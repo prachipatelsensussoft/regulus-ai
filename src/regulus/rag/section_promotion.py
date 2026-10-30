@@ -407,6 +407,22 @@ _ACT_NOT_OFFERED = frozenset({"301"})
 _AU1_GENERIC = frozenset({"201", "301", "704", "801"})   # definitions, prohibited acts, inspection, imports: in most lists
 
 
+def named_act_path(section: str, question: str, raw: str | None) -> str:
+    """AP2 (30 Oct): the subsection of a picked FD&C Act section that the question writes ("what does a 513(g) request
+    accomplish?") or, failing that, the picker wrote ("FD&C Act § 513(g)"), so its blocks are supplied first
+    (StatuteIndex.blocks keeps a named block before ranking the rest). P-008: the picker named 513(g), the path was
+    dropped, and word ranking supplied 513(b), (c) and (f) and left (g) among 54 blocks out - the model then said 513(g)
+    was not in the sources. "" when neither names one, or AP2 is off."""
+    if not precision_fix("AP2"):
+        return ""
+    rx = re.compile(rf"(?<![\d.]){re.escape(section)}((?:\([A-Za-z0-9]{{1,4}}\))+)")
+    for text in (question, raw):
+        m = rx.search(text or "")
+        if m:
+            return m.group(1)
+    return ""
+
+
 def routed_programme(question: str):
     """DR1 (regulus.rag.validator_switches): the one programme the question names (regulus.retrieval.programmes), or None."""
     if not precision_fix("DR1"):
@@ -1691,7 +1707,7 @@ class SectionPromoter:
         # S-005 asks for the personnel subpart's records AND where the general recordkeeping rules are (Subpart P)
         return (kept + [c for c in cands if c["section"] not in inside] if boost else kept) if kept else cands
 
-    def decomposed_sections(self, question: str, parts=None) -> list[str]:
+    def decomposed_sections(self, question: str, parts=None, home: tuple[str, ...] = ()) -> list[str]:
         """QD1 (27 Oct): question decomposition for a multi-part question (Question Decomposition for RAG, ACL SRW 2025):
         the model writes at most QD1_SUBQUESTIONS sub-questions; each one's lexical candidates are scored by the
         cross-encoder and its best regulation section, at QD1_MIN_SCORE or more, is returned (in sub-question order) to
@@ -1723,7 +1739,13 @@ class SectionPromoter:
             except Exception:  # noqa: BLE001
                 return None
             best = max(cfr, key=lambda c: scores.get(c["section"], (0.0, ""))[0], default=None)
-            return best["section"] if best is not None and scores.get(best["section"], (0.0, ""))[0] >= floor else None
+            score = scores.get(best["section"], (0.0, ""))[0] if best is not None else 0.0
+            if (best is not None and scope is None and home and precision_fix("QD3")
+                    and best["section"].split(".")[0] not in home):
+                # QD3 (30 Oct): a sub-question searched across all parts adds a section of another part than the promoted
+                # one's only at QD2's stricter floor - P-012 (UDI, Part 830) got 822.3 (postmarket surveillance)
+                floor = max(floor, QD2_MIN_SCORE)
+            return best["section"] if best is not None and score >= floor else None
 
         # DR1: a question routed to its programme keeps it for its sub-questions - L-015's "where are those names
         # codified?" searched every part and promoted 502.19 (animal food) for a food labeling question (30 Oct, FAIL)
@@ -2103,8 +2125,9 @@ class SectionPromoter:
                 if scores and scores.get(second_cfr, (0.0, ""))[0] < SP2F_MIN_SCORE:
                     notes, second_cfr = notes + (f"second pick {second_cfr} below the reranker floor",), None
         if picked_c.get("statute"):
-            acts = [(picked_c["section"], "")] + ([(second_act["section"], "")] if second_act is not None
-                                                  and second_act["section"] != picked_c["section"] else [])
+            acts = [(picked_c["section"], named_act_path(picked_c["section"], question, raw))] + (
+                [(second_act["section"], named_act_path(second_act["section"], question, raw))]
+                if second_act is not None and second_act["section"] != picked_c["section"] else [])
             pr = self._statute_promotion(acts, lex, self.mode, t0, cands, raw)
             if other is not None:   # FD&C Act section first, a regulation second: the regulation is promoted with it
                 sec = self.siblings(other, cands, lex)
@@ -2147,7 +2170,8 @@ class SectionPromoter:
                 pr = replace(pr, companions=pr.companions + tuple(nav), notes=pr.notes + (f"navigated: {', '.join(nav)}",))
         if precision_fix("QD1") and multi_part(question):
             cited = {c.split("(")[0] for c in pr.citations}   # a paragraph PL1 added is its section (code review)
-            extra = [s2 for s2 in self.decomposed_sections(question, parts) if s2.split("(")[0] not in cited][:QD1_MAX]
+            home = tuple(dict.fromkeys(x.split(".")[0] for x in pr.sections))
+            extra = [s2 for s2 in self.decomposed_sections(question, parts, home) if s2.split("(")[0] not in cited][:QD1_MAX]
             if extra:
                 pr = replace(pr, companions=pr.companions + tuple(extra), notes=pr.notes + (f"sub-questions: {', '.join(extra)}",))
         return replace(pr, notes=pr.notes + notes) if notes else pr

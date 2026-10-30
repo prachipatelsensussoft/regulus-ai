@@ -389,3 +389,51 @@ def test_a_dropped_table_is_planned_after_the_paragraph_it_follows():
     assert plan.status == "planned"
     assert [(r.paragraph_path, r.path_ordinal, r.ordinal, r.source_tag) for r in plan.inserts] == [("", 1, 1, "TABLE")]
     assert DT.plan_section("701.30", els, applied(rows, plan)).inserts == []
+
+
+# -- 30 Oct: split-at-designator rows align; large tables are stored in parts ------------------------------------------
+
+SPLIT_SECTION = b"""<ROOT><DIV8 N="1114.7" TYPE="SECTION"><HEAD>Required content and format.</HEAD>
+<P>(f) Labeling and description of marketing plans&#x2014;(1) Labeling. The application must contain specimens.</P>
+<EXTRACT><P>Specimen text.</P></EXTRACT>
+<P>(2) Marketing plans. The application must describe them.</P></DIV8></ROOT>"""
+
+
+def test_a_paragraph_the_ingestion_split_at_an_inline_designator_aligns():
+    # 1114.7 (23 Oct): stored as "...marketing plans—" + "(1) Labeling. ..." - the joined stream reads "plans— (1)"
+    els = DT.sections_of(SPLIT_SECTION)["1114.7"]
+    head, tail = els[0].text.split("(1) Labeling", 1)
+    rows = [DT.StoredRow("a", "(f)", 0, 0, head), DT.StoredRow("b", "(f)(1)", 0, 1, "(1) Labeling" + tail),
+            DT.StoredRow("c", "(f)(2)", 0, 2, els[2].text)]
+    plan = DT.plan_section("1114.7", els, rows)
+    assert plan.status == "planned" and [(n.paragraph_path, n.source_tag, n.anchor_id) for n in plan.inserts] == [("(f)(1)", "EXTRACT", "b")]
+
+
+def _big_table(rows: int) -> bytes:
+    trs = "".join(f"<TR><TD>Category {i} of the general food supply</TD><TD>{i} g</TD><TD>{i} oz</TD></TR>" for i in range(rows))
+    return (b"""<ROOT><DIV8 N="101.12" TYPE="SECTION"><HEAD>Reference amounts.</HEAD><P>(b) The following tables:</P>
+<DIV><DIV class="gpotbl_div"><TABLE><CAPTION><P>Table 2&#x2014;Reference Amounts Customarily Consumed: General Food Supply</P></CAPTION>
+<THEAD><TR><TH>Product category</TH><TH>Reference amount</TH><TH>Label statement</TH></TR></THEAD><TBODY>"""
+            + trs.encode() + b"</TBODY></TABLE></DIV></DIV></DIV8></ROOT>")
+
+
+def test_a_large_table_is_stored_in_parts_that_name_their_table():
+    els = DT.sections_of(_big_table(120))["101.12"]
+    parts = [e for e in els if e.tag == "TABLE"]
+    assert len(parts) > 1 and all(len(e.text) <= DT.TABLE_PART_CHARS for e in parts)
+    assert all(e.text.startswith(f"Table 2—Reference Amounts Customarily Consumed: General Food Supply (part {k} of {len(parts)}): ")
+               for k, e in enumerate(parts, 1))
+    rows = [r for e in parts for r in e.text.split("): ", 1)[1].split(". Product category")]
+    assert len(rows) == 120                                   # no row split across parts
+    small = [e for e in DT.sections_of(_big_table(3))["101.12"] if e.tag == "TABLE"]
+    assert len(small) == 1 and not small[0].text.startswith("Table 2")   # a small table: as before, byte for byte
+
+
+def test_the_parts_are_planned_in_order_and_a_rerun_after_apply_changes_nothing():
+    els = DT.sections_of(_big_table(120))["101.12"]
+    rows = [DT.StoredRow("id-0", "(b)", 0, 0, els[0].text)]
+    plan = DT.plan_section("101.12", els, rows)
+    parts = [e for e in els if e.tag == "TABLE"]
+    assert plan.status == "planned" and [n.body_text for n in plan.inserts] == [e.text for e in parts]
+    assert [n.path_ordinal for n in plan.inserts] == list(range(1, len(parts) + 1))
+    assert DT.plan_section("101.12", els, applied(rows, plan)).inserts == []
