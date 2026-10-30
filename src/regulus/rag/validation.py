@@ -452,12 +452,22 @@ def _unit_key(unit: str) -> str:
 _CL1_LABEL = re.compile(r"(?:21\s*CFR\s*)?(?:Part\s+\d+|§?\s*\d+\.\d+[a-z]?(?:\s*\([A-Za-z0-9]+\))*)|\[\d+\]", re.I)
 
 
+# words that point at a citation without saying anything ("See 21 CFR 820.45 [8]")
+_CL1_POINTERS = frozenset("see also and under per cfr part parts section sections paragraph paragraphs subpart".split())
+CL1_MIN_WORDS = 2   # a line saying something keeps at least this many words once its labels are removed
+
+
 def citations_only(text: str) -> bool:
-    """CL1: two or more lines, none of which says anything once its citation labels and source markers are removed."""
+    """CL1: two or more lines, none of which says anything once its citation labels and source markers are removed.
+    A terse statement says something ("21 CFR 820.10(b)(4): advisory notices. [2]" - 30 Oct: the first threshold of four
+    words read it as a bare label); M-042's "21 CFR 820.45(a)(1) [8]" lines keep no word at all."""
     lines = [l for l in (text or "").splitlines() if l.strip()]
     if len(lines) < 2:
         return False
-    return not any(len(re.findall(r"[A-Za-z]{3,}", _CL1_LABEL.sub(" ", l))) >= 4 for l in lines)
+    def says(line: str) -> bool:
+        words = [w for w in re.findall(r"[A-Za-z]{3,}", _CL1_LABEL.sub(" ", line)) if w.lower() not in _CL1_POINTERS]
+        return len(words) >= CL1_MIN_WORDS
+    return not any(says(l) for l in lines)
 
 
 def _content_words(text: str) -> set[str]:

@@ -153,6 +153,7 @@ def test_total_budget_sacrifices_optional_before_required():
     assert sel.total_chars <= policy.max_total_chars
 
 
+@pytest.mark.usefixtures("cpu_era_budget")   # fixtures sized to overflow the CPU-era evidence budget (tests/conftest.py)
 def test_required_evidence_above_the_hard_ceiling_is_dropped_explicitly_not_silently():
     long_table = [dict(r, body_text="L" * 1500) for r in TABLE]
     reg = registry_for("820.10(b)(1) through (b)(4)", TableDatabase(long_table))

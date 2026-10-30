@@ -35,6 +35,9 @@ from tests.test_accuracy_observer import CASES, Scripted, answer_one
 from tests.test_accuracy_pass_integrity import A, B, C, FOCUSED, S211
 from tests.test_retrieval_plan import TableDatabase
 
+# scripted model drafts: the model-drafted path (tests/conftest.py)
+pytestmark = pytest.mark.usefixtures("model_drafted_path")
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 runner = importlib.import_module("run_acceptance_test")
 

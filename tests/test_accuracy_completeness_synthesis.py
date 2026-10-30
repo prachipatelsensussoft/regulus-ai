@@ -101,6 +101,7 @@ def _crowded_table():
     return [row("312.32", p, i, text=t, section_heading=_F["section_heading"]) for i, (p, t) in enumerate(rows, 1)]
 
 
+@pytest.mark.usefixtures("cpu_era_budget")   # fixtures sized to overflow the CPU-era evidence budget (tests/conftest.py)
 def test_obligations_the_ceiling_kept_out_make_completeness_impossible_to_establish():
     table = _crowded_table()
     _, _, probe = production(BROAD_SECTION, "x", table)
@@ -114,6 +115,7 @@ def test_obligations_the_ceiling_kept_out_make_completeness_impossible_to_establ
     assert completeness(d)["state"] in ("not_established", "fail")
 
 
+@pytest.mark.usefixtures("cpu_era_budget")   # fixtures sized to overflow the CPU-era evidence budget (tests/conftest.py)
 def test_the_withheld_rows_never_reach_the_prompt():
     from regulus.rag.generation import render_package
     _, _, probe = production(BROAD_SECTION, "x", _crowded_table())
@@ -136,9 +138,25 @@ def test_a_seven_day_answer_without_its_starting_event_still_fails():
     assert v["status"] == FAIL
 
 
-def test_a_wrong_deadline_for_the_fatal_category_still_fails():
+def test_a_wrong_deadline_for_the_fatal_category_still_fails(monkeypatch):
+    # the evaluator's own check, on a delivered answer: without FC2 the wrong figure reaches it
+    from regulus.rag import validator_switches as VS
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION - {"FC2"})
     v, d, _ = production(SEVEN, CORRECT_SEVEN.replace("7 calendar", "15 calendar"), S312)
     assert v["status"] == FAIL and d["checked"]["claims"][0]["support"] == "contradicted"
+
+
+def test_with_fc2_a_wrong_deadline_is_never_delivered(monkeypatch):
+    # 30 Oct, promoting FC2: the 15-day figure under the 7-day paragraph (c)(2) is caught before delivery and the
+    # provision is quoted instead - the wrong answer never reaches the reader (the evaluator then scores a quotation)
+    from regulus.rag import validator_switches as VS
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"FC2"})
+    v, d, out = production(SEVEN, CORRECT_SEVEN.replace("7 calendar", "15 calendar"), S312)
+    codes = [p["code"] for p in out.metadata["validation"]["initial"]["problems"]]
+    assert "figure_misattributed" in codes and out.metadata["fallback_type"] is not None
+    wrong = CORRECT_SEVEN.replace("7 calendar", "15 calendar").split(" [")[0]
+    # the model's sentence is never shown; the quoted regulation may itself say "15 calendar days" ((c)(1))
+    assert wrong not in out.answer and v["status"] != PASS
 
 
 def test_a_focused_question_is_not_asked_for_the_whole_section():

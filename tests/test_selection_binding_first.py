@@ -15,6 +15,9 @@ from regulus.retrieval.query import QueryType
 from tests.test_retrieval_plan import TableDatabase, row
 from tests.test_retrieval_section_coverage import COVERAGE, UI12, guidance, run
 
+# fixtures sized to overflow the CPU-era evidence budget (tests/conftest.py)
+pytestmark = pytest.mark.usefixtures("cpu_era_budget")
+
 ON = ContextPolicy(general_evidence_order="binding_first")
 
 

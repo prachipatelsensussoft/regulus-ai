@@ -347,6 +347,7 @@ def test_weak_evidence_prompt_and_disclosure_flag():
 # ------------------------------------------------------------ streaming in structured mode
 
 
+@pytest.mark.usefixtures("delivered_as_drafted")   # the final is the validated draft itself
 def test_structured_streaming_draft_final_and_equivalence():
     from tests.test_streaming import StreamingGenerator
 

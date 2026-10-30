@@ -31,6 +31,9 @@ from regulus.traceability import measurement as M
 from tests.test_accuracy_observer import CASES, Scripted, answer_one
 from tests.test_measurement_record import A, B, C, INVENTED, RUN, build, focused, runner
 
+# scripted model drafts: the model-drafted path (tests/conftest.py)
+pytestmark = pytest.mark.usefixtures("model_drafted_path")
+
 ROOT = Path(__file__).resolve().parents[1]
 CLEAN, ONLY_C = f"{A} [1] {B} [2] {C} [3]", f"{C} [3]"
 

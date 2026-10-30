@@ -1,3 +1,4 @@
+import pytest
 """P1 (2026-10-20): when the hard ceiling keeps paragraphs of a requested provision out of the prompt, the delivered
 answer names what was left out and the record says the evidence was not complete. Found on the benchmark: for
 F-002 46 required rows of Part 117 and for R-002 13 rows of Part 803 were cut, while coverage said COMPLETE and the
@@ -11,6 +12,9 @@ from regulus.rag.prompt import withheld_evidence_statement
 from regulus.retrieval import LexicalRetriever
 from tests.test_rag import FakeGenerator
 from tests.test_retrieval_plan import TABLE, TableDatabase
+
+# fixtures sized to overflow the CPU-era evidence budget (tests/conftest.py)
+pytestmark = pytest.mark.usefixtures("cpu_era_budget")
 
 QUESTION = "What do 820.10(b)(1) through (b)(4) require?"
 CUT = ["21 CFR 820.10(b)(3)", "21 CFR 820.10(b)(4)"]

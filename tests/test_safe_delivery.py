@@ -40,6 +40,9 @@ from tests.test_answer_shape import TABLE
 from tests.test_retrieval_plan import TableDatabase
 from tests.test_streaming import StreamingGenerator
 
+# the delivered answer is the validated draft itself (tests/conftest.py)
+pytestmark = pytest.mark.usefixtures("delivered_as_drafted")
+
 _spec = importlib.util.spec_from_file_location("serve_ui_safe_delivery", PROJECT_ROOT / "scripts" / "serve_ui.py")
 UI = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(UI)

@@ -92,3 +92,21 @@ def test_fd1_a_denial_about_a_named_provision_is_checked_against_it_only():
     s = "21 CFR 820.10(b)(2) [5]: Requires traceability procedures; this does not address complaint reporting to regulatory authorities"
     assert false_denial(s, [REPORTING, TRACE], cited=[TRACE]) is None
     assert false_denial("Part 820 does not address complaint reporting to regulatory authorities", [REPORTING, TRACE]) is not None
+
+
+def test_fd1_the_regulations_own_exclusion_is_not_a_false_denial():
+    # 30 Oct, promoting FD1: a verbatim 21 CFR 312.32 answer was failed - its quotation of the (a) definition's exclusion
+    # was read as a denial of (c)(1)
+    a = SimpleNamespace(index=1, citation="21 CFR 312.32(a)", text=(
+        "Life-threatening adverse event or life-threatening suspected adverse reaction. ... It does not include an adverse "
+        "event or suspected adverse reaction that, had it occurred in a more severe form, might have caused death."))
+    c1 = SimpleNamespace(index=3, citation="21 CFR 312.32(c)(1)", text=(
+        "In each IND safety report, the sponsor must identify all IND safety reports previously submitted to FDA "
+        "concerning a similar suspected adverse reaction, and must analyze the significance of the suspected adverse "
+        "reaction in light of previous, similar reports or any other relevant information."))
+    quoted = ("It does not include an adverse event or suspected adverse reaction that, had it occurred in a more severe "
+              "form, might have caused death [1].")
+    assert false_denial(quoted, [a, c1]) is None
+    # the answer's own denial is still checked (M-001)
+    assert false_denial("Additionally, the regulations do not apply to human cells, tissues, and cellular and tissue-based "
+                        "products (HCT/Ps) regulated as devices [3].", [HCTP, BLOOD]) is not None
