@@ -70,11 +70,11 @@ class TableDatabase:
     """Answers the exact statements from TABLE and the text statements from canned rows."""
 
     def __init__(self, table=TABLE, *, full_text=(), guidance=(), trigram=(), or_ecfr=(), or_guidance=(), docket=(),
-                 coverage=()):
+                 coverage=(), anchored=()):
         self.table = [dict(r) for r in table]
         self.canned = {"full_text": list(full_text), "guidance": list(guidance), "trigram": list(trigram),
                        "or_ecfr": list(or_ecfr), "or_guidance": list(or_guidance), "docket": list(docket),
-                       "coverage": list(coverage)}
+                       "coverage": list(coverage), "anchored": list(anchored)}
         self.calls: list[tuple[str, dict]] = []
 
     def query(self, statement, params=None):
@@ -119,6 +119,8 @@ class TableDatabase:
             return [dict(r) for r in self.canned["docket"]]
         if name == "ECFR_SECTION_COVERAGE":
             return [dict(r) for r in self.canned["coverage"]][: params["limit"]]
+        if name == "GUIDANCE_ANCHORED":   # AG1: guidance anchored to the requested sections (none unless a test supplies them)
+            return [dict(r) for r in self.canned["anchored"]][: params["limit"]]
         raise AssertionError(name)
 
     def names(self):
@@ -606,6 +608,7 @@ def test_part_stem_ranking_is_deterministic():
     assert runs[0] == ["21 CFR 111.103", "21 CFR 111.105", "21 CFR 111.110", "21 CFR 111.117", "21 CFR 111.3"]
 
 
+@pytest.mark.usefixtures("cpu_era_budget")   # fixtures sized to overflow the CPU-era evidence budget (tests/conftest.py)
 def test_relevance_wins_when_it_conflicts_with_alphabetical_order():
     """Test D: the relevant stem sorts LAST in ASCII order and still leads - and with a
     budget that fits two sources it is kept while the ASCII-first stems are dropped."""
@@ -736,6 +739,7 @@ def test_part_expansion_is_off_without_a_relevance_signal():
     assert len(rows) == 5  # the five stems, nothing deeper
 
 
+@pytest.mark.usefixtures("cpu_era_budget")   # fixtures sized to overflow the CPU-era evidence budget (tests/conftest.py)
 def test_part_expansion_respects_the_existing_ceilings():
     """Test E: the expanded rows go through select_evidence like any required evidence -
     they are bounded by the hard ceilings and recorded when dropped, never smuggled in."""

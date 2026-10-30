@@ -38,6 +38,9 @@ from tests.test_accuracy_observer import Scripted
 from tests.test_generation_contract import package_for
 from tests.test_retrieval_plan import TableDatabase, row
 
+# scripted model drafts: the model-drafted path (tests/conftest.py)
+pytestmark = pytest.mark.usefixtures("model_drafted_path")
+
 TEXT = {p["citation"]: p["text"] for p in json.loads(
     (Path(__file__).parent / "fixtures" / "accuracy_definition_citation_rows.json").read_text(encoding="utf-8"))["paragraphs"]}
 

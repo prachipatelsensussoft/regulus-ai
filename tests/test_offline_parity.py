@@ -40,6 +40,9 @@ from tests.test_retrieval_plan import TableDatabase
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from serve_ui import Engine  # noqa: E402
 
+# scripted model drafts: the model-drafted path (tests/conftest.py)
+pytestmark = pytest.mark.usefixtures("model_drafted_path")
+
 PARAPHRASE = "There must be enough qualified personnel to perform and supervise the manufacture of each drug product. [3]"
 NAMES_ABSENT = f"{A} [1] See also 21 CFR 211.999. [1]"
 

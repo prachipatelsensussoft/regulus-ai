@@ -104,10 +104,25 @@ def _fd1_clauses(text: str) -> list[str]:
     return [c for c in re.split(r"(?<=[.;:])\s+|\n+", text or "") if c.strip()]
 
 
+_FD1_MARKERS = re.compile(r"\s*\[\d{1,3}\]")
+FD1_VERBATIM_MIN = 25   # characters: a shorter sentence is too generic to be told apart from a quotation
+
+
+def _fd1_verbatim(sentence: str, texts) -> bool:
+    """The sentence is a supplied paragraph's own wording (citation markers and spacing aside)."""
+    core = " ".join(_FD1_MARKERS.sub("", sentence or "").split()).strip(" .;:").lower()
+    return len(core) >= FD1_VERBATIM_MIN and any(core in " ".join((t or "").split()).lower() for t in texts)
+
+
 def false_denial(sentence: str, sources, cited=None) -> tuple[int, str] | None:
     """FD1: (source index, its affirming clause) when `sentence` denies what a supplied paragraph affirms: "does not
     apply to X" against a clause that applies the part to X, or "does not provide/address/... X" against a paragraph
-    holding nearly all of X's key words with no negation in that clause. None otherwise."""
+    holding nearly all of X's key words with no negation in that clause. None otherwise - and None for a sentence that
+    is a supplied paragraph's own wording: the regulation's exclusion ("It does not include an adverse event ... that,
+    had it occurred in a more severe form, might have caused death", 312.32(a)) is not a denial by the answer (30 Oct:
+    a verbatim 312.32 answer was failed against (c)(1))."""
+    if _fd1_verbatim(sentence, [getattr(s, "text", "") for s in list(sources) + list(cited or [])]):
+        return None
     for m in (_FD1_NOT_APPLY.search(sentence or ""), _FD1_NO_TOPIC.search(sentence or "")):
         if m and _FD1_RELATIVE.search((sentence or "")[:m.start()]):
             return None

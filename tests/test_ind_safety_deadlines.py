@@ -39,6 +39,9 @@ from regulus.retrieval import LexicalRetriever
 from tests.test_accuracy_claim_extraction import judge
 from tests.test_retrieval_plan import TableDatabase, row
 
+# fixtures sized to overflow the CPU-era evidence budget (tests/conftest.py)
+pytestmark = pytest.mark.usefixtures("cpu_era_budget")
+
 # ------------------------------------------------------------------ the provision, verbatim
 
 C1_TEXT = ("(c)(1) IND safety reports. The sponsor must notify FDA and all participating investigators (i.e., all "
@@ -535,3 +538,12 @@ def test_a_reversed_deadline_is_still_contradicted_against_production_shaped_sou
               "later than 15 calendar days after initial receipt of the information. [3]")
     a = judge(HOW_QUICKLY, answer, HEADED)
     assert a.checked["claims"][0]["support"] == AN.CONTRADICTED and _substantive(a) == "fail"
+
+
+def test_with_the_gpu_budget_the_whole_section_fits(monkeypatch):
+    # CB1/HX1/BA1 (promoted 30 Oct): the 15,000-character / 48-source ceiling without URL charges holds every required
+    # paragraph of 21 CFR 312.32 - the overflow the tests above exercise no longer happens for this section
+    from regulus.rag import validator_switches as VS
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"CB1", "HX1", "BA1"})
+    selection = select_evidence(_registry("What does 21 CFR 312.32 require?"), question=DEADLINE_QUESTION)
+    assert not selection.overflow and not [d for d in selection.dropped if d.required]

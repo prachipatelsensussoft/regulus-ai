@@ -16,6 +16,9 @@ from regulus.retrieval.evidence import TIER_DISCOVERY, TIER_SUPPORTING, Evidence
 from regulus.retrieval.models import METHOD_FULL_TEXT, METHOD_TRIGRAM
 from tests.test_retrieval_plan import guidance_row, row
 
+# fixtures sized to overflow the CPU-era evidence budget (tests/conftest.py)
+pytestmark = pytest.mark.usefixtures("cpu_era_budget")
+
 Q = ("We're a small cosmetic pigment maker and want FDA to list a new color additive for our makeup line. "
      "Can we propose it ourselves, and how must the petition be submitted?")
 PART71 = dict(part_title="Color Additive Petitions", section_heading="Petitions.")

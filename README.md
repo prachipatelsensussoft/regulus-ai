@@ -260,6 +260,18 @@ pip install -e .
 `pip install -e .` installs the `regulus` package from `src/` in editable
 mode so scripts and tests can `import regulus` from anywhere.
 
+### Database
+
+Restore the 15 Sep 2026 baseline backup into PostgreSQL, set `REGULUS_DATABASE_URL` in `.env`, then bring the
+eCFR records to the repaired data this repository expects (previews and asks before writing; Windows and macOS):
+
+```bash
+python -m regulus.setup status   # read-only
+python -m regulus.setup          # apply the pending data migrations, rebuild the semantic index
+```
+
+See `docs/DATA_MIGRATIONS.md`.
+
 ### GPU machines
 
 The `torch` wheel on PyPI is CPU-only on Windows. On a machine with an NVIDIA

@@ -431,6 +431,9 @@ def test_cl1_a_list_of_citations_that_states_nothing():
     assert not citations_only("21 CFR 820.10(b)(1) [2]: requires a documented system to assign unique device identifiers.\n"
                               "21 CFR 820.45 [6]")
     assert not citations_only("21 CFR 820.10(b) [1]")   # one line: a short answer, not a list
+    # terse statements say something; pointers to a citation do not (30 Oct, promoting CL1)
+    assert not citations_only("21 CFR 820.10(b)(2): traceability procedures. [1]\n\n21 CFR 820.10(b)(4): advisory notices. [2]")
+    assert citations_only("See 21 CFR 820.45(a)(1) [8]\nSee also 21 CFR 820.45(b) [9]\nUnder part 820 [3]")
 
 
 def test_cl1_rejects_a_contentless_answer_only_when_on(monkeypatch):

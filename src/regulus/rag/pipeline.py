@@ -1728,6 +1728,9 @@ class RagPipeline:
             or ("requested_provision_not_found" in conditions and self.config.incomplete_behavior != "partial"))
         fallback_type: str | None = None
         fallback_reason: str | None = None
+        # where the answer itself ends: the notes after it (what the evidence does not establish, an unanswered part, a
+        # gap notice, status notes) close the answer, and an addition about the answer's content (ISO1) goes before them
+        answer_body_end: int | None = None
         prompt_sent: str | None = None  # the user message actually sent to the model, for evidence capture
         timings["answerability_ms"] = round((time.perf_counter() - t_gate) * 1000, 2)
         composed = composed_report = None
@@ -2065,6 +2068,7 @@ class RagPipeline:
                     answer_text, stray = drop_stray_decline(answer_text)
                     if stray:
                         generation_info["stray_decline_removed"] = stray
+            answer_body_end = len(answer_text.rstrip())
             if gate_on and decision.limitation and not (analysis is not None and analysis.scope_status == SCOPE_MIXED):
                 # Stage 5 PARTIALLY_ANSWERABLE: say what the evidence does not establish (mixed scope in
                 # "structured" mode already gets its own note below)
@@ -2079,6 +2083,8 @@ class RagPipeline:
                 coverage_action = "answer"
             if analysis is not None and analysis.scope_status == SCOPE_MIXED and analysis.out_of_scope_part:
                 answer_text = answer_text.rstrip() + "\n" + mixed_scope_note(analysis.out_of_scope_part)
+        if answer_body_end is None:
+            answer_body_end = len((answer_text or "").rstrip())
         # P1 (2026-10-20): paragraphs of a requested provision that the hard ceiling kept out of the prompt are named
         # in the delivered answer and recorded; the prompt and the model's text are unchanged.
         evidence_gap = None
@@ -2110,9 +2116,12 @@ class RagPipeline:
             # ISO1: the ISO 13485 clauses the cited Part 820 provisions name, stated with their citations
             from regulus.rag.iso_clauses import clause_line
 
-            line = clause_line(answer_text, package.sources)
+            body, closing = answer_text[:answer_body_end].rstrip(), answer_text[answer_body_end:]
+            line = clause_line(body, package.sources)
             if line:
-                answer_text = answer_text.rstrip() + "\n\n" + line
+                # after the answer, before its closing notes (30 Oct: the line followed "Not answered: ..." and the
+                # PARTIALLY_ANSWERABLE limitation, which must end the answer)
+                answer_text = body + "\n\n" + line + closing
                 generation_info["iso_clauses_named"] = line.count("Clause ")
         t_post = time.perf_counter()
         if package is not None and model_called:

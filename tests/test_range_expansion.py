@@ -227,6 +227,9 @@ def test_no_duplicate_requirement_is_created():
 
 from tests.test_retrieval_plan import TableDatabase, row  # noqa: E402
 
+# fixtures sized to overflow the CPU-era evidence budget (tests/conftest.py)
+pytestmark = pytest.mark.usefixtures("cpu_era_budget")
+
 # five sections of part 50, each with a long section row and two paragraphs
 RANGE_TABLE = [r for n in (50, 51, 52, 53, 54) for r in (
     row(f"50.{n}", "", 0, part="50", text=f"Section 50.{n} body. " + "x" * 900),

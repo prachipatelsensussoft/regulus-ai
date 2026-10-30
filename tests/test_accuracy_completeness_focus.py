@@ -36,6 +36,9 @@ from regulus.accuracy.review import FAIL, PASS
 from tests.test_accuracy_pass_integrity import completeness, production
 from tests.test_retrieval_plan import row
 
+# scripted model drafts: the model-drafted path (tests/conftest.py)
+pytestmark = pytest.mark.usefixtures("model_drafted_path")
+
 _F = json.loads((Path(__file__).parent / "fixtures" / "accuracy_312_32_rows.json").read_text(encoding="utf-8"))
 _TEXT = {p["paragraph"]: p["text"] for p in _F["paragraphs"]}
 # one row per paragraph, in document order: SOURCE 1 (a), 2 (b), 3 (c)(1), 4 (c)(1)(i), 5 (c)(2),

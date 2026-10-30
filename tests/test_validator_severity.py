@@ -94,6 +94,7 @@ def test_applicability_dropped_alone_makes_the_report_unsupported():
 # ------------------------------------------------------------ what must not trigger
 
 
+@pytest.mark.usefixtures("delivered_as_drafted")   # delivered exactly as validated / repaired
 @pytest.mark.parametrize("question, answer", [
     (ONE, SOUND),                                                                               # verbatim substance
     (ONE, "21 CFR 820.10(b)(2) requires the manufacturer to document traceability procedures meeting part 821, if applicable [1]."),  # paraphrase
@@ -167,6 +168,7 @@ def test_a_blocking_finding_that_survives_repair_still_withholds():
 # ------------------------------------------------------------ existing repair behaviour preserved
 
 
+@pytest.mark.usefixtures("delivered_as_drafted")   # delivered exactly as validated / repaired
 def test_an_invented_condition_alone_is_still_repaired_in_place():
     """D-013 passed only after this repair: an invented condition with nothing else wrong is removed in place."""
     p, _ = pipeline(None, response=SOUND + " If appropriate, the rule also covers imports [1].")
@@ -190,6 +192,7 @@ def test_an_invented_condition_beside_a_treated_finding_is_no_longer_repaired_in
 # ------------------------------------------------------------ known costs, measured and accepted for decision
 
 
+@pytest.mark.usefixtures("model_drafted_path")   # the cost is on the model-drafted path
 def test_known_cost_a_faithful_paraphrase_with_little_source_wording_is_withheld():
     """Lexical support cannot judge paraphrase (Stage 7's reason for keeping this a warning). This faithful
     paraphrase of the verbatim 21 CFR 211.25(a) text shares under 30% of its content words with the sources,

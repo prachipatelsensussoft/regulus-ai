@@ -1,3 +1,6 @@
 # Pre-edit source snapshots are evidence checked against their SHA256SUMS: store their bytes exactly
 # (core.autocrlf=input would otherwise turn a CRLF file's line endings into LF and break the checksum).
 artifacts/**/pre_edit/** -text
+
+# Data migration files are checksummed in the ledger when applied: keep their bytes exactly (no CRLF conversion)
+data/migrations/** -text
