@@ -407,6 +407,22 @@ _ACT_NOT_OFFERED = frozenset({"301"})
 _AU1_GENERIC = frozenset({"201", "301", "704", "801"})   # definitions, prohibited acts, inspection, imports: in most lists
 
 
+def named_act_path(section: str, question: str, raw: str | None) -> str:
+    """AP2 (30 Oct): the subsection of a picked FD&C Act section that the question writes ("what does a 513(g) request
+    accomplish?") or, failing that, the picker wrote ("FD&C Act § 513(g)"), so its blocks are supplied first
+    (StatuteIndex.blocks keeps a named block before ranking the rest). P-008: the picker named 513(g), the path was
+    dropped, and word ranking supplied 513(b), (c) and (f) and left (g) among 54 blocks out - the model then said 513(g)
+    was not in the sources. "" when neither names one, or AP2 is off."""
+    if not precision_fix("AP2"):
+        return ""
+    rx = re.compile(rf"(?<![\d.]){re.escape(section)}((?:\([A-Za-z0-9]{{1,4}}\))+)")
+    for text in (question, raw):
+        m = rx.search(text or "")
+        if m:
+            return m.group(1)
+    return ""
+
+
 def routed_programme(question: str):
     """DR1 (regulus.rag.validator_switches): the one programme the question names (regulus.retrieval.programmes), or None."""
     if not precision_fix("DR1"):
@@ -2103,8 +2119,9 @@ class SectionPromoter:
                 if scores and scores.get(second_cfr, (0.0, ""))[0] < SP2F_MIN_SCORE:
                     notes, second_cfr = notes + (f"second pick {second_cfr} below the reranker floor",), None
         if picked_c.get("statute"):
-            acts = [(picked_c["section"], "")] + ([(second_act["section"], "")] if second_act is not None
-                                                  and second_act["section"] != picked_c["section"] else [])
+            acts = [(picked_c["section"], named_act_path(picked_c["section"], question, raw))] + (
+                [(second_act["section"], named_act_path(second_act["section"], question, raw))]
+                if second_act is not None and second_act["section"] != picked_c["section"] else [])
             pr = self._statute_promotion(acts, lex, self.mode, t0, cands, raw)
             if other is not None:   # FD&C Act section first, a regulation second: the regulation is promoted with it
                 sec = self.siblings(other, cands, lex)

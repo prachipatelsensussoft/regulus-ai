@@ -73,3 +73,17 @@ def test_sub_questions_of_a_routed_question_stay_in_its_programme(monkeypatch):
     seen.clear()
     pr.decomposed_sections(q)
     assert seen and all(scope is None for scope in seen)   # without DR1: every part, as before
+
+
+def test_ap2_the_named_act_subsection_is_passed_on(monkeypatch):
+    from regulus.rag import section_promotion as SP
+    from regulus.rag import validator_switches as VS
+
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"AP2"})
+    q = "How are medical devices classified and what does a 513(g) request accomplish?"   # P-008
+    assert SP.named_act_path("513", q, "FD&C Act § 513") == "(g)"                       # the question names it
+    assert SP.named_act_path("513", "What is a classification request?", "FD&C Act § 513(f)(2)") == "(f)(2)"   # the picker
+    assert SP.named_act_path("513", "What is a classification request?", "FD&C Act § 513") == ""
+    assert SP.named_act_path("513", "Under 21 CFR 513.2(a) ...", None) == ""                # a CFR number is not the Act
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION - {"AP2"})
+    assert SP.named_act_path("513", q, None) == ""

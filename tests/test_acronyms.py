@@ -20,3 +20,12 @@ def test_lower_case_spelled_out_and_unknown_acronyms_add_nothing():
     assert expansions("Is the ace of spades a device?") == []
     assert expansions("What is a unique device identifier (UDI)?") == []
     assert expansions("What does the XYZQ program require?") == []
+
+
+def test_programme_names_the_cfr_never_defines_are_aliased():
+    # P-003: "510(k)" never reached 807.81 "When a premarket notification submission is required"
+    assert expansions("When must a 510(k) be submitted for a change to a legally marketed device?") == ["premarket notification"]
+    assert expansions("What are the PMA supplement requirements?") == ["premarket approval"]
+    assert expansions("What hazard analysis must an importer conduct under FSVP?") == ["foreign supplier verification programs"]
+    assert expansions("What does a premarket notification 510(k) contain?") == []   # already spelled out
+    assert expansions("Is a pma required?") == []                                    # capitals only

@@ -955,7 +955,16 @@ switches:
     status: experimental
     in_default: false
     introduced: {date: "2026-10-30", commit: ce03079}
-    evidence: not measured; L-008 - 'RACC' never brought 101.12 into the candidates (data/reference/acronyms_v1.json, 287 acronyms)
+    evidence: >-
+      not measured; L-008 - 'RACC' never brought 101.12 into the candidates (data/reference/acronyms_v1.json, 287
+      acronyms); P-003 - '510(k)' never brought 807.81 (ALIASES: 510(k), PMA, MDR, FSVP, PCQI, PMTA, MRTP, CAPA)
+  AP2:
+    purpose: the subsection of a picked FD&C Act section that the question (or else the picker) writes, "513(g)", is supplied first
+    stage: selection
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-10-30", commit: pending}
+    evidence: not measured; P-008 - the picker named 513(g), word ranking supplied (b), (c), (f) and left (g) among 54 blocks out
   AMB1:
     purpose: a question naming no product type, whose first-ranked candidates are one provision written for several types, gets a clarifying question listing them; the reply naming a type is answered from its section
     stage: router

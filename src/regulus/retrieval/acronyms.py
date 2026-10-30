@@ -4,8 +4,9 @@ A question writing "RACC" shares no word with 101.12 ("Reference amounts customa
 the section was never a candidate (L-008, full300d: 101.12 missing, PARTIALLY PASS). data/reference/acronyms_v1.json
 (scripts/build_acronyms.py) holds every acronym the regulations spell out before it in parentheses ("reference amount
 commonly consumed (RACC)"), with the senses questions do not use excluded (PDP is a product development protocol in
-the corpus and a principal display panel on a label). The expansion is added to the search words only: the picker and
-the model read the question as asked.
+the corpus and a principal display panel on a label), and ALIASES the programme names the CFR never defines in
+parentheses ("510(k)", "PMA", "FSVP"). The expansion is added to the search words only: the picker and the model read
+the question as asked.
 """
 from __future__ import annotations
 
@@ -16,6 +17,19 @@ from pathlib import Path
 
 PATH = Path(__file__).resolve().parents[3] / "data" / "reference" / "acronyms_v1.json"
 _ACRONYM = re.compile(r"(?<![\w&])([A-Z][A-Z&]{2,7})s?(?![\w&])")
+# The programme names FDA and industry use that the CFR never spells out in parentheses, with the words its headings and
+# text do use (P-003, 30 Oct: "When must a 510(k) be submitted ..." never reached 807.81 "When a premarket notification
+# submission is required"). Each expansion is in at least one 21 CFR heading or in the defining section's text.
+ALIASES: tuple[tuple[re.Pattern, str], ...] = (
+    (re.compile(r"(?<!\w)510\s*\(k\)"), "premarket notification"),                     # 807 Subpart E, 13 headings
+    (re.compile(r"(?<![\w&])PMAs?(?![\w&])"), "premarket approval"),                      # Part 814, 19 headings
+    (re.compile(r"(?<![\w&])MDRs?(?![\w&])"), "medical device reporting"),                # Part 803
+    (re.compile(r"(?<![\w&])FSVPs?(?![\w&])"), "foreign supplier verification programs"), # Part 1 Subpart L
+    (re.compile(r"(?<![\w&])PCQIs?(?![\w&])"), "preventive controls qualified individual"),  # 117.180, 507.53
+    (re.compile(r"(?<![\w&])PMTAs?(?![\w&])"), "premarket tobacco product application"),     # Part 1114
+    (re.compile(r"(?<![\w&])MRTPA?s?(?![\w&])"), "modified risk tobacco product"),        # Part 1114, FD&C Act 911
+    (re.compile(r"(?<![\w&])CAPAs?(?![\w&])"), "corrective and preventive action"),      # 820 (ISO 13485 8.5.2)
+)
 
 
 @lru_cache(maxsize=1)
@@ -33,5 +47,8 @@ def expansions(question: str) -> list[str]:
     for acronym in dict.fromkeys(_ACRONYM.findall(question or "")):
         words = known.get(acronym)
         if words and words not in q and words not in out:
+            out.append(words)
+    for pattern, words in ALIASES:
+        if pattern.search(question or "") and words not in q and words not in out:
             out.append(words)
     return out
