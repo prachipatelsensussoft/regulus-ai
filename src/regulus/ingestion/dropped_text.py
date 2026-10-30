@@ -45,6 +45,10 @@ def normalize(text: str | None) -> str:
     return " ".join((text or "").split())
 
 
+def _compact(text: str | None) -> str:
+    return "".join((text or "").split())
+
+
 def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -150,38 +154,74 @@ def _html_columns(thead: ET.Element | None) -> list[str]:
     return labels
 
 
-def table_text(el: ET.Element) -> str:
-    """A table as text, one row after another: "header: value; header: value." - every non-empty cell kept with its
-    column heading, so the reader (and the model) can tell "Established label name: Hydrofluorocarbon 152a" from the
-    formula. Handles the eCFR renderer's HTML <TABLE> (THEAD/TBODY, rowspan/colspan) and the GPO <GPOTABLE>."""
+def _table_parts(el: ET.Element) -> tuple[str, str, list[str]] | None:
+    """(GPO title, HTML caption, one "heading: value; ..." line per row), or None when the element holds no table."""
     html = el if el.tag == "TABLE" else el.find(".//TABLE")
     if html is not None:
         heads = _html_columns(html.find("THEAD"))
         body = html.find("TBODY") if html.find("TBODY") is not None else html
         rows = [[_cell(e) for e in tr if e.tag in ("TD", "TH")] for tr in body.iter("TR")]
-        title = ""
+        title, caption = "", (_cell(html.find("CAPTION")) if html.find("CAPTION") is not None else "")
     else:
         table = el if el.tag == "GPOTABLE" else el.find(".//GPOTABLE")
         if table is None:
-            return block_text(el)
+            return None
         heads = [_cell(h) for h in table.iter("CHED")]
         rows = [[_cell(e) for e in row.findall("ENT")] for row in table.iter("ROW")]
         title = _cell(table.find("TTITLE")) if table.find("TTITLE") is not None else ""
-    lines = [title] if title else []
+        caption = ""
+    lines = []
     for cells in rows:
         pairs = [f"{heads[i]}: {c}" if i < len(heads) and heads[i] else c for i, c in enumerate(cells) if c]
         if pairs:
             lines.append("; ".join(pairs) + ("" if pairs[-1].endswith(".") else "."))
-    return normalize(" ".join(lines))
+    return title, caption, lines
 
 
-def _element(c: ET.Element) -> SourceElement:
+def table_text(el: ET.Element) -> str:
+    """A table as text, one row after another: "header: value; header: value." - every non-empty cell kept with its
+    column heading, so the reader (and the model) can tell "Established label name: Hydrofluorocarbon 152a" from the
+    formula. Handles the eCFR renderer's HTML <TABLE> (THEAD/TBODY, rowspan/colspan) and the GPO <GPOTABLE>."""
+    parts = _table_parts(el)
+    if parts is None:
+        return block_text(el)
+    title, _, lines = parts
+    return normalize(" ".join(([title] if title else []) + lines))
+
+
+# A table longer than this is stored as several rows (30 Oct): the 23 Oct repair excluded tables "over 4000 chars" whole
+# (the prompt cuts a result at 4,000 characters), which left 101.12's RACC tables (26,980), 1107.18's product-properties
+# table (23,216) and 1002.1's reporting table (6,958) out of the corpus. Each part holds whole rows - every row already
+# names its columns - and opens with the table's caption, so a part read alone says which table it is.
+TABLE_PART_CHARS = 3500
+
+
+def table_texts(el: ET.Element) -> list[str]:
+    """The table as one text (table_text), or - over TABLE_PART_CHARS - as parts of whole rows, each opening with
+    "<caption or title> (part k of n):"."""
+    whole = table_text(el)
+    parts = _table_parts(el)
+    if len(whole) <= TABLE_PART_CHARS or parts is None:
+        return [whole]
+    title, caption, lines = parts
+    label = caption or title or "Table"
+    room = TABLE_PART_CHARS - len(label) - 24
+    groups: list[list[str]] = [[]]
+    for line in lines:
+        if groups[-1] and sum(len(x) + 1 for x in groups[-1]) + len(line) > room:
+            groups.append([])
+        groups[-1].append(line)
+    n = len(groups)
+    return [normalize(f"{label} (part {k} of {n}): " + " ".join(g)) for k, g in enumerate(groups, 1)]
+
+
+def _elements(c: ET.Element) -> list[SourceElement]:
     if c.tag == "P":
-        return SourceElement("P", inline_text(c))
+        return [SourceElement("P", inline_text(c))]
     if c.tag in ("GPOTABLE", "TABLE") or (c.tag.startswith("DIV") and (c.find(".//GPOTABLE") is not None
                                                                        or c.find(".//TABLE") is not None)):
-        return SourceElement("TABLE", table_text(c))
-    return SourceElement(c.tag, block_text(c))
+        return [SourceElement("TABLE", t) for t in table_texts(c)]
+    return [SourceElement(c.tag, block_text(c))]
 
 
 def sections_of(xml_bytes: bytes) -> dict[str, list[SourceElement]]:
@@ -193,7 +233,7 @@ def sections_of(xml_bytes: bytes) -> dict[str, list[SourceElement]]:
         if not (div.tag.startswith("DIV") and div.get("TYPE") == "SECTION"):
             continue
         number = div.get("N") or ""
-        out[number] = [_element(c) for c in div if c.tag not in ("HEAD", "CITA", "EDNOTE", "SECAUTH")]
+        out[number] = [e for c in div if c.tag not in ("HEAD", "CITA", "EDNOTE", "SECAUTH") for e in _elements(c)]
     return out
 
 
@@ -211,20 +251,24 @@ def align(elements: Sequence[SourceElement], rows: Sequence[StoredRow]) -> tuple
     stored row it follows, and the number of EXTRACT/FP elements already stored. Raises RepairError when the stored
     rows do not account for the section's paragraphs exactly, in order (the stored text is read as one stream, so a
     <P> split over several rows, or several <P> merged into one row, still align)."""
-    texts = [r.body_text for r in rows]
-    stream = " ".join(texts)
-    ends, pos_end = [], -1
+    # The stream is compared with every whitespace character removed: the original ingestion split a paragraph at an
+    # inline designator ("... marketing plans—(1) Labeling.") into two rows, which reads back as "plans— (1)" - 865
+    # sections, 1114.7 and 1040.10 among them, were refused for that space alone (23 Oct). Every other character must
+    # still match exactly and in order.
+    texts = [_compact(r.body_text) for r in rows]
+    stream = "".join(texts)
+    ends, pos_end = [], 0
     for t in texts:
-        pos_end += len(t) + 1
+        pos_end += len(t)
         ends.append(pos_end)
     boundary = {0: None} | {e: i for i, e in enumerate(ends)}
     pos, dropped, already = 0, [], 0
 
     def take(t: str) -> bool:
         nonlocal pos
-        start = pos + 1 if pos > 0 and stream.startswith(" ", pos) else pos
-        if t and stream.startswith(t, start):
-            pos = start + len(t)
+        c = _compact(t)
+        if c and stream.startswith(c, pos):
+            pos += len(c)
             return True
         return False
 
