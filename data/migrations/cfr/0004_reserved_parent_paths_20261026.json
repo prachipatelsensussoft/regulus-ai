@@ -1,0 +1,91 @@
+{
+ "format": 1,
+ "version": 4,
+ "name": "reserved_parent_paths_20261026",
+ "reference_applied": "2026-10-26",
+ "description": "Paragraphs stored under a reserved-range row's path ((a)(g) for (g) in 82.3; (b)(e), (a)(c), (f)(j) in other sections) given their own path: 31 rows.",
+ "provenance": {
+  "source_files": [
+   {
+    "file": "~/regulus_eval_runs/programme_20261026/db_repair/82.3_paths_fix.sql",
+    "sha256": "b236e830cc1de9fc770e2f42d49a4ab5d3e5b54900a031841b60c0b72e4db4a9"
+   },
+   {
+    "file": "~/regulus_eval_runs/programme_20261026/db_repair/82.3_paths_rollback.sql",
+    "sha256": "0417ce9a2179589d16f4759ce5e241727cac06c77de576a840afaf8877bbe201"
+   },
+   {
+    "file": "~/regulus_eval_runs/programme_20261026/db_repair/reserved_parent_fix.sql",
+    "sha256": "ff2e05e488441f2c7472ce18ccb515ec9c4fe337b794be64be74770586cb255e"
+   },
+   {
+    "file": "~/regulus_eval_runs/programme_20261026/db_repair/reserved_parent_rollback.sql",
+    "sha256": "1cbf8fd70e87e5e24f7df2447912ed514af9dcedb54bc029b94569e6abc8bd58"
+   }
+  ],
+  "ecfr_payloads": {
+   "82": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=82",
+    "sha256": "b2d2b12f110bab19e7e11c14a799cccf577deb7835bc5172e3e11806bede7d03",
+    "from": "rows' source_payload_sha256"
+   },
+   "105": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=105",
+    "sha256": "ed07898751aca5e57b6fc93b00ccbbb541346b7c57f5e068e45c1954947e13ef",
+    "from": "rows' source_payload_sha256"
+   },
+   "164": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=164",
+    "sha256": "5b8f13f091902e4c3c320f9f5730334f858ad28b5f743afd7e191b3267b1ff57",
+    "from": "rows' source_payload_sha256"
+   },
+   "202": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=202",
+    "sha256": "ac9a5c8d53ac70d1615a0cf65847794ef196d632e0407fb3c287e07a50dc2748",
+    "from": "rows' source_payload_sha256"
+   }
+  }
+ },
+ "fingerprint_before": {
+  "rows": 66010,
+  "sha256": "de203b5cc8fdcd0072317606a27b4ae2f1b50c02e0ea21f72f24207926588055"
+ },
+ "fingerprint_after": {
+  "rows": 66010,
+  "sha256": "5747981932e0428a7a5b33277a7c155c1b442316a546b5a92010247ce42f8d04"
+ },
+ "insert": [],
+ "update": [
+{"id": "01a07aab-fb34-7c0b-b2e7-e170a94362a2", "new": ["(g)", 0, 2], "old": ["(a)(g)", 0, 2], "section": "82.3"},
+{"id": "01a07aab-fb36-7136-a5fe-302fd8127502", "new": ["(h)", 0, 3], "old": ["(a)(h)", 0, 3], "section": "82.3"},
+{"id": "01a07aab-fb37-7a02-ba51-5ed413d375d5", "new": ["(i)", 0, 4], "old": ["(a)(i)", 0, 4], "section": "82.3"},
+{"id": "01a07aab-fb38-7bab-bcd0-04e6270705a7", "new": ["(j)", 0, 5], "old": ["(a)(j)", 0, 5], "section": "82.3"},
+{"id": "01a07aab-fb39-7829-8f3a-b2b1aa09587c", "new": ["(k)", 0, 6], "old": ["(a)(k)", 0, 6], "section": "82.3"},
+{"id": "01a07aab-fb3a-73e8-82f5-a37252ec6c1d", "new": ["(n)", 0, 7], "old": ["(a)(k)(n)", 0, 7], "section": "82.3"},
+{"id": "01a07aab-fb3b-7141-89d1-6c220e2001d6", "new": ["(o)", 0, 8], "old": ["(a)(k)(o)", 0, 8], "section": "82.3"},
+{"id": "01a07aab-fb3b-7ce8-aa35-d4e53d85c38f", "new": ["(q)", 0, 9], "old": ["(a)(k)(o)(q)", 0, 9], "section": "82.3"},
+{"id": "01a07aac-4b2d-7a49-acfb-03ef2ce2e0c4", "new": ["(e)", 0, 7], "old": ["(b)(e)", 0, 7], "section": "105.3"},
+{"id": "01a07aae-1ef3-7ad6-8121-ba291b501e7e", "new": ["(c)", 0, 1], "old": ["(a)(c)", 0, 1], "section": "164.120"},
+{"id": "01a07aae-1ef4-7c5c-9263-5139fed2a033", "new": ["(c)(1)", 0, 2], "old": ["(a)(c)(1)", 0, 2], "section": "164.120"},
+{"id": "01a07aae-1ef5-7b0a-b7a5-6d7edaa6a44c", "new": ["(c)(2)", 0, 3], "old": ["(a)(c)(2)", 0, 3], "section": "164.120"},
+{"id": "01a07aae-1ef6-77d1-9462-32f029e06f32", "new": ["(c)(2)(i)", 0, 4], "old": ["(a)(c)(2)(i)", 0, 4], "section": "164.120"},
+{"id": "01a07aae-1ef7-7b08-8283-c310c4e0da8f", "new": ["(c)(2)(ii)", 0, 5], "old": ["(a)(c)(2)(ii)", 0, 5], "section": "164.120"},
+{"id": "01a07aae-1ef8-77f2-817e-c4254f7e2975", "new": ["(c)(2)(ii)(a)", 0, 6], "old": ["(a)(c)(2)(ii)(a)", 0, 6], "section": "164.120"},
+{"id": "01a07aae-1ef9-7553-9dfa-b653525c56dd", "new": ["(c)(2)(ii)(b)", 0, 7], "old": ["(a)(c)(2)(ii)(b)", 0, 7], "section": "164.120"},
+{"id": "01a07aae-1efa-7f88-8e93-e9154f070aeb", "new": ["(c)(2)(ii)(c)", 0, 8], "old": ["(a)(c)(2)(ii)(c)", 0, 8], "section": "164.120"},
+{"id": "01a07aae-1efc-77bd-99bb-7390f56a4337", "new": ["(c)(2)(iii)", 0, 9], "old": ["(a)(c)(2)(iii)", 0, 9], "section": "164.120"},
+{"id": "01a07aae-1efd-7b04-9d59-0629097b303e", "new": ["(c)(3)", 0, 10], "old": ["(a)(c)(3)", 0, 10], "section": "164.120"},
+{"id": "01a07aaf-9a9e-705f-b576-8db3c7027ebd", "new": ["(j)(1)", 0, 88], "old": ["(f)(j)(1)", 0, 88], "section": "202.1"},
+{"id": "01a07aaf-9a9e-7ad2-9e55-a1f602b54032", "new": ["(j)(1)(i)", 0, 89], "old": ["(f)(j)(1)(i)", 0, 89], "section": "202.1"},
+{"id": "01a07aaf-9a9f-75a5-9c11-ae45d8668e8d", "new": ["(j)(1)(ii)", 0, 90], "old": ["(f)(j)(1)(ii)", 0, 90], "section": "202.1"},
+{"id": "01a07aaf-9a9f-7f1d-9f08-099d2eb41cd6", "new": ["(j)(1)(iii)", 0, 91], "old": ["(f)(j)(1)(iii)", 0, 91], "section": "202.1"},
+{"id": "01a07aaf-9aa0-78d3-9791-1caca998a344", "new": ["(j)(2)", 0, 93], "old": ["(f)(j)(2)", 0, 93], "section": "202.1"},
+{"id": "01a07aaf-9aa1-7350-9e10-9b3bdbb13eec", "new": ["(j)(3)", 0, 94], "old": ["(f)(j)(3)", 0, 94], "section": "202.1"},
+{"id": "01a07aaf-9aa1-7c4f-85db-64fc6d17a508", "new": ["(j)(4)", 0, 95], "old": ["(f)(j)(4)", 0, 95], "section": "202.1"},
+{"id": "01a07aaf-9aa2-7657-96b5-a549def738f1", "new": ["(j)(5)", 0, 96], "old": ["(f)(j)(5)", 0, 96], "section": "202.1"},
+{"id": "01a07aaf-9aa2-7f6e-b618-883b40989c8f", "new": ["(k)", 0, 97], "old": ["(f)(k)", 0, 97], "section": "202.1"},
+{"id": "01a07aaf-9aa3-79da-81e9-5ab7f2e7170e", "new": ["(l)(1)", 0, 98], "old": ["(f)(l)(1)", 0, 98], "section": "202.1"},
+{"id": "01a07aaf-9aa4-72c6-aca4-0dc2371be58c", "new": ["(l)(2)", 0, 99], "old": ["(f)(l)(2)", 0, 99], "section": "202.1"},
+{"id": "01a166e7-65cf-7110-be1d-caf6969b5054", "new": ["(j)(1)(iii)", 1, 92], "old": ["(f)(j)(1)(iii)", 1, 92], "section": "202.1"}
+]
+}

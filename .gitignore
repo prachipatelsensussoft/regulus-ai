@@ -43,6 +43,8 @@ data/evaluation/results/*
 data/evaluation/semantic/generated/
 # Stage 10 versioned corpora: <name>/manifest.yaml tracked, <name>/generated/ reproducible
 data/evaluation/semantic/*/generated/
+# backups of a generated/ folder (python -m regulus.setup semantic: generated_backup_<time>/; manual generated_before_*)
+data/evaluation/semantic/*/generated_*/
 
 # Stage 11 training data: JSONL splits are regenerated deterministically from the database
 # (manifest_<v>.json and validation_<v>.json are tracked)
