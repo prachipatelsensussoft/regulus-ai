@@ -355,6 +355,9 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
   AP2 (30 Oct, off until measured) the subsection of a picked FD&C Act section that the question (or else the picker) writes
       - "513(g)" - is supplied first. P-008: the picker named 513(g) and the statute step supplied (b), (c), (f) by word
       ranking, leaving (g) among 54 blocks out
+  QD3 (30 Oct, off until measured) a QD1 sub-question searched across every part adds a section of a part other than the
+      promoted section's only at QD2's stricter cross-encoder floor (0.7, not 0.5). P-012 (UDI, Part 830) got 822.3
+      (postmarket surveillance) beside the key 801.20
   AMB1 (30 Oct, off until measured) a question naming no product type whose first-ranked candidates are the same provision
       written for several types (101.7 / 201.62 / 701.13 / 801.62 "Declaration of net quantity of contents") is answered
       with a clarifying question listing them, cited, without calling the model; a short reply naming one type ("food",

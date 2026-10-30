@@ -87,3 +87,27 @@ def test_ap2_the_named_act_subsection_is_passed_on(monkeypatch):
     assert SP.named_act_path("513", "Under 21 CFR 513.2(a) ...", None) == ""                # a CFR number is not the Act
     monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION - {"AP2"})
     assert SP.named_act_path("513", q, None) == ""
+
+
+def test_qd3_another_parts_sub_question_section_needs_the_stricter_floor(monkeypatch):
+    # P-012: the UDI question (promoted 830.320) got 822.3 from a sub-question searched across every part
+    from regulus.rag import section_promotion as SP
+    from regulus.rag import validator_switches as VS
+
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"QD1", "QD3"})
+    monkeypatch.setattr(SP, "RERANKER", "stub")
+
+    class Gen:
+        def generate(self, messages, max_new_tokens=0, **kw):
+            return type("G", (), {"response": "What must be submitted to GUDID?\nWhat must the label bear?"})()
+
+    pr = SP.SectionPromoter.__new__(SP.SectionPromoter)
+    pr.generator = Gen()
+    best = {"What must be submitted to GUDID?": "822.3", "What must the label bear?": "801.20"}
+    monkeypatch.setattr(pr, "candidates", lambda sub, scope: ([], [{"section": best[sub]}]), raising=False)
+    monkeypatch.setattr(pr, "rerank_scores", lambda sub, cfr: {"822.3": (0.6, ""), "801.20": (0.8, "")}, raising=False)
+    q = "What are the unique device identification requirements and what must be submitted to GUDID?"
+    assert pr.decomposed_sections(q, None, ("830",)) == ["801.20"]           # 822.3 at 0.6 < 0.7 dropped
+    assert pr.decomposed_sections(q, None, ("822",)) == ["822.3", "801.20"]  # its own part: the 0.5 floor
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION - {"QD3"})
+    assert pr.decomposed_sections(q, None, ("830",)) == ["822.3", "801.20"]  # off: as before

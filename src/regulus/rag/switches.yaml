@@ -963,8 +963,16 @@ switches:
     stage: selection
     status: experimental
     in_default: false
-    introduced: {date: "2026-10-30", commit: pending}
+    introduced: {date: "2026-10-30", commit: 13d47aa}
     evidence: not measured; P-008 - the picker named 513(g), word ranking supplied (b), (c), (f) and left (g) among 54 blocks out
+  QD3:
+    purpose: a QD1 sub-question searched across every part adds another part's section only at QD2's stricter floor (0.7)
+    stage: selection
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-10-30", commit: pending}
+    evidence: not measured; P-012 got 822.3 (postmarket surveillance) from an unrouted sub-question; must keep the key 801.20
+    interactions: [QD1, QD2, DR1]
   AMB1:
     purpose: a question naming no product type, whose first-ranked candidates are one provision written for several types, gets a clarifying question listing them; the reply naming a type is answered from its section
     stage: router
