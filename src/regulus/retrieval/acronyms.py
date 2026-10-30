@@ -32,12 +32,31 @@ ALIASES: tuple[tuple[re.Pattern, str], ...] = (
 )
 
 
+# an expansion used in more sections than this is common, not specific: it dilutes the search. SY4 calibration on the
+# 300Q (30 Oct): "food and drug administration" (906 sections), "current good manufacturing practice" (507) and "good
+# manufacturing practice" (860) cost F-003 its rank-1 key 117.10 and G-006 201.17; "reference amount commonly consumed"
+# (1), "investigational device exemption" (31) brought L-008's 101.12 and P-010's 812.43 / 812.46
+MAX_SECTIONS = 50
+
+
 @lru_cache(maxsize=1)
-def table() -> dict[str, str]:
+def _data() -> dict:
     try:
-        return {k: v["expansion"] for k, v in json.loads(PATH.read_text(encoding="utf-8"))["acronyms"].items()}
-    except (OSError, ValueError, KeyError, TypeError):
+        return json.loads(PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
         return {}
+
+
+def table() -> dict[str, str]:
+    """The specific acronyms: defined in the corpus, expansion used in at most MAX_SECTIONS sections."""
+    try:
+        return {k: v["expansion"] for k, v in _data()["acronyms"].items() if v.get("sections", 0) <= MAX_SECTIONS}
+    except (KeyError, TypeError, AttributeError):
+        return {}
+
+
+def _specific_alias(words: str) -> bool:
+    return (_data().get("alias_sections") or {}).get(words, 0) <= MAX_SECTIONS
 
 
 def expansions(question: str) -> list[str]:
@@ -49,6 +68,6 @@ def expansions(question: str) -> list[str]:
         if words and words not in q and words not in out:
             out.append(words)
     for pattern, words in ALIASES:
-        if pattern.search(question or "") and words not in q and words not in out:
+        if pattern.search(question or "") and _specific_alias(words) and words not in q and words not in out:
             out.append(words)
     return out

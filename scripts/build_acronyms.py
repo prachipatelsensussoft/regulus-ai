@@ -64,7 +64,19 @@ def main() -> int:
             continue
         expansion, n = counts.most_common(1)[0]
         table[acronym] = {"expansion": expansion, "count": n}
-    Path(a.out).write_text(json.dumps({"built_from": "cfr_records (live rows)", "acronyms": table,
+    # spread: how many sections use each expansion (and each alias's) - a common phrase ("food and drug administration",
+    # 906 sections) dilutes the search instead of pointing it (SY4 calibration, 30 Oct)
+    from regulus.retrieval.acronyms import ALIASES
+
+    by_section: dict[str, list[str]] = {}
+    for r in db.query("SELECT section_number, lower(body_text) AS t FROM cfr_records WHERE removed_on IS NULL", {}):
+        by_section.setdefault(r["section_number"], []).append(r["t"] or "")
+    joined = [" ".join(v) for v in by_section.values()]
+    spread = lambda phrase: sum(1 for t in joined if phrase in t)
+    for v in table.values():
+        v["sections"] = spread(v["expansion"])
+    aliases = {words: spread(words) for _, words in ALIASES}
+    Path(a.out).write_text(json.dumps({"built_from": "cfr_records (live rows)", "acronyms": table, "alias_sections": aliases,
                                        "excluded": dict(sorted(excluded.items()))}, indent=1) + "\n")
     print(f"{len(table)} acronyms, {len(excluded)} excluded -> {a.out}")
     return 0

@@ -696,10 +696,13 @@ switches:
   AU2:
     purpose: an FD&C Act section promoted alone brings the best regulation from a part issued under it
     stage: selection
-    status: experimental
+    status: rejected
     in_default: false
     introduced: {date: "2026-10-28", commit: 157d456}
-    evidence: none recorded (L-010, P-002 motivating cases)
+    evidence: >-
+      LEDGER 30 Oct - calibration (no model) on the 9 statute-only picks of full300d + five_dr1: adds a key section once
+      (P-008 860.3) and a wrong one 4 times (H-002 803.18, P-002 807.92 for 807.100, T-001 1114.15 for 1114.7, T-007
+      1100.204); the cross-encoder chooses the wrong regulation. Left off
   RR2:
     purpose: RR1 redesigned - the first section keeps all its paragraphs; only the sections after it share round-robin
     stage: selection
@@ -950,21 +953,25 @@ switches:
       869bf26: QD1 sub-questions keep the routed programme (L-015 promoted 502.19)
     interactions: [QD1, AU1]
   SY4:
-    purpose: acronyms the regulations define in their own text are spelled out in the section search's words
+    purpose: acronyms the regulations define, and a few programme names, spelled out in the section search when the expansion is specific (used in at most 50 sections)
     stage: retrieval
     status: experimental
     in_default: false
     introduced: {date: "2026-10-30", commit: ce03079}
     evidence: >-
-      not measured; L-008 - 'RACC' never brought 101.12 into the candidates (data/reference/acronyms_v1.json, 287
-      acronyms); P-003 - '510(k)' never brought 807.81 (ALIASES: 510(k), PMA, MDR, FSVP, PCQI, PMTA, MRTP, CAPA)
+      LEDGER 30 Oct - calibration on the 300Q candidates (no model): as first built, +4 key / -4 key, 14 lower (FDA, CGMP,
+      GMP expansions diluted the search: F-003 lost rank-1 117.10) - FAILED; narrowed to specific expansions (<= 50
+      sections): +3 key (L-008 101.12, P-010 812.43, 812.46), 0 lost, 8 higher / 9 lower (V-006 1.509 3 -> 11). Live paired
+      measurement pending
   AP2:
     purpose: the subsection of a picked FD&C Act section that the question (or else the picker) writes, "513(g)", is supplied first
     stage: selection
     status: experimental
     in_default: false
     introduced: {date: "2026-10-30", commit: 13d47aa}
-    evidence: not measured; P-008 - the picker named 513(g), word ranking supplied (b), (c), (f) and left (g) among 54 blocks out
+    evidence: >-
+      calibration on recorded runs (30 Oct): acts on 4 promotions, the named subsection missing in all 4 (P-008 513(g)
+      twice, G-007 503(b)(1), L-003 403(i)(2)); K-010 520(g) already supplied, untouched. Live paired measurement pending
   QD3:
     purpose: a QD1 sub-question searched across every part adds another part's section only at QD2's stricter floor (0.7)
     stage: selection
