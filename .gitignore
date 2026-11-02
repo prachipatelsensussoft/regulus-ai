@@ -28,6 +28,9 @@ models/qwen3-0.6b-lora/*smoke_tmp/
 # Data (keep folder structure, not contents)
 data/raw/*
 data/processed/*
+# the FD&C Act store is read at run time and is not in the database: tracked so a pull brings it (2 Nov 2026)
+!data/raw/statute_fdca/
+!data/processed/statute_fdca/
 # chat conversations (local SQLite, scripts/serve_ui.py): user content, never committed
 data/chat/
 # UI measurement sessions (regulus.traceability.ui_session): user questions and answers, never committed
