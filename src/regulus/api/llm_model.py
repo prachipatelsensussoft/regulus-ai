@@ -377,6 +377,15 @@ def make_handler(service: Service):
             # a body that was refused unread must not be parsed as the next request on this connection
             headers["Connection"] = "close"
             self.close_connection = True
+            # ... and is read and dropped first (at most 1 MiB): Windows resets a connection closed with unread input,
+            # and the client then never sees the error
+            if not getattr(self, "_body_read", False):
+                try:
+                    length = int(self.headers.get("Content-Length") or 0)
+                except ValueError:
+                    length = 0
+                if 0 < length <= 1024 * 1024:
+                    self.rfile.read(length)
             self._send_json(err.status, err.body(), headers)
 
         def _begin(self) -> None:
@@ -385,6 +394,7 @@ def make_handler(service: Service):
             self.request_id = rid if re.fullmatch(r"[A-Za-z0-9._\-]{8,64}", rid) else str(uuid.uuid4())
             self._status = None
             self.key = None
+            self._body_read = False
 
         def _done(self) -> None:
             service.log(f"{self.command} {self.path.split('?')[0]} {self._status} "
@@ -409,6 +419,7 @@ def make_handler(service: Service):
             if length > service.config.max_body_bytes:
                 raise ApiError(413, "payload_too_large", f"the body is over {service.config.max_body_bytes} bytes")
             raw = self.rfile.read(length) if length > 0 else b""
+            self._body_read = True
             try:
                 return json.loads(raw.decode("utf-8") or "null"), raw
             except (UnicodeDecodeError, json.JSONDecodeError):

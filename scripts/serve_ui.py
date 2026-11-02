@@ -157,14 +157,18 @@ class Engine:
         (prompts are tokenized in this process); the memory preflight; the worker starts. There is no fallback:
         any failure raises SystemExit and the server does not start."""
         from regulus.model import load_tokenizer
-        from regulus.rag.mlx_generator import MlxGenerator, memory_preflight
+        from regulus.rag.mlx_generator import MlxGenerator, memory_preflight, worker_script
         from regulus.system_identity import configured_generation_config
 
         m = self.settings.model
 
         def refuse(problem: str):
+            # the MLX runtime exists only on Apple Silicon; elsewhere the same model directory runs under PyTorch
+            hint = (" MLX needs an Apple Silicon Mac: on this machine set REGULUS_WORKER_RUNTIME=torch, which runs the "
+                    "same MLX model directory with PyTorch (scripts/torch_worker.py; see configs/ui.env.example)."
+                    if m.worker_runtime == "mlx" and sys.platform != "darwin" else "")
             raise SystemExit(f"{MLX_LABEL} cannot start: {problem}. The application answers with this model only "
-                             f"and never substitutes another.")
+                             f"and never substitutes another.{hint}")
 
         try:   # the pipeline's switches (REGULUS_SECTION_PROMOTION, _ANSWER_STYLE, _REPETITION_PENALTY) before anything loads
             from regulus.system_identity import configured_rag_config
@@ -206,10 +210,11 @@ class Engine:
         revision = m.mlx_revision or (path.name if path.parent.name == "snapshots" else None)
         try:
             memory_preflight(m.mlx_min_available_mb)
-            print(f"Starting {MLX_LABEL} in the MLX worker ...", flush=True)
+            print(f"Starting {MLX_LABEL} in the {'torch' if m.worker_runtime == 'torch' else 'MLX'} worker ...", flush=True)
             t0 = time.perf_counter()
             self._mlx = MlxGenerator(self.tokenizer, configured_generation_config(self.settings), model_id=MLX_MODEL_ID,
-                                     model_path=path, python=m.mlx_python, revision=revision)
+                                     model_path=path, python=m.mlx_python, revision=revision,
+                                     worker_script=worker_script(m.worker_runtime))
         except Exception as exc:  # noqa: BLE001 - every start-up failure stops the server, explained
             refuse(f"{type(exc).__name__}: {exc}")
         prefix = getattr(self._mlx, "generation_prefix", lambda: "")()
@@ -226,7 +231,9 @@ class Engine:
             print(f"Reply cache: {self._answering.path} ({len(self._answering.cache)} replies)", flush=True)
         d = self._mlx.describe()
         print(f"Answering model: {d['model_id']} {d['dtype']} revision {d['model_revision'] or 'not recorded'}, "
-              f"MLX worker {d.get('runtime_versions')}, tokenizer.json sha256 {self._tokenizer_sha256[:12]}, "
+              f"{'torch worker' if d.get('runtime') == 'torch' else 'MLX worker'} {d.get('runtime_versions')}"
+              f"{' on ' + str(d['device']) if d.get('runtime') == 'torch' else ''}, "
+              f"tokenizer.json sha256 {self._tokenizer_sha256[:12]}, "
               f"ready in {time.perf_counter() - t0:.1f}s", flush=True)
 
     def adapter_record(self, adapter_id: str) -> dict | None:
@@ -339,7 +346,9 @@ class Engine:
         """What answers, as the start-up log, /api/config, every response and every measurement record name it.
         Never the local paths."""
         d = self._mlx.describe()
-        return {"backend": "mlx", "model_id": d.get("model_id"), "model_revision": d.get("model_revision"),
+        # "runtime" only for the torch worker: the MLX identity keeps exactly its former keys (records and caches)
+        return {"backend": "mlx", **({"runtime": d["runtime"]} if d.get("runtime") else {}),
+                "model_id": d.get("model_id"), "model_revision": d.get("model_revision"),
                 "device": d.get("device"), "dtype": d.get("dtype"), "quantization": d.get("quantization"),
                 "runtime_versions": d.get("runtime_versions"), "adapter": None,
                 "decoding": d.get("generation"),   # what the worker does (greedy), not the configured sampling
@@ -622,15 +631,27 @@ class Handler(BaseHTTPRequestHandler):
         hosts = self._hosts()
         host = (self.headers.get("Host") or "").strip().lower()
         if host and host not in hosts:
+            self._discard_body()
             self._json(403, {"error": "forbidden host"})
             return False
         origin = self.headers.get("Origin")
         if check_origin and origin is not None:
             parsed = urlparse(origin.strip().lower())
             if parsed.scheme not in ("http", "https") or parsed.netloc not in hosts or parsed.path not in ("", "/"):
+                self._discard_body()
                 self._json(403, {"error": "forbidden origin"})
                 return False
         return True
+
+    def _discard_body(self) -> None:
+        """Read and drop a refused request's body (at most 1 MiB): Windows resets a connection that is closed with
+        unread input, and the client then never receives the refusal."""
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            return
+        if 0 < length <= 1024 * 1024:
+            self.rfile.read(length)
 
     def _turn(self, question: str, endpoint: str, kwargs: dict, conversation: tuple[str, str] | None = None):
         """A measurement turn for this request, or None. Never raises."""
