@@ -396,7 +396,13 @@ DEFAULT_BEFORE_27OCT_RELEASE = ("A1,A2,A3,A4,G1,S1,E1,C82,P1,Q1,FP1,RS1,QM1,D1,P
                                 "VB1,SY2,WC1,AF1,SY3")
 # WS1 and ISO1 measured as gains but held back from this release: they change the delivered-answer path that 25 tests
 # pin (WS1 answers fixture questions before the draft is validated; ISO1 appends after validation) - reconcile first
-DEFAULT = DEFAULT_BEFORE_27OCT_RELEASE + ",LS1,LS2,QM2,QC1,XR1,HC1,HT1,HM1,SP3"
+DEFAULT_27OCT_RELEASE = DEFAULT_BEFORE_27OCT_RELEASE + ",LS1,LS2,QM2,QC1,XR1,HC1,HT1,HM1,SP3"
+# 2 Nov 2026 (user: the UI always runs the best measured configuration): the 30 Oct step-1 set - the full300c bundle
+# (41.0% -> 56.7%) and the full300d additions (-> 61.0%) without OC1 (rejected: 7 PASS lost), plus DR1/AP2/SY4/AMB1
+# (five-domain run 7 up / 5 down, 0 PASS lost). The suite conflicts were reconciled in 450d504. The remaining step-1
+# answers run as confirmation; a switch that loses a PASS there leaves DEFAULT again.
+DEFAULT = DEFAULT_27OCT_RELEASE + (",SP2,SP2F,SP2O,SN1,DQ1,MS1,MS2,FQ1,PT1,AU1,AP1,AR2,AG1,DV1,WS1,ISO1,PC1,BA1,CB1,HX1,"
+                                   "DV2,CX1,AL1,FC2,FD1,CL1,FJ1,GT1,BR1,NX1,NX2,DR1,AP2,SY4,AMB1")
 VALIDATOR_PRECISION = frozenset(x.strip().upper() for x in os.environ.get("REGULUS_VALIDATOR_PRECISION", DEFAULT).split(",")
                                  if x.strip() and x.strip().lower() not in ("off", "none"))
 

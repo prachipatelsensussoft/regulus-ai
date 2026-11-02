@@ -15,7 +15,7 @@
 # Report: python scripts/switch_report.py   (--status X, --stage X, --run full300d, --check)
 
 meta:
-  as_of: "2026-10-30"
+  as_of: "2026-11-02"
   code_ref: rc-2026-10-29 (bb7543b)
   runs:
     # every DEFAULT switch was on in both runs; `extra` is what each run added on top of DEFAULT
@@ -176,8 +176,8 @@ switches:
   SP2:
     purpose: the picker's second regulation joins the first as a companion when it is in the same part
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-26", commit: 1894c59}
     evidence: >-
       LEDGER 28 Oct 12:55 - 110 rows, 79 changed, blind: PASS 10 -> 15, PASS+PP 15 -> 27, 19 up / 8 down, 3 PASS lost
@@ -480,8 +480,8 @@ switches:
       cross-encoder scores >= 0.5 appended verbatim; (b) 28 Oct, section_promotion.cascade_pick: a confident
       cross-encoder makes the picks and the language-model picker is skipped
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-27", commit: 8f194d7}
     evidence: >-
       only as part of the full300c bundle; LEDGER 28 Oct 15:25 "cascade decided 0 of 10" on pf49b 1-10; feature (a) has
@@ -534,8 +534,8 @@ switches:
   DV1:
     purpose: a question naming only a small part (Part 820, 11), or ISO 13485 / the QMSR, is answered from its top paragraphs
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-27", commit: "5566322"}
     evidence: >-
       VS - dev device questions key paragraph among its picks 13 of 19; MEM 29 Oct - on full300c 30 fire, 12 up / 14 same /
@@ -606,15 +606,15 @@ switches:
   WS1:
     purpose: an overview question whose subject is the promoted section's heading gets the whole section (<= 3,600 chars)
     stage: composer
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-27", commit: 91ecd7b}
     evidence: VS - measured gain, held back from the 27 Oct release (changes the delivered-answer path 25 tests pin); in full300c
   ISO1:
     purpose: the ISO 13485 clauses the cited Part 820 paragraphs name are added on one line with their citations
     stage: post_answer
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-27", commit: 965947f}
     evidence: VS - measured gain, held back from the 27 Oct release (appends after validation; tests pin the old path); in full300c
   SP3:
@@ -627,8 +627,8 @@ switches:
   HX1:
     purpose: up to 48 required paragraphs (was 24) under the unchanged character ceiling
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-27", commit: 8a8d114}
     evidence: >-
       27 Oct release - measured and left off (S-018 lost); LEDGER 28 Oct 18:20 - no-loss gate with BA1+CB1, complete key
@@ -645,22 +645,22 @@ switches:
   AU1:
     purpose: a general question is offered only the FD&C Act sections its top regulations' parts are issued under
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-28", commit: ccdabc3}
     evidence: bundle-level only (full300c); built after SA1 offered 502 for a PMTA question
   AP1:
     purpose: FD&C Act paragraphs chosen by the cross-encoder over the section's most similar paragraphs
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-28", commit: ccdabc3}
     evidence: bundle-level only (full300c); 910 is 13,500 chars and 2,500 fit
   MS1:
     purpose: other candidates of the promoted part above a cross-encoder floor join as companions (count and char cap)
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-28", commit: b7e5e66}
     evidence: >-
       MEM 29 Oct - on full300c 111 fire, 44 up / 59 same / 8 down; no score floor separates the downs (any floor removing
@@ -668,29 +668,29 @@ switches:
   MS2:
     purpose: MS1's pool also takes the promoted section's subpart neighbours and same-part citations
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-28", commit: 389a1fb}
     evidence: bundle-level only (full300c); 66 of 148 answers lacking a key section had it there
   DQ1:
     purpose: the definition paragraph of a term the question asks about, from the promoted section's subpart or part
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-28", commit: aa31702}
     evidence: bundle-level only (full300c); V-001 'importer' 1.500, F-002 'qualified facility' 117.3
   BA1:
     purpose: the evidence budget is charged for what the prompt renders (no URL line)
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-28", commit: e329181}
     evidence: LEDGER 28 Oct 17:56 / 18:20 - BA1+CB1+HX1 +11 complete on the sample; dev 225 no-loss gate 83 -> 110, 0 lost
   CB1:
     purpose: the required-evidence hard ceiling is 15,000 chars for the GPU model (was 9,000)
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-28", commit: 4feb968}
     evidence: LEDGER 28 Oct 18:20 - with BA1+HX1, complete key evidence 83 -> 110 of 182, 0 lost; in full300c
   AU2:
@@ -758,8 +758,8 @@ switches:
   AG1:
     purpose: a question asking beyond the regulation gets the guidance passages anchored to its requested sections
     stage: retrieval
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-28", commit: 82cd025}
     evidence: bundle-level only (full300c); DB test - D-023, 0 -> OOS guidance passages first
   MS3:
@@ -775,43 +775,43 @@ switches:
   AR2:
     purpose: a draft saying the provisions do not specify something gets one more pass with the section that holds it
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-28", commit: a2e6a9d}
     evidence: bundle-level only (full300c); motivated by 47 answers with such claims at 23% PASS+PP vs 43%
   SP2O:
     purpose: of the picker's two same-part picks, the one the cross-encoder rates >= 0.15 higher leads
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-28", commit: a0daea4}
     evidence: bundle-level only (full300c); LEDGER 28 Oct 12:10 - Z-001 down was a wrong first pick
   SP2F:
     purpose: SP2's second pick stands only when its cross-encoder score reaches REGULUS_SP2F_MIN_SCORE (0.7)
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-28", commit: "6141466"}
     evidence: LEDGER 28 Oct 12:58 - offline floor 0.7, dev keeps 12 of 14 gains (12 up / 2 down), sealed 3 / 0, 0 PASS lost
   SN1:
     purpose: a question naming "Part N Subpart X" is answered from that subpart's candidates
     stage: selection
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-28", commit: 50bd4eb}
     evidence: bundle-level only (full300c); fixes the SP2 downs F-004, S-005 (LEDGER 28 Oct 10:30)
   PT1:
     purpose: a product the yes/no question names is not an unstated premise when a source permits its category
     stage: answer_checks
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-28", commit: 603a356}
     evidence: bundle-level only (full300c); "Is mica permitted in eye shadow?" had been declined
   FQ1:
     purpose: the focused verbatim quote takes up to 8 paragraphs / 4,000 chars (was 3 / 1,600)
     stage: composer
-    status: candidate
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-28", commit: 604be01}
     evidence: bundle-level only (full300c); 27 Oct 300Q - 27 focused quotes scored 0 PASS+PP, 22 as "omits (b)-(g)"
 
@@ -819,8 +819,8 @@ switches:
   AL1:
     purpose: the answer allowance counts up to 18 required units and may reach 3,072 tokens (was 10 / 2,048)
     stage: generation
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-29", commit: "0590969"}
     evidence: >-
       LEDGER 29 Oct 11:40 - stepA 9 changed blind 2 up / 2 down, F-016 PASS lost (paraphrase replaced the verbatim
@@ -829,15 +829,15 @@ switches:
   DV2:
     purpose: DV1 narrowed - no DV1 for guidance-document questions; whole Scope/Definitions; DV1 score lets Q2 quote
     stage: selection
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-29", commit: "0590969"}
     evidence: LEDGER 29 Oct 11:40 - stepA 2 up / 0 down (M-026 FAIL -> PASS, E-001 PF -> PP); in full300d
   CX1:
     purpose: a draft with 3+ different error codes skips the correction pass (speed)
     stage: generation
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-29", commit: 46d8f39}
     evidence: full300c offline - 31 of 32 such passes rejected, the accepted one stayed FAIL; saves 0.8 h of 11.8 h; in full300d
   OC1:
@@ -854,58 +854,58 @@ switches:
   FC2:
     purpose: a figure stated under a cited paragraph must be in that paragraph, its parent or child
     stage: answer_checks
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-29", commit: 2417cfa}
     evidence: LEDGER 29 Oct ~12:30 - replay of 16 stepA questions fires on F-015, F-016, T-009 only; restores F-016 PASS, F-015 PP; in full300d
   FD1:
     purpose: a denial a supplied EXACT paragraph contradicts is an error (false_denial)
     stage: answer_checks
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-29", commit: e5db973}
     evidence: offline on 318 recorded answers fires on M-001 only; in full300d
   CL1:
     purpose: an answer of 2+ lines that says nothing once citations are removed is degenerate
     stage: answer_checks
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-29", commit: 7af8e13}
     evidence: over 618 recorded answers fires on M-042 only; in full300d
   FJ1:
     purpose: a question naming a non-U.S. regulator beside FDA is answered for FDA only, with a note
     stage: router
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-29", commit: 7af8e13}
     evidence: fires on SD-013 only of the benchmark questions (SD-011 PASS kept); in full300d
   GT1:
     purpose: a guidance title quoted after "guidance" that FDA's listing does not contain is said not to be held
     stage: router
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-29", commit: 7af8e13}
     evidence: targets NC-022, NC-015; a looser match had called an invented title found; in full300d
   BR1:
     purpose: requests a research tool must not carry out (certify, attest, conceal, litigate ...) get a fixed answer
     stage: router
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-29", commit: d01a0e9}
     evidence: fires on 9 of the 300Q (SD-002/003/004/006/007/008/009/012, PB-007), 0 of 2,574 others; in full300d
     notes: SD-002, SD-004 and NC-003 keys were seen while designing - no longer clean sealed tests
   NX1:
     purpose: a requested provision the database shows does not exist is said not to exist, with unused premise terms
     stage: router
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-29", commit: d01a0e9}
     evidence: replayed on the 16 cached stepA questions with 0 errors; in full300d
   NX2:
     purpose: a subpart the question names that is absent or reserved is said to be so, with the part's subparts
     stage: router
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-29", commit: eab97a3}
     evidence: fires on PB-008, NC-013 (+ sealed NC-003, NC-018); in full300d
   HQ1:
@@ -944,8 +944,8 @@ switches:
   DR1:
     purpose: a question naming one regulatory programme (tobacco, food labeling, device submissions, radiological health, combination products) is searched in that programme's parts and offered its FD&C Act sections
     stage: retrieval
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-30", commit: 9b80f66}
     evidence: >-
       LEDGER 30 Oct - routing precision 97.6% on 7,811 gold-labelled questions (492 routed); 300Q 45 routed; candidate
@@ -955,8 +955,8 @@ switches:
   SY4:
     purpose: acronyms the regulations define, and a few programme names, spelled out in the section search when the expansion is specific (used in at most 50 sections)
     stage: retrieval
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-30", commit: ce03079}
     evidence: >-
       LEDGER 30 Oct - calibration on the 300Q candidates (no model): as first built, +4 key / -4 key, 14 lower (FDA, CGMP,
@@ -966,8 +966,8 @@ switches:
   AP2:
     purpose: the subsection of a picked FD&C Act section that the question (or else the picker) writes, "513(g)", is supplied first
     stage: selection
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-30", commit: 13d47aa}
     evidence: >-
       calibration on recorded runs (30 Oct): acts on 4 promotions, the named subsection missing in all 4 (P-008 513(g)
@@ -983,8 +983,8 @@ switches:
   AMB1:
     purpose: a question naming no product type, whose first-ranked candidates are one provision written for several types, gets a clarifying question listing them; the reply naming a type is answered from its section
     stage: router
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-30", commit: da605cc}
     evidence: >-
       fires on L-004 and L-005 only (300Q) and 18 of 8,088 gold-labelled bank questions (15 truly unspecified);
@@ -1001,7 +1001,7 @@ other_switches:
     evidence: LEDGER 29 Oct 12:40 - S-006, F-002 raw drafts and answers byte-identical; picker 56-95 s -> 16-19 s
   PX1:
     purpose: prompt prefix KV cache in the MLX worker
-    variable: REGULUS_MLX_PREFIX_CACHE=1 (request field "prefix_cache")
+    variable: REGULUS_MLX_PREFIX_CACHE (default on since 2 Nov; 0 turns it off; request field "prefix_cache")
     where: scripts/mlx_worker.py
-    status: candidate
-    evidence: on in every evaluation run since 28 Oct; not on in the app (MEM 29 Oct app-default-lags-benchmark)
+    status: default
+    evidence: on in every evaluation run since 28 Oct; not on in the app (MEM 29 Oct app-default-lags-benchmark); app default since 2 Nov 2026 (user)

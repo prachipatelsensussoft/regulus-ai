@@ -56,7 +56,7 @@ def test_exact_cfr_section_lookup(retriever):
     resp = retriever.run("21 CFR 820.10", corpus="ecfr", top_k=20)
     assert resp.query_type is QueryType.EXACT_CFR
     exact = [r for r in resp.results if r.retrieval_method == METHOD_EXACT_CFR]
-    assert len(exact) == 12
+    assert len(exact) == 13   # 12 until migration 0003 restored 820.10(c)(2)'s device table (23 Oct)
     assert exact[0].citation.label == "21 CFR 820.10" and exact[0].relevance_score == 100.0
     assert exact[1].citation.label == "21 CFR 820.10(a)"
     assert exact[0].source_url.startswith("https://www.ecfr.gov/current/title-21/")
@@ -221,7 +221,8 @@ def test_part_level_relevance_ranking_is_deterministic_on_the_live_corpus(db):
     ("L-009", "What are the small-package labeling exemptions and alternatives in Part 101?", "101.9"),
     ("D-003", "What are the personnel qualification and training requirements under Part 211?", "211.25"),
 ])
-def test_relevance_ranking_brings_the_governing_section_inside_the_ceiling(db, question_id, question, governing):
+def test_relevance_ranking_brings_the_governing_section_inside_the_ceiling(db, question_id, question, governing,
+                                                                          cpu_era_budget):
     """Measured across four Parts: the benchmark's expected section was retrieved but sorted
     past the ceiling by ASCII order, and relevance ranking brings it inside."""
     from regulus.rag.selection import select_evidence
@@ -319,7 +320,7 @@ def test_section_level_lookup_is_unchanged_by_c2(db):
     and no part-expansion metadata anywhere."""
     resp = LexicalRetriever(db).run("21 CFR 820.10", corpus="ecfr", top_k=20)
     exact = [r for r in resp.results if r.retrieval_method == METHOD_EXACT_CFR]
-    assert len(exact) == 12
+    assert len(exact) == 13   # with 820.10(c)(2)'s device table (migration 0003)
     assert exact[0].citation.label == "21 CFR 820.10" and exact[0].relevance_score == 100.0
     assert exact[1].citation.label == "21 CFR 820.10(a)"
     assert not any("part_expanded_from" in r.metadata for r in resp.results)
@@ -373,7 +374,7 @@ def test_live_range_is_retrieved_through_the_ordinary_exact_section_path(db):
     assert not any("part_expanded_from" in e.result.metadata for e in registry.evidence)
 
 
-def test_live_range_selection_still_respects_both_ceilings(db):
+def test_live_range_selection_still_respects_both_ceilings(db, cpu_era_budget):
     from regulus.rag.selection import select_evidence
 
     plan, _ = _expanded(db, RANGE_Q)

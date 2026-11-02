@@ -35,8 +35,9 @@ LEADIN_CHARS = 200
 # wrong pick never acted on a drug, device or food question. The cosmetics/Act index and its cache are unchanged (built
 # first, as before); the other parts are appended after it, cached one part per file so a repaired part re-embeds only
 # itself (about 63,000 paragraphs, about 20 minutes on CPU the first time: prebuild with
-# `python -m regulus.retrieval.paragraph_dense`). Default "cosmetics" until measured.
-SCOPE = os.environ.get("REGULUS_PARAGRAPH_DENSE_SCOPE", "cosmetics").strip().lower() or "cosmetics"
+# `python -m regulus.retrieval.paragraph_dense`). Default "title21" since 2 Nov 2026: every evaluation run since 26 Oct
+# used it (the 61.0% 300Q run included), so the app reads what was measured; "cosmetics" restores the old index.
+SCOPE = os.environ.get("REGULUS_PARAGRAPH_DENSE_SCOPE", "title21").strip().lower() or "title21"
 
 _ROWS_SQL = """
 SELECT section_number, part_number, paragraph_path, ordinal, section_heading, body_text
