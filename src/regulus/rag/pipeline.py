@@ -968,6 +968,10 @@ class RagPipeline:
         text, _ = strip_plan_labels(text)
         if analysis is not None:
             text, _ = normalize_answer(text, question)
+        if precision_fix("AO1"):
+            from regulus.rag.conjunctions import fix_conjunctions
+
+            text, _ = fix_conjunctions(text, package.sources)
         if precision_fix("CN1"):
             text, _ = resolve_label_citations(text, package)
         text, _ = repoint_citations(text, [(s.index, s.text) for s in package.sources])
@@ -1022,6 +1026,10 @@ class RagPipeline:
         text, _ = strip_plan_labels(text)
         if analysis is not None:
             text, _ = normalize_answer(text, question)
+        if precision_fix("AO1"):
+            from regulus.rag.conjunctions import fix_conjunctions
+
+            text, _ = fix_conjunctions(text, package.sources)
         if precision_fix("CN1"):
             text, _ = resolve_label_citations(text, package)
         text, _ = repoint_citations(text, [(s.index, s.text) for s in package.sources])
@@ -1061,6 +1069,10 @@ class RagPipeline:
         text, _ = strip_plan_labels(text)
         if analysis is not None:
             text, _ = normalize_answer(text, question)
+        if precision_fix("AO1"):
+            from regulus.rag.conjunctions import fix_conjunctions
+
+            text, _ = fix_conjunctions(text, package.sources)
         if precision_fix("CN1"):
             text, _ = resolve_label_citations(text, package)
         text, _ = repoint_citations(text, [(s.index, s.text) for s in package.sources])
@@ -2051,6 +2063,13 @@ class RagPipeline:
             # does not, is renumbered to that source (the model was measured to cite by paragraph number)
             repointed = []
             if package is not None:
+                if precision_fix("AO1"):
+                    # AO1: a restated list keeps its source's "and" / "or" (regulus.rag.conjunctions)
+                    from regulus.rag.conjunctions import fix_conjunctions
+
+                    answer_text, joins = fix_conjunctions(answer_text, package.sources)
+                    if joins:
+                        generation_info["conjunctions_restored"] = joins
                 if precision_fix("CN1"):
                     # CN1: "[4.2(a)]"-style labels become [n] markers, so the provision checks see them
                     answer_text, labels = resolve_label_citations(answer_text, package)

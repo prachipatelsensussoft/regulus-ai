@@ -402,6 +402,8 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       meaning set forth in § 3.2(e)") to that paragraph (regulus.rag.section_promotion.definition_redirects): X-001
   CF1 (2 Nov, off until measured) companion floor: each companion section keeps its best paragraph when a long first
       section would take every slot (regulus.rag.selection._per_section_order): F-002's 117.3 and A-004's Part 225
+  AO1 (2 Nov, off until measured) a restated list keeps its source's "and" / "or" (regulus.rag.conjunctions): K-002 made
+      three required conditions alternatives; 1 change in 324 recorded answers
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

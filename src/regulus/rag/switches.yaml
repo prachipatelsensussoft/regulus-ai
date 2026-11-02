@@ -1106,6 +1106,17 @@ switches:
       supplied nothing; A-004: 558.6 took 48, Part 225 none; not yet measured
     interactions: [RR2, RR1, OF1, MS1]
 
+  AO1:
+    purpose: a list the answer restates item by item keeps its source's joining word - "(i) ..., (ii) ..., or (iii)" for a source list ending "; and (iii)" becomes "and"; only that word changes, only when every item matches its source item
+    stage: answer_checks
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-02", commit: "this commit (AO1)"}
+    evidence: >-
+      bundle 2 Nov K-002 turned 50.24(a)(2)'s three required conditions into alternatives (scored PF for it); over 324
+      recorded answers (42 with a joining word before a list label) it changes K-002 only; not yet measured
+    interactions: [TE1]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:
