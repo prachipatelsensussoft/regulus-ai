@@ -942,7 +942,7 @@ switches:
 
   # ------------------------------------------------------------------ 30 Oct: five weak domains, product clarification
   DR1:
-    purpose: a question naming one regulatory programme (tobacco, food labeling, device submissions, radiological health, combination products) is searched in that programme's parts and offered its FD&C Act sections
+    purpose: a question naming one regulatory programme (tobacco, food labeling, device submissions, radiological health, combination products, biologics, animal food) is searched in that programme's parts and offered its FD&C Act sections
     stage: retrieval
     status: default
     in_default: true
@@ -950,7 +950,12 @@ switches:
     evidence: >-
       LEDGER 30 Oct - routing precision 97.6% on 7,811 gold-labelled questions (492 routed); 300Q 45 routed; candidate
       lists without a model: 12 key sections newly offered, 21 ranked higher, 0 lost; five-domain live run pending.
-      869bf26: QD1 sub-questions keep the routed programme (L-015 promoted 502.19)
+      869bf26: QD1 sub-questions keep the routed programme (L-015 promoted 502.19).
+      2 Nov: + biologics (600-680) and animal food (feed, medicated feed, VFD) programmes; tobacco offered 901-920,
+      radiological 531-538 (not for mammography). Same bank (8,086 = section questions + section resolution; the
+      30 Oct "7,811" is this bank, 492 routed 97.6% reproduced): 758 routed, 97.5%; biologics 79/82 96.3%, animal food
+      180/184 97.8%; 0 previously routed question changed. 300Q 51 routed (+B-002 B-004 A-001..A-004, keys in
+      programme); key Act sections stay in the lexical top 3 for every Act-keyed T row. Not measured live
     interactions: [QD1, AU1]
   SY4:
     purpose: acronyms the regulations define, and a few programme names, spelled out in the section search when the expansion is specific (used in at most 50 sections)

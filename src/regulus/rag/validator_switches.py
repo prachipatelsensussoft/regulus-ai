@@ -344,9 +344,9 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       (dev 225: 8 key sections, e.g. U-001 801.1, G-006 211.137, X-003 4.4). Only the question's own candidates are
       considered, unlike XP1's citations (REGULUS_XC1_MIN_SCORE)
   DR1 (30 Oct, off until measured) a question naming exactly one regulatory programme by its own words (tobacco, food
-      labeling, device submissions, radiological health, combination products) and no 21 CFR part gets candidates from that
-      programme's parts only - as a cosmetics question has since 22 Oct - and is offered the FD&C Act sections the programme
-      is issued under (regulus.retrieval.programmes). full300d: those five domains were 40 of 56 below PASS/PP; tobacco
+      labeling, device submissions, radiological health, combination products; biologics and animal food since 2 Nov) and
+      no 21 CFR part gets candidates from that programme's parts only - as a cosmetics question has since 22 Oct - and is
+      offered the FD&C Act sections the programme is issued under (regulus.retrieval.programmes). full300d: those five domains were 40 of 56 below PASS/PP; tobacco
       candidates were mostly other programmes' sections and Act 904-911 was never offered
   SY4 (30 Oct, off until measured) an acronym the regulations define in their own text ("reference amount commonly consumed
       (RACC)") is spelled out in the section search's words - the picker and the model still read the question as asked
