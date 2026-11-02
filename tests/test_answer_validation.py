@@ -352,8 +352,12 @@ def test_pipeline_removes_invalid_citations_and_notes_truncation():
     assert out.metadata["validation"]["initial"]["status"] == STATUS_CITATION_INVALID
     assert "[9]" not in out.answer
     # truncation is stated, not hidden, and is not dressed up as a finished answer
-    assert "Incomplete: generation stopped at the token limit" in out.answer
-    assert out.metadata["validation"]["repair"] == "invalid_citations_removed+truncation_noted"
+    # since the 16 Oct severity fix a cut draft is not delivered with a note: the requested provisions' verified text is
+    # shown instead (P2, 43 withheld drafts: salvaging cut drafts gained no PASS and delivered wrong answers). Either way
+    # the cut answer is never presented as complete
+    assert ("Incomplete: generation stopped at the token limit" in out.answer
+            or out.metadata.get("fallback_type") == "verbatim_requested_provision")
+    assert out.metadata["validation"]["repair"].startswith("invalid_citations_removed+truncation_noted")
     assert out.validation.status == STATUS_INCOMPLETE and out.validation.truncated  # truncation cannot be repaired away
 
 

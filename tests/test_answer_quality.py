@@ -248,12 +248,16 @@ def test_a_restated_question_is_removed_only_when_an_answer_follows():
     assert normalize_answer("What is the capital of France? [1]", q)[0] == "What is the capital of France? [1]"  # nothing else to keep
 
 
-def test_normalisation_happens_before_validation_and_fixes_attribution():
+def test_normalisation_happens_before_validation_and_fixes_attribution(delivered_as_drafted):
     # line-leading markers, as the model writes them: the validator would attach [2] to the (c) sentence
-    answer = "[1] 21 CFR 820.10(c) requires design and development controls for class II devices.\n[2] 21 CFR 820.10(d) applies to devices that support or sustain life, as appropriate."
+    # the (c) sentence states (c)'s whole applicability: "for class II devices" alone is withheld since the
+    # applicability_dropped check, which is right - this test is about where the markers go
+    c = ("21 CFR 820.10(c) requires design and development controls for class II, class III, and those class I devices "
+         "listed in paragraph (c)(1)")
+    answer = f"[1] {c}.\n[2] 21 CFR 820.10(d) applies to devices that support or sustain life, as appropriate."
     p, _ = pipe(answer)
     out = p.answer("Compare 21 CFR 820.10(c) and 820.10(d).")
-    assert out.answer.startswith("21 CFR 820.10(c) requires design and development controls for class II devices [1].")
+    assert out.answer.startswith(f"{c} [1].")
     assert out.metadata["normalization"]["markers_moved"] == 2
     p2, _ = pipe(answer, mode="adaptive")
     assert p2.answer("Compare 21 CFR 820.10(c) and 820.10(d).").answer == answer  # default: text untouched
@@ -317,7 +321,13 @@ def test_missing_citation_and_weak_structure_are_flagged():
             "linked to affected lots so recalls can be scoped. Outsourced activities remain the manufacturer's "
             "responsibility under the quality agreement. Periodic checks confirm that labels match the records "
             "kept for every batch shipped.")
-    flags, _ = _flags(long, "What does 21 CFR 820.10(b)(2) require?")
+    q = "What does 21 CFR 820.10(b)(2) require?"
+    flags, out = _flags(long, q)
+    # since the claim checks the validator withholds this draft (invented statements), so the page never shows it; the
+    # review flags are still what a delivered answer like it would carry
+    assert "Records show which suppliers" not in out.answer
+    flags = {f["flag"] for f in quality_flags(long, out.package, analysis(q), None, coverage_action=None, model_called=True,
+                                              question=q)}
     assert {"missing_citation", "weak_structure"} <= flags
 
 

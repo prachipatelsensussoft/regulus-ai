@@ -377,8 +377,9 @@ def test_results_are_reproducible_and_their_hash_verifies(tmp_path):
     a[0]["result"]["review_status"] = PASS if a[0]["result"]["review_status"] != PASS else FAIL
     assert O.verify_result(a[0]) == ["result_sha256 does not match"]
     statuses = [r["review_status"] for r in results(tmp_path / "a.jsonl")]
-    # Q-003's repair removed a statement carrying 211.25(a) text: completeness is then not established
-    assert statuses == [PASS, PASS, NOT_EVALUATED, PASS, FAIL]         # the last omits two requirements
+    # Q-003's repair removed a statement carrying 211.25(a) text: completeness is then not established. Q-004 declines
+    # with no evidence: since the 23 Oct calibrated rule a decline is never shown as a pass (accuracy.review)
+    assert statuses == [PASS, PASS, NOT_EVALUATED, NOT_EVALUATED, FAIL]         # the last omits two requirements
     identity = a[1]["result"]["evaluator"]
     assert (identity["aligner"], identity["identifier_index"], identity["repair_argument"]) == \
            ("lexical", "not_used", "passed")
