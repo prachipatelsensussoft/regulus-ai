@@ -186,6 +186,32 @@ def test_a_longer_prompt_matches_the_reference(worker, tiny):
     assert ids == reference_greedy(tiny[1], prompt, 5)
 
 
+def test_the_prefix_cache_reuses_the_shared_prompt_and_matches_the_reference(worker, tiny):
+    base = [5, 17, 99, 42, 7, 3, 250, 128]
+    worker.generate(base, 4, prefix_cache=True)
+    for prompt in (base[:5] + [6], base + [6], [9, 9, 10] + base):
+        ids, done, _ = worker.generate(prompt, 6, prefix_cache=True)
+        assert ids == reference_greedy(tiny[1], prompt, 6)
+    assert done["prefix_reused"] == 0                    # nothing shared with the previous prompt
+
+
+def test_a_failed_generation_leaves_no_stale_prefix_cache(worker, tiny):
+    """A request that fails after its prompt entered the prefix cache must not be reused as the previous prompt's state."""
+    first, failed = [5, 17, 99, 42, 7, 3, 250, 128], [5, 17, 99, 60, 61, 62, 63, 64]
+    again = first + [6]      # this tiny model answers it differently after `failed`'s tokens, so stale reuse shows
+    assert reference_greedy(tiny[1], again, 6) != reference_greedy(tiny[1], failed + [6], 6)
+    worker.generate(first, 4, prefix_cache=True)
+    # shares 3 tokens with `first`, then fails at its first chunk (an unreadable reply) after its prompt is in the cache
+    worker.send({"op": "generate", "prompt_ids": failed, "max_new_tokens": 40, "eos_ids": [2], "check_every": 4,
+                 "prefix_cache": True})
+    assert worker.read()["op"] == "chunk"
+    worker.proc.stdin.write("not json\n")
+    worker.proc.stdin.flush()
+    assert worker.read()["op"] == "error"
+    ids, _, _ = worker.generate(again, 6, prefix_cache=True)
+    assert ids == reference_greedy(tiny[1], again, 6)
+
+
 # ------------------------------------------------------------------ the MLX description is unchanged (reply-cache keys)
 
 MLX_DESCRIBE_KEYS = ["model_id", "model_revision", "backend", "device", "dtype", "quantization", "mlx_model_path",

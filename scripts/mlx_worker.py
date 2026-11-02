@@ -83,6 +83,8 @@ def main(model_path: str, adapter_path: str | None = None) -> None:
         try:
             generate(model, req)
         except Exception as exc:  # explicit failure, never a silent fallback
+            # the cache may hold part of the failed request while _PREFIX["ids"] still names the previous one
+            _PREFIX["cache"], _PREFIX["ids"] = None, []
             send({"op": "error", "message": f"{type(exc).__name__}: {exc}"})
 
 

@@ -340,7 +340,8 @@ def generate(model, device: torch.device, req: dict) -> None:
             common += 1
         common = min(common, len(ids) - 1)
         if _PREFIX["cache"] is not None and common > 0:
-            _PREFIX["cache"].crop(common)
+            # a negative count removes that many tokens (transformers drops crop(max_length) in 5.18)
+            _PREFIX["cache"].crop(common - _PREFIX["cache"].get_seq_length())
         else:
             _PREFIX["cache"], common = DynamicCache(), 0
         cache, feed, reused = _PREFIX["cache"], ids[common:], common
@@ -434,6 +435,8 @@ def main(model_path: str, adapter_path: str | None = None) -> None:
         try:
             generate(model, device, req)
         except Exception as exc:  # explicit failure, never a silent fallback
+            # the cache may hold part of the failed request while _PREFIX["ids"] still names the previous one
+            _PREFIX["cache"], _PREFIX["ids"] = None, []
             if device.type == "cuda":
                 torch.cuda.empty_cache()
             send({"op": "error", "message": f"{type(exc).__name__}: {exc}"})
