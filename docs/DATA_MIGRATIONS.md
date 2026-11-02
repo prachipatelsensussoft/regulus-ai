@@ -20,8 +20,10 @@ The schema is not touched. The backend owns it through Prisma, in schema `public
 | 5 | `0005_paragraph_path_corrections_20261028.json` | 28 Oct | Correct 988 paragraph paths against the eCFR paragraph ids |
 | 6 | `0006_definition_paths_20261030.json` | 30 Oct | DEF1: restart the numbering at each definition (1,162 rows in 47 sections) |
 | 7 | `0007_restore_dropped_text_20261030.json` | 30 Oct | Insert 701 rows (remaining parts; large tables in captioned parts); renumber 2,879 ordinals |
+| 8 | `0008_restore_dropped_text_20261102.json` | 2 Nov | Insert 363 rows in 82 sections: form templates, blocks over 3,500 characters in captioned parts, footnotes, notes, formula lines; renumber 1,732 ordinals and move 190 path ordinals |
 
-In total, migrations 1–7 insert 1,370 rows and update 7,846. They delete nothing.
+In total, migrations 1–8 insert 1,733 rows (65,341 → 67,074) and update 9,578. They delete nothing. Head fingerprint:
+67,074 rows / `cf6240fab35e8b46`.
 
 Every file holds:
 - every inserted row, with all its columns;
@@ -37,9 +39,10 @@ No other file or download is needed to apply them.
    psycopg's binary wheel covers Windows and macOS.
 2. **A database restored from one of the two backups below**, on PostgreSQL 12 or later (18 recommended), with
    UTF8 encoding and the pgvector extension:
-   - the 15 Sep 2026 baseline (`regulus db backup.sql`): `setup` applies all seven migrations;
+   - the 15 Sep 2026 baseline (`regulus db backup.sql`): `setup` applies all eight migrations;
    - or the 30 Oct 2026 Mac dump (`regulus_live_2026-10-30.dump`; Windows steps in its `RESTORE_ON_WINDOWS.md`).
-     This dump already contains migrations 1–5 without a ledger: run `adopt` once, then `apply` adds 6 and 7.
+     This dump already contains migrations 1–5 without a ledger: run `adopt` once, then `apply` adds 6 to 8.
+   - a database already set up with migrations 1–7 (pulled before 2 Nov): `git pull`, then `setup` applies 8.
 
    Restoring a backup is a one-time PostgreSQL step (pgAdmin's Restore, `pg_restore` or `psql`); `setup` never
    creates, drops or restores a database.
@@ -71,28 +74,28 @@ CI, pass `--confirm <dbname>` instead. Without one or the other, nothing is writ
 
 ```text
 [1] Migrations in this checkout
-  7 files in data/migrations/cfr, checksums read
+  8 files in data/migrations/cfr, checksums read
 [2] Connection
   database regulus on localhost:5432 as postgres (PostgreSQL 18.6)
   schema: Prisma, latest migration 0041_acceptance_benchmark (not changed by setup)
 [3] Baseline and ledger
   cfr_records: 65341 rows, fingerprint 50597016a537e3a6
   ledger regulus_data.cfr_migrations: none recorded
-  state: 7 pending
+  state: 8 pending
 [4] Preview
     0001_restore_dropped_text_20261021: insert 16 rows, update 135 rows (...)  [2026-10-21]
     ...
-  total: 1370 rows inserted, 7846 rows updated; no row deleted; each migration is one transaction
-Type the database name (regulus) to apply 7 migrations, or press Enter to cancel: regulus
+  total: 1733 rows inserted, 9578 rows updated; no row deleted; each migration is one transaction
+Type the database name (regulus) to apply 8 migrations, or press Enter to cancel: regulus
 [5] Apply
   applied 0001_restore_dropped_text_20261021: 16 inserted, 135 updated, verified
   ...
 [6] Semantic index
 [7] Verify
-  ledger: versions 1-7; state up_to_date; fingerprint f17a6ba9b8d725e6
+  ledger: versions 1-8; state up_to_date; fingerprint cf6240fab35e8b46
 ```
 
-The seven migrations take about 25 seconds. A rerun prints `Nothing to apply` and writes nothing.
+The eight migrations take about 30 seconds. A rerun prints `Nothing to apply` and writes nothing.
 
 ### States `status` can report
 
@@ -100,7 +103,7 @@ The seven migrations take about 25 seconds. A rerun prints `Nothing to apply` an
 |---|---|---|
 | `N pending` | The table is exactly the baseline plus the recorded migrations | Run `python -m regulus.setup` |
 | `UP TO DATE` | Every migration is applied | Nothing |
-| `ALREADY CONTAINS migrations 1-k without a ledger` | A copy of a database the migrations were applied to (the 30 Oct dump: 1-5; the reference Mac: 1-7) | Run `adopt`, then `apply` |
+| `ALREADY CONTAINS migrations j-k without a ledger entry` | A copy of a database the migrations were applied to (the 30 Oct dump: 1-5), or the reference database where a repair was made before it was written as a migration (2 Nov: 8 after 1-7) | Run `adopt`, then `apply` |
 | `INCOMPATIBLE` | The table is neither the baseline nor any migration's result, or it changed after a migration was recorded | Nothing is written. Restore the baseline into a new database; do not "fix" rows by hand |
 | `LEDGER ERROR` | A migration file differs from the one recorded when it was applied, or the database has a migration this checkout lacks | Update your checkout. Never edit an applied migration file |
 
