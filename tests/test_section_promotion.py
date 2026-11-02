@@ -327,13 +327,21 @@ def _two_section_required(question):
     return [e for e in reg.evidence if is_required(e)]
 
 
-def test_each_section_is_ordered_by_relevance_and_sections_keep_their_order():
+def test_each_section_is_ordered_by_relevance_and_sections_keep_their_order(monkeypatch):
+    from regulus.rag import validator_switches as VS
     from regulus.rag.selection import _required_order
     required = _two_section_required("We sell by direct mail order. Where does the declaration go under 21 CFR 701.3 and 701.30?")
     assert [e.citation for e in required][:3] == ["21 CFR 701.3(a)", "21 CFR 701.3(b)", "21 CFR 701.3(r)"]
-    order = [e.citation for e in _required_order(required, "We sell by direct mail order. Where does the declaration go?")]
+    question = "We sell by direct mail order. Where does the declaration go?"
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION - {"CF1"})
+    order = [e.citation for e in _required_order(required, question)]
     assert order[0] == "21 CFR 701.3(r)"                       # the paragraph the question is about, first
     assert order[-1] == "21 CFR 701.30"                        # the companion section still follows the promoted one
+    assert sorted(order) == sorted(e.citation for e in required)
+    # CF1 (default since 2 Nov): the companion's best paragraph competes right after the promoted section's best
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"CF1"})
+    order = [e.citation for e in _required_order(required, question)]
+    assert order[:2] == ["21 CFR 701.3(r)", "21 CFR 701.30"]
     assert sorted(order) == sorted(e.citation for e in required)
 
 
@@ -517,6 +525,9 @@ def _cands(*secs):
 
 
 def test_ms1_adds_the_best_scored_sections_of_the_part_above_the_floor(monkeypatch):
+    from regulus.rag import validator_switches as VS
+    # MS1 on its own: XC1 (default since 2 Nov) adds the best other-part candidate on top - its own tests cover that
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION - {"XC1"})
     monkeypatch.setattr(SP, "MS1_MIN_SCORE", 0.5)
     monkeypatch.setattr(SP, "MS1_MAX", 2)
     monkeypatch.setattr(SP, "MS1_MAX_CHARS", 6000)

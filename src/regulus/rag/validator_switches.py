@@ -432,8 +432,13 @@ DEFAULT_27OCT_RELEASE = DEFAULT_BEFORE_27OCT_RELEASE + ",LS1,LS2,QM2,QC1,XR1,HC1
 # (41.0% -> 56.7%) and the full300d additions (-> 61.0%) without OC1 (rejected: 7 PASS lost), plus DR1/AP2/SY4/AMB1
 # (five-domain run 7 up / 5 down, 0 PASS lost). The suite conflicts were reconciled in 450d504. The remaining step-1
 # answers run as confirmation; a switch that loses a PASS there leaves DEFAULT again.
-DEFAULT = DEFAULT_27OCT_RELEASE + (",SP2,SP2F,SP2O,SN1,DQ1,MS1,MS2,FQ1,PT1,AU1,AP1,AR2,AG1,DV1,WS1,ISO1,PC1,BA1,CB1,HX1,"
-                                   "DV2,CX1,AL1,FC2,FD1,CL1,FJ1,GT1,BR1,NX1,NX2,DR1,AP2,SY4,AMB1")
+DEFAULT_2NOV_RELEASE = DEFAULT_27OCT_RELEASE + (",SP2,SP2F,SP2O,SN1,DQ1,MS1,MS2,FQ1,PT1,AU1,AP1,AR2,AG1,DV1,WS1,ISO1,PC1,BA1,"
+                                                "CB1,HX1,DV2,CX1,AL1,FC2,FD1,CL1,FJ1,GT1,BR1,NX1,NX2,DR1,AP2,SY4,AMB1")
+# 2 Nov 2026 night (user-authorized): the switches blind-measured on 2 Nov with no PASS lost. Bundle (48 answers,
+# 17 up / 1 down - the down was LQ1's, shown by replay): CN1 SC1 CP1 XC1; final chain (13): DX1 (X-001 PF->PASS), OF1,
+# CF1, AO1 (1 change in 324 recorded answers, the real error). Kept off: LQ1 (T-010 PASS lost), DA1 (3 PASS lost),
+# TE1 (SD-005 PASS lost), PC2 (never fired - not measured).
+DEFAULT = DEFAULT_2NOV_RELEASE + ",CN1,SC1,CP1,XC1,OF1,DX1,CF1,AO1"
 VALIDATOR_PRECISION = frozenset(x.strip().upper() for x in os.environ.get("REGULUS_VALIDATOR_PRECISION", DEFAULT).split(",")
                                  if x.strip() and x.strip().lower() not in ("off", "none"))
 

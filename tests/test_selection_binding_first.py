@@ -113,10 +113,11 @@ def test_rr1_requested_sections_share_the_budget_round_robin(monkeypatch):
     b = [ev("820.10", ""), ev("820.10", "(b)"), ev("820.10", "(c)")]
     monkeypatch.setattr(S, "_paragraph_of", lambda e: (e.sec, e.path))
     monkeypatch.setattr(S, "_required_order", lambda g, q: g)
-    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"RR1"})
+    # RR1 on its own (CF1, default since 2 Nov, adds a companion floor on top - tests/test_companion_floor_cf1.py)
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", (VS.VALIDATOR_PRECISION | {"RR1"}) - {"CF1"})
     got = [e.evidence_id for e in S._per_section_order(a + b, "q")]
     assert got == ["820.3(a)", "820.10", "820.3(b)", "820.10(b)", "820.10(c)"]   # M-029: 820.10 is not starved
-    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION - {"RR1"})
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION - {"RR1", "CF1"})
     assert [e.evidence_id for e in S._per_section_order(a + b, "q")] == ["820.3(a)", "820.3(b)", "820.10", "820.10(b)", "820.10(c)"]
 
 
@@ -133,7 +134,7 @@ def test_rr2_the_first_section_keeps_its_list_and_the_companions_share(monkeypat
     c2 = [ev("111.123", "(a)"), ev("111.123", "(b)")]
     monkeypatch.setattr(S, "_paragraph_of", lambda e: (e.sec, e.path))
     monkeypatch.setattr(S, "_required_order", lambda g, q: g)
-    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", (VS.VALIDATOR_PRECISION | {"RR2"}) - {"RR1"})
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", (VS.VALIDATOR_PRECISION | {"RR2"}) - {"RR1", "CF1"})
     got = [e.evidence_id for e in S._per_section_order(first + c1 + c2, "q")]
     assert got[:3] == ["111.210(a)", "111.210(b)", "111.210(c)"]   # S-018: the list is never halved
     assert got[3:] == ["111.205(a)", "111.123(a)", "111.205(b)", "111.123(b)"]

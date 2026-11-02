@@ -934,8 +934,8 @@ switches:
   XC1:
     purpose: the best candidate from another part joins as a companion when the cross-encoder scores it >= 0.85
     stage: selection
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-10-29", commit: bb7543b}
     evidence: not measured; dev 225 - 8 key sections in reach (U-001 801.1, G-006 211.137, X-003 4.4)
     interactions: [MS1]
@@ -1020,8 +1020,8 @@ switches:
   CN1:
     purpose: citations written as provision labels ("[4.2(a)]", "[4.3(a), (b)]") become [n] markers before validation - the supplied paragraph named, else the one stating the sentence's words, else dropped
     stage: answer_checks
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-11-02", commit: "this commit (CN1)"}
     evidence: >-
       full300d - 6 of 300 model answers cite by label, never checked (their sentences counted as uncited, a warning);
@@ -1031,8 +1031,8 @@ switches:
   SC1:
     purpose: a statute paragraph is indexed (dense and lexical) with its subsection's caption - "(e) Good manufacturing practice requirements" heads 906(e)(1)(A) "In general"
     stage: retrieval
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-11-02", commit: "this commit (SC1)"}
     evidence: >-
       six18 2 Nov T-011 (tobacco manufacturing practice) - 906 ranked 7th of the tobacco Act sections, 3 are offered;
@@ -1042,8 +1042,8 @@ switches:
   CP1:
     purpose: a question asking how several things differ reads up to 3 picker choices; a CFR pick from another part joins as a companion when the cross-encoder rates it >= REGULUS_SP2F_MIN_SCORE against the question or against the compared item it is about
     stage: selection
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-11-02", commit: "this commit (CP1)"}
     evidence: >-
       12 of 300 questions compare; T-004 picker named 1107.16, 1107.13, 1114.1 and only the first two were read.
@@ -1076,8 +1076,8 @@ switches:
   OF1:
     purpose: when the requested section does not fit, its top-level paragraphs compete first (outline first) - only for a question asking no particular value, and only when the top level costs at most a third of the ceiling
     stage: selection
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-11-02", commit: "this commit (OF1)"}
     evidence: >-
       full300d - a key section was cut by the ceiling in 23 non-PASS answers and 3 PASS; L-013 kept 28 of 101.36's 82
@@ -1087,8 +1087,8 @@ switches:
   DX1:
     purpose: for a question asking a definition, a supplied definition that only points elsewhere ("has the meaning set forth in § 3.2(e)") brings the paragraph it points to as a companion - one hop, CFR only, a paragraph never a whole section
     stage: selection
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-11-02", commit: "this commit (DX1)"}
     evidence: >-
       six18 2 Nov X-001 ("How is a combination product defined") had 4.2's pointer, not 3.2(e) - scored "definition
@@ -1098,8 +1098,8 @@ switches:
   CF1:
     purpose: companion floor - when a long first section would take every evidence slot, each companion section keeps its one most relevant paragraph (MMR-style diversity floor); the first section fills the rest as RR2 orders it
     stage: selection
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-11-02", commit: "this commit (CF1)"}
     evidence: >-
       bundle 2 Nov - F-002: 117.5 took all 35 slots, companions 117.3 (the qualified facility definition) and 117.201
@@ -1109,8 +1109,8 @@ switches:
   AO1:
     purpose: a list the answer restates item by item keeps its source's joining word - "(i) ..., (ii) ..., or (iii)" for a source list ending "; and (iii)" becomes "and"; only that word changes, only when every item matches its source item
     stage: answer_checks
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-11-02", commit: "this commit (AO1)"}
     evidence: >-
       bundle 2 Nov K-002 turned 50.24(a)(2)'s three required conditions into alternatives (scored PF for it); over 324
