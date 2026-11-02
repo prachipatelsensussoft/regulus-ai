@@ -30,7 +30,7 @@ from typing import Any
 from regulus.inference.types import Message
 from regulus.planning.plan import KIND_GENERAL, KIND_MULTI, KIND_MULTIPLE_REFERENCE, KIND_RANGE, KIND_SINGLE, QueryPlan
 from regulus.planning.shape import MODE_FOCUSED, AnswerShape
-from regulus.rag.answer_plan import APPLY_FORMAT, AnswerPlan, build_answer_plan, format_line, plan_lines, profile_for, value_entries
+from regulus.rag.answer_plan import AnswerPlan, apply_format, build_answer_plan, format_line, plan_lines, profile_for, value_entries
 from regulus.rag.evidence_values import selection_value_kind
 from regulus.rag.context import CORPUS_LABEL
 from regulus.rag.coverage import CoverageReport
@@ -311,7 +311,7 @@ class GenerationPackage:
     # "What does 21 CFR 312.32 require?" loses (c)(2), the 7-day rule, and (d)(1)-(3) to the
     # ceiling, and an answer complete against what remained was assessed complete.
     withheld: tuple[tuple[str, str], ...] = ()
-    # RagConfig.answer_style: "apply" replaces the ANSWER FORMAT line with APPLY_FORMAT; "restate" = as before
+    # RagConfig.answer_style: "apply" replaces the ANSWER FORMAT line with APPLY_FORMAT (apply_format); "restate" = as before
     answer_style: str = "restate"
     # section promotion to FD&C Act section(s): their labels, shown under REQUESTED PROVISIONS (no requirement ids)
     resolved: tuple[str, ...] = ()
@@ -532,7 +532,7 @@ def render_package(package: GenerationPackage) -> str:
         parts.extend([EXAMPLE_LEAD, f"Example question: {package.example['question']}",
                       f"What its complete answer covers: {package.example['covers']}", ""])
     if package.answer_style == "apply" and package.sources:
-        parts.append(APPLY_FORMAT)
+        parts.append(apply_format())
     elif package.answer_plan is not None:
         parts.append(format_line(package.answer_plan, package.profile, focus=focus))
     else:

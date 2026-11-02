@@ -1,5 +1,6 @@
 """Section promotion, the answer-first format, the statute corpus and the refusal retry (22 Oct 2026)."""
 from dataclasses import replace
+from types import SimpleNamespace
 
 from regulus.planning import plan_query
 from regulus.rag import RagConfig, RagPipeline
@@ -946,3 +947,72 @@ def test_xc1_one_clearly_relevant_candidate_of_another_part_joins(monkeypatch):
     monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION - {"XC1"})
     monkeypatch.setattr(SP, "XC1_MIN_SCORE", 0.85)
     assert pr.reranked_companions("q", cands, promotion) == []              # off: other parts are never pooled
+
+
+# ------------------------------------------------------------ TE1: targeted revision of the sentences that failed
+
+
+class Answers(ScriptedGenerator):
+    def __init__(self, *answers):
+        super().__init__(answers[0]); self.answers = list(answers)
+
+    def generate(self, messages, max_new_tokens=None, on_text=None):
+        self.response = self.answers[min(len(self.calls), len(self.answers) - 1)]
+        return super().generate(messages, max_new_tokens)
+
+
+TE1_DRAFT = ("21 CFR 820.10(b)(2) requires traceability procedures within 30 days [1]. "
+             "21 CFR 820.10(b)(4) requires advisory notices [2].")
+
+
+def _te1(monkeypatch):
+    from regulus.rag import validator_switches as VS
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"TE1"})
+
+
+def test_te1_only_the_failing_sentence_is_revised_and_the_rest_kept(monkeypatch):
+    _te1(monkeypatch)
+    g = Answers(TE1_DRAFT, "1: 21 CFR 820.10(b)(2) requires traceability procedures [1].", "unused full rewrite")
+    out = RagPipeline(LexicalRetriever(TableDatabase()), g, RagConfig(answer_style="apply")).answer(TWO)
+    ask = g.calls[1]["messages"]
+    assert ask[0] == g.calls[0]["messages"][0] and ask[-1]["content"].startswith(g.calls[0]["messages"][-1]["content"])
+    assert "THESE SENTENCES OF YOUR DRAFT ARE NOT SUPPORTED AS WRITTEN:\n1. 21 CFR 820.10(b)(2)" in ask[-1]["content"]
+    assert len(g.calls) == 2                                                  # no full rewrite
+    info = out.metadata["generation"]["correction_pass"]
+    assert info["accepted"] is True and info["targeted"]["accepted"] is True
+    assert "30 days" not in out.answer and "21 CFR 820.10(b)(4) requires advisory notices [2]." in out.answer
+
+
+def test_te1_a_revision_that_does_not_validate_falls_back_to_the_full_rewrite(monkeypatch):
+    _te1(monkeypatch)
+    good = "21 CFR 820.10(b)(2) requires traceability procedures [1]. 21 CFR 820.10(b)(4) requires advisory notices [2]."
+    g = Answers(TE1_DRAFT, "1: 21 CFR 820.10(b)(2) requires traceability procedures within 45 days [1].", good)
+    out = RagPipeline(LexicalRetriever(TableDatabase()), g, RagConfig(answer_style="apply")).answer(TWO)
+    info = out.metadata["generation"]["correction_pass"]
+    assert len(g.calls) == 3 and "PROBLEMS FOUND IN THE DRAFT:" in g.calls[2]["messages"][-1]["content"]
+    assert info["targeted"]["accepted"] is False and info["accepted"] is True and out.answer.startswith(good[:40])
+
+
+def test_te1_splice_rules():
+    from regulus.rag.pipeline import apply_targeted
+
+    draft = "A must be done [1]. B must be done within 9 days [2]. C must be done [3]."
+    assert apply_targeted(draft, ["B must be done within 9 days [2]."], "1: DELETE") == "A must be done [1]. C must be done [3]."
+    # a replacement without its citation keeps the original markers
+    assert apply_targeted(draft, ["B must be done within 9 days [2]."], "1: B must be done.") == \
+        "A must be done [1]. B must be done [2]. C must be done [3]."
+    # an unanswered number leaves the sentence; a sentence not in the draft gives None
+    assert apply_targeted(draft, ["B must be done within 9 days [2]."], "nothing useful") == draft
+    assert apply_targeted(draft, ["Z is required [4]."], "1: DELETE") is None
+
+
+def test_te1_only_when_every_error_is_one_sentences():
+    from regulus.rag.pipeline import targeted_problems
+    from regulus.rag.validation import ValidationProblem, ValidationReport
+
+    def report(*problems):
+        return SimpleNamespace(problems=list(problems))
+    fig = ValidationProblem("unsupported_figure", "error", "the figure 9 appears in no source", sentence="B within 9 days [2].")
+    missing = ValidationProblem("requirement_not_addressed", "error", "21 CFR 1.1 is not addressed", requirement_id="r1")
+    assert targeted_problems(report(fig))[0][0] == "B within 9 days [2]."
+    assert targeted_problems(report(fig, missing)) is None                     # new content is needed: a full rewrite

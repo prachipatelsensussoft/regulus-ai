@@ -136,10 +136,10 @@ def _statute_store_sha() -> str | None:
 
 
 def _apply_format() -> str:
-    from regulus.rag.answer_plan import APPLY_FORMAT
+    from regulus.rag.answer_plan import apply_format
     from regulus.rag.generation import APPLY_RETRY_SYSTEM_PROMPT
 
-    return APPLY_FORMAT + "\n" + APPLY_RETRY_SYSTEM_PROMPT
+    return apply_format() + "\n" + APPLY_RETRY_SYSTEM_PROMPT   # DA1 on: its wording is part of the identity
 
 
 def decoding_config(generation: GenerationConfig) -> dict[str, Any]:

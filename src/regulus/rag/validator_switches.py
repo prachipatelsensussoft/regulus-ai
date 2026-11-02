@@ -389,6 +389,12 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       paragraph_dense, regulus.retrieval.statute): T-011's 906(e) "Good manufacturing practice requirements" ranked 7th
   CP1 (2 Nov, off until measured) a comparison question reads up to 3 picker choices, and one from another part joins
       when the cross-encoder rates it (regulus.rag.section_promotion.comparison_question)
+  DA1 (2 Nov, off until measured) the apply format's first part is the direct answer only, at most three sentences;
+      the requirements stay with their paragraphs (regulus.rag.answer_plan.apply_format): 90 of full300d's 184 model
+      answers state their content twice
+  TE1 (2 Nov, off until measured) targeted revision: a draft whose every error is one sentence's gets only those sentences
+      back to correct or delete, the rest kept; a revision that does not validate falls back to the full rewrite
+      (regulus.rag.pipeline.targeted_problems / apply_targeted): 49 of full300d's 86 passes rewrote whole answers for that
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

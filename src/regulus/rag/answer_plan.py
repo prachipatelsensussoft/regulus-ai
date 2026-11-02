@@ -726,6 +726,28 @@ APPLY_FORMAT = (
 )
 
 
+# DA1 (2 Nov 2026, off until measured): the first part of APPLY_FORMAT asks the model to answer the question; Qwen3-4B
+# fills it with the provisions' requirements and then states them again paragraph by paragraph - 90 of 184 model
+# answers of 29 Oct say their content twice (S-005, S-010, F-019), which is length the reader does not need and minutes
+# of generation on this Mac. Removing the repeat afterwards lost 3 PASS (DD1, E-002's only closed-system definition), so
+# the model is asked not to write it: the first part is the direct answer only, the requirements stay with their
+# paragraphs. Nothing the format asks to be covered is dropped.
+DIRECT_ANSWER_ONLY = (" Keep this first part to the direct answer, in at most three sentences: the decision, period, "
+                      "amount or place and the provision that decides it, not the requirements themselves, which belong "
+                      "to the paragraph-by-paragraph part that follows.")
+_DIRECT_AFTER = "instead of declining."
+
+
+def apply_format() -> str:
+    """APPLY_FORMAT, with DA1's limit on its first part when that fix is on."""
+    from regulus.rag.validator_switches import enabled
+
+    if not enabled("DA1"):
+        return APPLY_FORMAT
+    head, sep, tail = APPLY_FORMAT.partition(_DIRECT_AFTER)
+    return head + sep + DIRECT_ANSWER_ONLY + tail
+
+
 def format_line(plan: AnswerPlan, profile: str | None = None, focus: bool = True) -> str:
     """The shape-specific ANSWER FORMAT line: short, list-free, no length.
     `profile` (answer-quality Stage 3) is a lead instruction for the question type,

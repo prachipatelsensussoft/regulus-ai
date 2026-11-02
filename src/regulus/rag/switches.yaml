@@ -1050,6 +1050,28 @@ switches:
       (1114.1 scored below the floor, so CP1 does not add it there); not yet measured
     interactions: [SP2, SP2F]
 
+  DA1:
+    purpose: the apply format's first part is the direct answer in at most three sentences (decision, period, amount or place, deciding provision); the requirements stay with their paragraphs, not written twice
+    stage: generation
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-02", commit: "this commit (DA1)"}
+    evidence: >-
+      full300d - 90 of 184 model answers state their content twice; removing the repeat after generation (DD1) lost 3
+      PASS blind and was rejected, so the model is asked not to write it; not yet measured
+    interactions: [AL1]
+
+  TE1:
+    purpose: targeted revision - a draft whose every error is one sentence's gets those sentences back numbered with their problems and returns each corrected or DELETE; the rest is kept; a revision that does not validate falls back to the full rewrite
+    stage: generation
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-02", commit: "this commit (TE1)"}
+    evidence: >-
+      full300d - 86 correction passes (1.49 h of 8.0 h), 49 with only sentence-level errors (0.75 h, 21 accepted);
+      six18 2 Nov B-005/B-002 spent ~4 min rewriting ~2,000 tokens each; not yet measured
+    interactions: [RX1, CX1, PX1]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:

@@ -78,6 +78,7 @@ from regulus.rag.selection import (
 from regulus.rag.shape_validation import ENUMERATION_INCOMPLETE, MATERIAL_GROUP_UNCOVERED
 from regulus.inference.repetition_text import drop_duplicate_sentences, repeated_sentence
 from regulus.rag.claim_validation import INVENTED_CONDITION, PARAGRAPH_MISATTRIBUTION, UNSUPPORTED_PREMISE
+from regulus.evaluation.grounding_eval import split_sentences
 from regulus.rag.validation import (
     CITATION_MISMATCH,
     INVALID_CITATION,
@@ -422,6 +423,79 @@ def correction_notes(report: ValidationReport, package: GenerationPackage, limit
             out.append(note)
     return out[:limit]
 
+
+# TE1 (2 Nov 2026, off until measured): targeted revision. A draft whose every error is one sentence's (a figure, a
+# citation, a condition or claim its source does not state) was rewritten whole by the correction pass - 49 of
+# full300d's 86 passes, 0.75 h; on this Mac a 2,000-token answer takes ~4 min to write again (B-005, B-002 on 2 Nov).
+# The model now gets those sentences, numbered with their problems, and returns each one corrected or DELETE; the rest
+# of the draft is kept as it was (the way RARR and chain-of-verification revise only the claims that failed). The
+# result is post-processed and validated as a rewrite is; if it does not validate, the full rewrite runs as before.
+TE1_CODES = frozenset({"unsupported_claim", "provision_citation_mismatch", "unsupported_figure", "obligation_strengthened",
+                       "condition_not_in_cited_source", "invented_condition", "citation_mismatch", "paragraph_misattribution",
+                       "figure_misattributed", "applicability_dropped", "qualifier_dropped", "false_denial"})
+TE1_TOKENS_PER_SENTENCE = 120
+TE1_MAX_SENTENCES = 6
+_TE1_LINE = re.compile(r"^\s*(\d{1,2})\s*[:.)]\s*(.+?)\s*$")
+
+
+_FIGURES = re.compile(r"not found in any supplied source:\s*(.+)$")
+
+
+def _problem_sentences(p, draft: str) -> list[str]:
+    """The draft sentence(s) a problem is about: its own, or for a figure the validator reports without one ("figure(s)
+    not found in any supplied source: 30"), every sentence stating that figure."""
+    if (p.sentence or "").strip():
+        return [p.sentence.strip()]
+    m = _FIGURES.search(p.detail or "") if p.code == "unsupported_figure" else None
+    if not m or not draft:
+        return []
+    figures = [f.strip() for f in m.group(1).split(",") if f.strip()]
+    return [s.strip() for s in split_sentences(attach_trailing_markers(draft))
+            if any(re.search(rf"(?<![\w.]){re.escape(f)}(?![\w])", s) for f in figures)]
+
+
+def targeted_problems(report: ValidationReport, draft: str = "") -> list[tuple[str, str]] | None:
+    """TE1: (sentence, problem note) for each error, or None when any error is not one sentence's to correct."""
+    errors = [p for p in report.problems if p.severity == "error"]
+    located = [(p, _problem_sentences(p, draft)) for p in errors]
+    if not errors or any(p.code not in TE1_CODES or not ss for p, ss in located):
+        return None
+    out: dict[str, list[str]] = {}
+    for p, ss in located:
+        for s in ss:
+            tmpl = _NOTE_BY_CODE.get(p.code, "{detail}.")
+            note = tmpl.format(detail=(p.detail or "").rstrip("."), sentence=" ".join(s.split())[:220])
+            out.setdefault(s, [])
+            if note not in out[s]:
+                out[s].append(note)
+    items = [(s, " ".join(n)) for s, n in out.items()]
+    return items if len(items) <= TE1_MAX_SENTENCES else None
+
+
+def apply_targeted(draft: str, sentences: list[str], reply: str) -> str | None:
+    """The draft with each numbered sentence replaced by the reply's line of that number ("DELETE" removes it); None
+    when a sentence cannot be found in the draft. A replacement that dropped its citation keeps the original markers;
+    a sentence the reply does not answer stays as it was (validation then decides)."""
+    lines = {}
+    for line in (reply or "").splitlines():
+        m = _TE1_LINE.match(line)
+        if m and 1 <= int(m.group(1)) <= len(sentences) and int(m.group(1)) not in lines:
+            lines[int(m.group(1))] = m.group(2).strip().strip('"“”')
+    text = attach_trailing_markers(draft)
+    for k, sentence in enumerate(sentences, start=1):
+        if sentence not in text:
+            return None
+        new = lines.get(k)
+        if new is None:
+            continue
+        if re.fullmatch(r"DELETE\.?", new, re.I):
+            new = ""
+        elif not re.search(r"\[\d{1,2}\]", new):
+            marks = "".join(re.findall(r"\[\d{1,2}\]", sentence))
+            new = (new.rstrip(".") + (" " + marks if marks else "") + ".") if marks else new
+        text = text.replace(sentence, new, 1)
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
 
 def _COSMETIC_PARTS():
     from regulus.retrieval.section_index import COSMETIC_PARTS
@@ -852,10 +926,43 @@ class RagPipeline:
         user = (messages[-1]["content"] + "\n\nYOUR DRAFT ANSWER:\n" + (draft or "(empty)") + "\n\nPROBLEMS FOUND IN THE DRAFT:\n"
                 + "\n".join(f"- {n}" for n in notes) + rule_9 + "\n\nWrite the corrected answer to the QUESTION now, from the "
                 "EVIDENCE only, following the ANSWER FORMAT. Output only the answer.")
+        targeted_info = None
+        if precision_fix("TE1") and (problems := targeted_problems(report, draft)) is not None:
+            t0 = time.perf_counter()
+            # the draft's own prompt first, so the worker's prefix cache holds all of it
+            ask = (messages[-1]["content"] + "\n\nYOUR DRAFT ANSWER:\n" + draft + "\n\nTHESE SENTENCES OF YOUR DRAFT ARE NOT "
+                   "SUPPORTED AS WRITTEN:\n" + "\n".join(f"{k}. {s}\n   Problem: {n}" for k, (s, n) in enumerate(problems, 1))
+                   + "\n\nWrite each numbered sentence again so that it says only what the source it cites states, with "
+                   "its source number in brackets, or write DELETE when no source states it. Answer with one line per "
+                   "sentence, \"1: <sentence>\", and nothing else.")
+            tmsgs = [{"role": "system", "content": messages[0]["content"]}] + list(messages[1:-1]) + [{**messages[-1], "content": ask}]
+            gen_t = self._generate(tmsgs, TE1_TOKENS_PER_SENTENCE * len(problems) + 40, None)
+            revised = apply_targeted(draft, [s for s, _ in problems], gen_t.response or "")
+            targeted_info = {"sentences": len(problems), "seconds": round(time.perf_counter() - t0, 2),
+                             "generated_tokens": getattr(gen_t, "generated_tokens", None), "spliced": revised is not None}
+            if revised is not None:
+                text = self._corrected_text(revised, package, question, analysis)
+                report_t = validate_answer(text, package, gen_t)
+                targeted_info.update(accepted=report_t.ok, codes_after=list(report_t.codes()))
+                if report_t.ok:
+                    return (text, gen_t, report_t), {
+                        "attempted": True, "targeted": targeted_info, "accepted": True, "seconds": targeted_info["seconds"],
+                        "codes_before": list(dict.fromkeys(p.code for p in report.problems if p.severity == "error")),
+                        "codes_after": list(report_t.codes())}
         msgs = [{"role": "system", "content": system}] + list(messages[1:-1]) + [{**messages[-1], "content": user}]
         t0 = time.perf_counter()
         gen2 = self._generate(msgs, package.max_new_tokens, None)
-        text = (gen2.response or "").strip()
+        text = self._corrected_text((gen2.response or "").strip(), package, question, analysis)
+        report2 = validate_answer(text, package, gen2)
+        # problem codes only: the notes quote rejected draft sentences, which must not reach the page or the history
+        info = {"attempted": True, "codes_before": list(dict.fromkeys(p.code for p in report.problems if p.severity == "error")),
+                "accepted": report2.ok, "seconds": round(time.perf_counter() - t0, 2), "codes_after": list(report2.codes())}
+        if targeted_info is not None:
+            info["targeted"] = targeted_info
+        return ((text, gen2, report2) if report2.ok else None), info
+
+    def _corrected_text(self, text: str, package: GenerationPackage, question: str, analysis) -> str:
+        """A corrected draft through the draft's own post-processing, before it is validated."""
         if not repeated_sentence(text):
             text, _ = drop_duplicate_sentences(text, _quote_sources(package))
         text, _ = strip_plan_labels(text)
@@ -866,11 +973,7 @@ class RagPipeline:
         text, _ = repoint_citations(text, [(s.index, s.text) for s in package.sources])
         if precision_fix("A4"):
             text, _ = repoint_named_citations(text, package)
-        report2 = validate_answer(text, package, gen2)
-        # problem codes only: the notes quote rejected draft sentences, which must not reach the page or the history
-        info = {"attempted": True, "codes_before": list(dict.fromkeys(p.code for p in report.problems if p.severity == "error")),
-                "accepted": report2.ok, "seconds": round(time.perf_counter() - t0, 2), "codes_after": list(report2.codes())}
-        return ((text, gen2, report2) if report2.ok else None), info
+        return text
 
     def claim_support(self, text: str, package) -> list[tuple[str, float]]:
         """CV1: each cited sentence of `text` with the entailment model's probability that the sources it cites support
