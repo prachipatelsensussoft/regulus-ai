@@ -375,6 +375,10 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
   QC1 (on since 27 Oct release) "does Part 820 require ISO 13485 certification / does a certificate exempt us from inspection"
       is answered from 820.10(a) once the database confirms no live part 820 text mentions certification
       (regulus.rag.qmsr.compose_certification)
+  RX1 (2 Nov, off until measured) the correction pass keeps the draft's system prompt and states rule 9's override (the
+      EVIDENCE contains the provision) in its own message, so the worker's prefix cache holds the prompt the draft was
+      written from: 82 of full300d's 86 passes re-read ~3,500 prompt tokens because the retry system prompt differs at
+      rule 9 (1.49 h of 8.0 h). It changes the pass's wording, so it is measured blind before it joins DEFAULT
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

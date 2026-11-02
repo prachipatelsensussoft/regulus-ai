@@ -32,6 +32,7 @@ from regulus.rag.citations import ROLE_CONTEXT, RagCitation, build_answer_citati
 from regulus.rag.coverage import STATE_INCOMPLETE, CoverageReport, check_coverage
 from regulus.rag.generation import (
     APPLY_RETRY_SYSTEM_PROMPT,
+    RETRY_RULE_9,
     UNVALIDATED_GENERAL,
     UNVALIDATED_PREFIX,
     GenerationBudget,
@@ -839,10 +840,17 @@ class RagPipeline:
         if not notes:
             return None, {"attempted": False}
         # rule 9 says the EVIDENCE contains the provision only when one was supplied (requested or resolved)
-        system = APPLY_RETRY_SYSTEM_PROMPT if (package.satisfied_ids or package.resolved) else messages[0]["content"]
+        supplied = bool(package.satisfied_ids or package.resolved)
+        system = APPLY_RETRY_SYSTEM_PROMPT if supplied else messages[0]["content"]
+        rule_9 = ""
+        if supplied and precision_fix("RX1"):
+            # RX1 (2 Nov): the draft's own system prompt, so the worker's prefix cache (PX1) holds the whole prompt the
+            # draft was written from and only the draft and the problems are read again (82 of full300d's 86 passes
+            # re-read ~3,500 tokens because the retry prompt differs at rule 9); rule 9's override moves here
+            system, rule_9 = messages[0]["content"], ("\n\nRule 9 does not apply to this correction: " + RETRY_RULE_9[3:])
         user = (messages[-1]["content"] + "\n\nYOUR DRAFT ANSWER:\n" + (draft or "(empty)") + "\n\nPROBLEMS FOUND IN THE DRAFT:\n"
-                + "\n".join(f"- {n}" for n in notes) + "\n\nWrite the corrected answer to the QUESTION now, from the EVIDENCE only, "
-                "following the ANSWER FORMAT. Output only the answer.")
+                + "\n".join(f"- {n}" for n in notes) + rule_9 + "\n\nWrite the corrected answer to the QUESTION now, from the "
+                "EVIDENCE only, following the ANSWER FORMAT. Output only the answer.")
         msgs = [{"role": "system", "content": system}] + list(messages[1:-1]) + [{**messages[-1], "content": user}]
         t0 = time.perf_counter()
         gen2 = self._generate(msgs, package.max_new_tokens, None)

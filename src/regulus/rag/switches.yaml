@@ -990,6 +990,16 @@ switches:
       fires on L-004 and L-005 only (300Q) and 18 of 8,088 gold-labelled bank questions (15 truly unspecified);
       score effect expected ~0 (client key = the food rule); asking was the user's choice (30 Oct)
     interactions: [CQ1]
+  RX1:
+    purpose: the correction pass keeps the draft's system prompt (rule 9's override goes in its message) so the prefix cache reuses the draft's prompt
+    stage: generation
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-02", commit: "this commit (RX1)"}
+    evidence: >-
+      full300d - 86 correction passes, 1.49 h of 8.0 h; 82 used APPLY_RETRY_SYSTEM_PROMPT, which differs from the
+      draft's at rule 9, so the cached prefix ended there and ~3,500 tokens were read again; not yet measured
+    interactions: [PX1]
 
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
