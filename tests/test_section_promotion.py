@@ -158,6 +158,19 @@ def test_a_rejected_draft_is_corrected_once_and_used_only_if_it_validates():
     assert info["accepted"] is True and out.answer.startswith("21 CFR 820.10(b)(2) requires traceability procedures [1]")
 
 
+def test_rx1_the_correction_keeps_the_drafts_prompt_as_its_prefix(monkeypatch):
+    from regulus.rag import validator_switches as VS
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"RX1"})
+    g = TwoAnswers("21 CFR 820.10(b)(2) requires traceability procedures [9]. 21 CFR 820.10(b)(4) requires advisory notices [2].",
+                   "21 CFR 820.10(b)(2) requires traceability procedures [1]. 21 CFR 820.10(b)(4) requires advisory notices [2].")
+    out = RagPipeline(LexicalRetriever(TableDatabase()), g, RagConfig(answer_style="apply")).answer(TWO)
+    first, second = g.calls[0]["messages"], g.calls[1]["messages"]
+    assert second[0] == first[0] and second[1:-1] == first[1:-1]               # the same system prompt and history
+    assert second[-1]["content"].startswith(first[-1]["content"] + "\n\nYOUR DRAFT ANSWER:")   # the prompt is the prefix
+    assert "Rule 9 does not apply to this correction: The EVIDENCE contains the provision" in second[-1]["content"]
+    assert out.metadata["generation"]["correction_pass"]["accepted"] is True
+
+
 def test_a_correction_that_still_fails_leaves_the_normal_repair_path():
     bad = "21 CFR 820.10(b)(2) requires traceability procedures [9]."
     g = TwoAnswers(bad, bad)

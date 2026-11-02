@@ -5,10 +5,10 @@ the targets file for scripts/repair_dropped_source_text.py.
 
 DIR holds part-<N>.xml payloads and the fetch logs (*.json, entries {"part", "verified"}) written with them. A part is
 scanned only when it is logged as verified, and planned only when its payload's SHA-256 equals the one its stored rows
-record (regulus.ingestion.dropped_text.plan_part). Excluded and listed, not restored: blank form templates (a run of
-five or more underscores) and non-table blocks over MAX_CHARS (the prompt cuts a result at 4,000 characters; a large
-table is planned in parts, regulus.ingestion.dropped_text.TABLE_PART_CHARS). An anchor holding an excluded block is
-left out whole, since a plan restores an anchor's blocks together.
+record (regulus.ingestion.dropped_text.plan_part). Since 2 Nov 2026 every block is restored: blank form templates are
+regulation text (101.69's petition format), and a block or table over TABLE_PART_CHARS is planned in parts. A row still
+over MAX_CHARS (the prompt cuts a result at 4,000 characters) would be excluded and listed with its whole anchor,
+since a plan restores an anchor's blocks together; there are none.
 
 Writes OUT_DIR/targets.json and OUT_DIR/scan.json (per part, per section, misaligned sections with the reason, and the
 excluded blocks). Successor of the 22-23 Oct scratch scan (tools_20261022/scan_t21.py).
@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -29,7 +28,6 @@ from regulus.ingestion import dropped_text as DT  # noqa: E402
 from regulus.retrieval import Database  # noqa: E402
 
 MAX_CHARS = 4000
-_FORM = re.compile(r"_{5,}")
 
 
 def main() -> int:
@@ -68,9 +66,9 @@ def main() -> int:
                 misaligned[pl.section_number] = (pl.reason or "")[:200]
             for r in pl.inserts:
                 item = {"section": pl.section_number, "paragraph_path": r.paragraph_path}
-                if _FORM.search(r.body_text) or (r.source_tag != "TABLE" and len(r.body_text) > MAX_CHARS):
+                if len(r.body_text) > MAX_CHARS:
                     excluded.append({**item, "tag": r.source_tag, "chars": len(r.body_text), "text": r.body_text[:120],
-                                     "why": "form template" if _FORM.search(r.body_text) else f"over {MAX_CHARS} chars"})
+                                     "why": f"over {MAX_CHARS} chars"})
                 else:
                     rows_by_tag[r.source_tag] += 1
                     if item not in targets:

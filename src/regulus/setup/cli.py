@@ -99,7 +99,7 @@ def describe(st, migrations) -> None:
         _say(f"  ledger {LEDGER_SCHEMA}.cfr_migrations: none recorded")
     _say(f"  this checkout: {len(migrations)} migrations")
     state = {"up_to_date": "UP TO DATE - nothing to apply", "pending": f"{len(st.pending)} pending",
-             "adoptable": f"ALREADY CONTAINS migrations 1-{st.adoptable_upto} without a ledger (run: adopt)",
+             "adoptable": f"ALREADY CONTAINS migrations {st.adoptable_from}-{st.adoptable_upto} without a ledger entry (run: adopt)",
              "incompatible": "INCOMPATIBLE", "ledger_error": "LEDGER ERROR"}[st.state]
     _say(f"  state: {state}")
     if st.message and st.state in ("incompatible", "ledger_error", "adoptable"):
@@ -236,7 +236,7 @@ def main(argv: list[str] | None = None) -> int:
             if st.state != "adoptable":
                 _say("  Nothing to adopt." if st.state in ("pending", "up_to_date") else "  Refused; nothing changed.")
                 return 0 if st.state in ("pending", "up_to_date") else 1
-            _say(f"[4] Adopt: record migrations 1-{st.adoptable_upto} as already present (no row changes)")
+            _say(f"[4] Adopt: record migrations {st.adoptable_from}-{st.adoptable_upto} as already present (no row changes)")
             if not _confirm(dbname, a.confirm, "record them"):
                 return 1
             conn.read_only = False

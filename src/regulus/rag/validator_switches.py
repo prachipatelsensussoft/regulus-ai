@@ -344,9 +344,9 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       (dev 225: 8 key sections, e.g. U-001 801.1, G-006 211.137, X-003 4.4). Only the question's own candidates are
       considered, unlike XP1's citations (REGULUS_XC1_MIN_SCORE)
   DR1 (30 Oct, off until measured) a question naming exactly one regulatory programme by its own words (tobacco, food
-      labeling, device submissions, radiological health, combination products) and no 21 CFR part gets candidates from that
-      programme's parts only - as a cosmetics question has since 22 Oct - and is offered the FD&C Act sections the programme
-      is issued under (regulus.retrieval.programmes). full300d: those five domains were 40 of 56 below PASS/PP; tobacco
+      labeling, device submissions, radiological health, combination products; biologics and animal food since 2 Nov) and
+      no 21 CFR part gets candidates from that programme's parts only - as a cosmetics question has since 22 Oct - and is
+      offered the FD&C Act sections the programme is issued under (regulus.retrieval.programmes). full300d: those five domains were 40 of 56 below PASS/PP; tobacco
       candidates were mostly other programmes' sections and Act 904-911 was never offered
   SY4 (30 Oct, off until measured) an acronym the regulations define in their own text ("reference amount commonly consumed
       (RACC)") is spelled out in the section search's words - the picker and the model still read the question as asked
@@ -375,6 +375,10 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
   QC1 (on since 27 Oct release) "does Part 820 require ISO 13485 certification / does a certificate exempt us from inspection"
       is answered from 820.10(a) once the database confirms no live part 820 text mentions certification
       (regulus.rag.qmsr.compose_certification)
+  RX1 (2 Nov, off until measured) the correction pass keeps the draft's system prompt and states rule 9's override (the
+      EVIDENCE contains the provision) in its own message, so the worker's prefix cache holds the prompt the draft was
+      written from: 82 of full300d's 86 passes re-read ~3,500 prompt tokens because the retry system prompt differs at
+      rule 9 (1.49 h of 8.0 h). It changes the pass's wording, so it is measured blind before it joins DEFAULT
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable
@@ -396,7 +400,13 @@ DEFAULT_BEFORE_27OCT_RELEASE = ("A1,A2,A3,A4,G1,S1,E1,C82,P1,Q1,FP1,RS1,QM1,D1,P
                                 "VB1,SY2,WC1,AF1,SY3")
 # WS1 and ISO1 measured as gains but held back from this release: they change the delivered-answer path that 25 tests
 # pin (WS1 answers fixture questions before the draft is validated; ISO1 appends after validation) - reconcile first
-DEFAULT = DEFAULT_BEFORE_27OCT_RELEASE + ",LS1,LS2,QM2,QC1,XR1,HC1,HT1,HM1,SP3"
+DEFAULT_27OCT_RELEASE = DEFAULT_BEFORE_27OCT_RELEASE + ",LS1,LS2,QM2,QC1,XR1,HC1,HT1,HM1,SP3"
+# 2 Nov 2026 (user: the UI always runs the best measured configuration): the 30 Oct step-1 set - the full300c bundle
+# (41.0% -> 56.7%) and the full300d additions (-> 61.0%) without OC1 (rejected: 7 PASS lost), plus DR1/AP2/SY4/AMB1
+# (five-domain run 7 up / 5 down, 0 PASS lost). The suite conflicts were reconciled in 450d504. The remaining step-1
+# answers run as confirmation; a switch that loses a PASS there leaves DEFAULT again.
+DEFAULT = DEFAULT_27OCT_RELEASE + (",SP2,SP2F,SP2O,SN1,DQ1,MS1,MS2,FQ1,PT1,AU1,AP1,AR2,AG1,DV1,WS1,ISO1,PC1,BA1,CB1,HX1,"
+                                   "DV2,CX1,AL1,FC2,FD1,CL1,FJ1,GT1,BR1,NX1,NX2,DR1,AP2,SY4,AMB1")
 VALIDATOR_PRECISION = frozenset(x.strip().upper() for x in os.environ.get("REGULUS_VALIDATOR_PRECISION", DEFAULT).split(",")
                                  if x.strip() and x.strip().lower() not in ("off", "none"))
 

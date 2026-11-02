@@ -1665,10 +1665,10 @@ class SectionPromoter:
         if offer_statute:
             cands = cands[:CFR_CANDIDATES_WITH_STATUTE] + self.statute_candidates(lex, question)
         elif (self.statute is not None and not parts and cands and (programme := routed_programme(question)) is not None
-              and programme.act):
+              and (act := tuple(x for x in programme.act_for(question) if x in self.statute.by_sec))):
             # DR1: the Act sections the programme is issued under (the tobacco keys cite 904-911, which AU1 reached only
-            # through a top candidate's part - T-001's were 25.35, 1.79, 1105.10)
-            act = tuple(x for x in programme.act if x in self.statute.by_sec)
+            # through a top candidate's part - T-001's were 25.35, 1.79, 1105.10). A programme with none (biologics: the
+            # PHS Act is not in the store) or none for this question (mammography) is offered AU1's, as before
             cands = cands[:CFR_CANDIDATES_WITH_STATUTE] + self.statute_candidates(lex, question, act)[:GENERAL_ACT_OFFERED]
         elif self.statute is not None and not parts and cands and (general_act_offered() or precision_fix("AU1")):
             # SA1: the FD&C Act sections a general question is most about, after the regulations

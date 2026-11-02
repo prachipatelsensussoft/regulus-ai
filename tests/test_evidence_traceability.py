@@ -309,17 +309,20 @@ def test_12_old_artifact_without_evidence_is_labelled_not_exact():
 
 
 def test_13_evidence_not_captured_is_distinct_from_an_unsupported_claim():
-    out, _, _ = answer(ONE, "21 CFR 820.10(b)(2) requires an independent annual supplier audit by a notified body [1].")
-    judged = evaluate(ONE, out.answer, evidence=out.evidence_snapshot)
+    draft = "21 CFR 820.10(b)(2) requires an independent annual supplier audit by a notified body [1]."
+    out, _, _ = answer(ONE, draft)
+    # the validator withholds this invented draft, so the delivered answer holds no claim of the model's own; the
+    # evaluator is given the draft, as it was when an unsupported claim could still be delivered
+    judged = evaluate(ONE, draft, evidence=out.evidence_snapshot)
     claims = judged.checked["claims"]
     assert judged.evidence["provenance"] == TR.EXACT
     assert claims and all(c["support"] != "supported" for c in claims)          # unsupported, judged
-    not_captured = evaluate(ONE, out.answer)
+    not_captured = evaluate(ONE, draft)
     assert not_captured.evidence["provenance"] == TR.MISSING                    # not judged at all
     assert "not captured" in not_captured.reason and not_captured.checked.get("claims") is None
     # and a captured package with nothing in it is "no evidence retrieved", still EXACT
     empty = replace(out.evidence_snapshot, items=(), fingerprint=TR.fingerprint(()))
-    nothing = evaluate(ONE, out.answer, evidence=empty)
+    nothing = evaluate(ONE, draft, evidence=empty)
     assert nothing.evidence["provenance"] == TR.EXACT and "No authoritative regulatory evidence was retrieved" in nothing.reason
 
 

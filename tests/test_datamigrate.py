@@ -253,6 +253,23 @@ def test_a_copy_that_already_holds_the_changes_is_adopted_without_writing_rows(e
 
 @pytest.mark.integration
 @db
+def test_a_repair_made_before_its_migration_was_written_is_adopted_after_the_recorded_ones(env):
+    # the reference database: 1 recorded, then a repair (here: migration 2) applied by its own tool and only afterwards
+    # written as a migration - status was INCOMPATIBLE until 2 Nov 2026 (0008 after 1-7)
+    from psycopg import sql
+    R.apply(env.conn, env.ms, upto=2, **env.kw)
+    env.conn.execute(sql.SQL("DELETE FROM {}.cfr_migrations WHERE version = 2").format(sql.Identifier(env.ledger)))
+    st = R.status(env.conn, env.ms, **env.kw)
+    assert st.state == "adoptable" and (st.adoptable_from, st.adoptable_upto) == (2, 2)
+    fp = env.fp()
+    assert [d["version"] for d in R.adopt(env.conn, env.ms, **env.kw)] == [2]
+    assert env.fp() == fp
+    st = R.status(env.conn, env.ms, **env.kw)
+    assert st.state == "pending" and st.applied == [1, 2] and [m.version for m in st.pending] == [3]
+
+
+@pytest.mark.integration
+@db
 def test_rollback_returns_to_the_baseline_and_can_be_reapplied(env):
     base = env.fp()
     R.apply(env.conn, env.ms, **env.kw)

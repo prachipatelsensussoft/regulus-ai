@@ -24,11 +24,19 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any, Callable, Iterable, Mapping, Sequence
 from xml.etree import ElementTree as ET
 
 RESTORED_TAGS = frozenset({"EXTRACT", "FP", "TABLE"})   # TABLE: a GPOTABLE, rendered row by row (22 Oct 2026)
+# 2 Nov 2026: footnotes, notes and the flush-paragraph variants (FP-1 formula lines, FP-2 ...) are the regulation's text
+# too (1020.30's aluminium-alloy footnote and line-voltage formula, 175.300's note) and were dropped the same way
+RESTORED_EXTRA = frozenset({"FTNT", "NOTE", "NOTES"})
+
+
+def restorable(tag: str) -> bool:
+    return tag in RESTORED_TAGS or tag in RESTORED_EXTRA or tag.startswith("FP-")
 # Tags that never open a new block: their text runs on inside the enclosing paragraph.
 INLINE_TAGS = frozenset({"I", "E", "B", "SU", "FR", "AC", "PRTPAGE", "FTREF", "SUB", "SUP", "BR"})
 # The corpus's content_sha256 is SHA-256 over body_text with typographic punctuation folded to ASCII, two
@@ -84,6 +92,10 @@ def block_text(el: ET.Element) -> str:
 class SourceElement:
     tag: str
     text: str
+    # a block or table stored in parts: every part carries the unsplit text and its part number, so a block stored
+    # whole before the split (a 3,579-character table of 23 Oct) still reads as stored
+    whole: str = ""
+    part: int = 0
 
 
 @dataclass(frozen=True)
@@ -114,6 +126,8 @@ class SectionPlan:
     reason: str | None = None
     inserts: list[NewRow] = field(default_factory=list)
     ordinal_updates: list[tuple[str, int, int]] = field(default_factory=list)   # (row id, old ordinal, new ordinal)
+    # (row id, old path_ordinal, new path_ordinal): a stored row of an anchor's path that follows the restored text
+    path_ordinal_updates: list[tuple[str, int, int]] = field(default_factory=list)
     already_restored: int = 0
     untargeted_dropped: list[dict[str, Any]] = field(default_factory=list)
     preconditions: list[tuple[str, str, int, int, str]] = field(default_factory=list)  # id, path, path_ordinal, ordinal, sha
@@ -215,13 +229,75 @@ def table_texts(el: ET.Element) -> list[str]:
     return [normalize(f"{label} (part {k} of {n}): " + " ".join(g)) for k, g in enumerate(groups, 1)]
 
 
+def _block_pieces(el: ET.Element) -> tuple[str, list[str]]:
+    """(heading, paragraphs) of a block: its HD text and the text of each block item, inline runs glued."""
+    heading, pieces, run = "", [], [el.text or ""]
+    for child in el:
+        if child.tag in INLINE_TAGS:
+            run.append("".join(child.itertext()))
+        else:
+            pieces.append(normalize("".join(run)))
+            text = block_text(child)
+            if child.tag == "HD" and not heading:
+                heading = text
+            pieces.append(text)
+            run = []
+        run.append(child.tail or "")
+    pieces.append(normalize("".join(run)))
+    return heading, [p for p in pieces if p]
+
+
+def _sentences(text: str, room: int) -> list[str]:
+    """A paragraph longer than `room` cut after sentence ends ('. ', '; ') into pieces of at most `room` characters."""
+    out, cur = [], ""
+    for bit in [b for b in re.split(r"(?<=[.;])\s+", text) if b]:
+        while len(bit) > room:               # no sentence end within room: a hard cut at a space
+            cut = bit.rfind(" ", 0, room) if bit.rfind(" ", 0, room) > 0 else room
+            if cur:
+                out.append(cur)
+                cur = ""
+            out.append(bit[:cut])
+            bit = bit[cut:].strip()
+        if cur and len(cur) + 1 + len(bit) > room:
+            out.append(cur)
+            cur = bit
+        else:
+            cur = f"{cur} {bit}".strip()
+    return out + ([cur] if cur else [])
+
+
+def block_texts(el: ET.Element) -> list[str]:
+    """A block as one text (block_text), or - over TABLE_PART_CHARS - as parts of whole paragraphs, each opening with
+    "<heading> (part k of n):" (2 Nov 2026: 22 blocks over 4,000 characters - forms, analytical methods, 343.80's
+    prescribing information - had been excluded whole)."""
+    whole = block_text(el)
+    if len(whole) <= TABLE_PART_CHARS:
+        return [whole]
+    heading, pieces = _block_pieces(el)
+    label = heading or "Text"
+    room = TABLE_PART_CHARS - len(label) - 24
+    groups: list[list[str]] = [[]]
+    for piece in (x for p in pieces for x in (_sentences(p, room) if len(p) > room else [p])):
+        if groups[-1] and sum(len(x) + 1 for x in groups[-1]) + len(piece) > room:
+            groups.append([])
+        groups[-1].append(piece)
+    n = len(groups)
+    return [normalize(f"{label} (part {k} of {n}): " + " ".join(g)) for k, g in enumerate(groups, 1)]
+
+
+def _parts(tag: str, texts: list[str], whole: str) -> list[SourceElement]:
+    if len(texts) == 1:
+        return [SourceElement(tag, texts[0])]
+    return [SourceElement(tag, t, whole, k) for k, t in enumerate(texts, 1)]
+
+
 def _elements(c: ET.Element) -> list[SourceElement]:
     if c.tag == "P":
         return [SourceElement("P", inline_text(c))]
     if c.tag in ("GPOTABLE", "TABLE") or (c.tag.startswith("DIV") and (c.find(".//GPOTABLE") is not None
                                                                        or c.find(".//TABLE") is not None)):
-        return [SourceElement("TABLE", t) for t in table_texts(c)]
-    return [SourceElement(c.tag, block_text(c))]
+        return _parts("TABLE", table_texts(c), table_text(c))
+    return _parts(c.tag, block_texts(c), block_text(c))
 
 
 def sections_of(xml_bytes: bytes) -> dict[str, list[SourceElement]]:
@@ -272,15 +348,25 @@ def align(elements: Sequence[SourceElement], rows: Sequence[StoredRow]) -> tuple
             return True
         return False
 
+    skip_rest = False
     for el in elements:
         if not el.text:
             continue
+        if el.part > 1 and skip_rest:
+            continue                         # its block was stored whole: the first part consumed it
+        if el.part == 1:
+            skip_rest = take(el.whole)
+            if skip_rest:
+                already += 1
+                continue
         if el.tag == "P":
             if not take(el.text):
                 raise RepairError(f"paragraph not found in the stored text at offset {pos}: {el.text[:80]!r}")
-        elif el.tag in RESTORED_TAGS:
+        elif restorable(el.tag):
             if take(el.text):
                 already += 1
+            elif el.tag in RESTORED_EXTRA and pos not in boundary:
+                continue                     # as before 2 Nov: a note inside a stored row's span is left alone
             elif pos not in boundary:
                 raise RepairError(f"dropped {el.tag} falls inside a stored row at offset {pos}: {el.text[:80]!r}")
             else:
@@ -308,37 +394,50 @@ def plan_section(section: str, elements: Sequence[SourceElement], rows: Sequence
         plan.status, plan.reason = "misaligned", str(exc)
         return plan
     after: dict[int, list[SourceElement]] = {}
+    before: list[SourceElement] = []   # text ahead of every stored row (369.20's first category, "ACETANILID.")
     for el, anchor in dropped:
-        anchor_path = rows[anchor].paragraph_path if anchor is not None else None
-        if anchor is None:
-            plan.untargeted_dropped.append({"tag": el.tag, "anchor": None, "text": el.text[:160],
-                                            "reason": "precedes every stored row"})
-        elif targets is not None and anchor_path not in targets:
-            plan.untargeted_dropped.append({"tag": el.tag, "anchor": anchor_path, "text": el.text[:160], "reason": "not targeted"})
+        anchor_path = rows[anchor].paragraph_path if anchor is not None else rows[0].paragraph_path
+        if targets is not None and anchor_path not in targets:
+            plan.untargeted_dropped.append({"tag": el.tag, "anchor": anchor_path if anchor is not None else None,
+                                            "text": el.text[:160], "reason": "not targeted"})
+        elif anchor is None:
+            before.append(el)
         else:
             after.setdefault(anchor, []).append(el)
-    if not after:
+    if not after and not before:
         return plan
-    for i in after:
-        # path_ordinal must follow document order: the next free path_ordinal of a path that already has a later row
-        # would place the restored text before it while numbering it after it
-        if any(r.paragraph_path == rows[i].paragraph_path for r in rows[i + 1:]):
-            plan.status = "misaligned"
-            plan.reason = f"{rows[i].paragraph_path} has later rows; a restored row would invert path_ordinal order"
-            return plan
-    next_po: dict[str, int] = {}
-    for r in rows:
-        next_po[r.paragraph_path] = max(next_po.get(r.paragraph_path, 0), r.path_ordinal + 1)
+    # path_ordinal follows document order within a path. When the anchor's path has later stored rows (2 Nov 2026: 175.300,
+    # 201.327, 343.80, 369.20, 369.21, 511.1, 1020.30 were refused for it), those rows move up by the number of rows
+    # restored before them, and the restored text takes the places freed after the anchor
+    shift: dict[str, int] = {}
     base, ordinal = rows[0].ordinal, rows[0].ordinal
+    if before:
+        # in free places below the first row's path_ordinal when there are enough, else that path moves up
+        first, k = rows[0], len(before)
+        places = range(first.path_ordinal - k, first.path_ordinal) if first.path_ordinal >= k else range(first.path_ordinal, first.path_ordinal + k)
+        if first.path_ordinal < k:
+            shift[first.paragraph_path] = k
+        for el, po in zip(before, places):
+            plan.inserts.append(NewRow(section, first.paragraph_path, po, ordinal, el.text, content_hash(el.text), el.tag, first.id))
+            ordinal += 1
     for i, r in enumerate(rows):
         if r.ordinal != ordinal:
             plan.ordinal_updates.append((r.id, r.ordinal, ordinal))
+        if shift.get(r.paragraph_path):
+            plan.path_ordinal_updates.append((r.id, r.path_ordinal, r.path_ordinal + shift[r.paragraph_path]))
         ordinal += 1
+        po = r.path_ordinal + shift.get(r.paragraph_path, 0)
         for el in after.get(i, []):
-            po = next_po[r.paragraph_path]
-            next_po[r.paragraph_path] = po + 1
+            po += 1
+            shift[r.paragraph_path] = shift.get(r.paragraph_path, 0) + 1
             plan.inserts.append(NewRow(section, r.paragraph_path, po, ordinal, el.text, content_hash(el.text), el.tag, r.id))
             ordinal += 1
+    moved = {u[0]: u[2] for u in plan.path_ordinal_updates}
+    final = [(r.paragraph_path, moved.get(r.id, r.path_ordinal)) for r in rows] + [(n.paragraph_path, n.path_ordinal) for n in plan.inserts]
+    if len(set(final)) != len(final):
+        plan.status, plan.reason, plan.inserts, plan.ordinal_updates, plan.path_ordinal_updates = (
+            "misaligned", "restored rows would collide with a stored (paragraph_path, path_ordinal)", [], [], [])
+        return plan
     assert ordinal - base == len(rows) + len(plan.inserts)
     plan.status = "planned"
     return plan
@@ -348,7 +447,8 @@ def plan_digest(plans: Sequence[SectionPlan], provenance: Mapping[str, Mapping[s
     """SHA-256 of everything a plan changes, every precondition it relies on, and the provenance written with it
     ({part: {url, sha256, retrieved_utc}}): the authorisation token for apply."""
     body = {"sections": [{"section": p.section_number, "inserts": [asdict(r) for r in p.inserts],
-                          "ordinal_updates": [list(u) for u in p.ordinal_updates], "preconditions": [list(c) for c in p.preconditions]}
+                          "ordinal_updates": [list(u) for u in p.ordinal_updates], "preconditions": [list(c) for c in p.preconditions],
+                          **({"path_ordinal_updates": [list(u) for u in p.path_ordinal_updates]} if p.path_ordinal_updates else {})}
                          for p in plans if p.status == "planned"],
             "provenance": {part: {k: v[k] for k in ("url", "sha256", "retrieved_utc")} for part, v in sorted(provenance.items())}}
     return hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
@@ -423,7 +523,7 @@ def apply_plans(conn, plans: Sequence[SectionPlan], provenance: Mapping[str, Map
     if authorized_sha256 != digest:
         raise RepairError(f"plan digest {digest} is not the authorised {authorized_sha256}")
     manifest: dict[str, Any] = {"plan_sha256": digest, "provenance": {k: dict(v) for k, v in provenance.items()},
-                                "inserted": [], "ordinal_updates": []}
+                                "inserted": [], "ordinal_updates": [], "path_ordinal_updates": []}
     with conn.transaction():
         _writable_transaction_check(conn)
         for p in planned:
@@ -440,6 +540,13 @@ def apply_plans(conn, plans: Sequence[SectionPlan], provenance: Mapping[str, Map
                 if n != 1:
                     raise RepairError(f"{p.section_number}: ordinal update of {row_id} touched {n} rows")
                 manifest["ordinal_updates"].append([row_id, old, new])
+            # highest first: (section_number, paragraph_path, path_ordinal) is unique, and each row moves up
+            for row_id, old, new in sorted(p.path_ordinal_updates, key=lambda u: -u[1]):
+                n = conn.execute("UPDATE cfr_records SET path_ordinal = %(new)s WHERE id = %(id)s::uuid AND path_ordinal = %(old)s",
+                                 {"new": new, "id": row_id, "old": old}).rowcount
+                if n != 1:
+                    raise RepairError(f"{p.section_number}: path_ordinal update of {row_id} touched {n} rows")
+                manifest["path_ordinal_updates"].append([row_id, old, new])
             retrieved = provenance[p.section_number.split(".")[0]]["retrieved_utc"]
             for r in p.inserts:
                 got = conn.execute(INSERT_SQL, {**asdict(r), "retrieved_at": retrieved}).fetchall()
@@ -474,5 +581,12 @@ def rollback(conn, manifest: Mapping[str, Any]) -> dict[str, int]:
                              {"old": old, "id": row_id, "new": new}).rowcount
             if n != 1:
                 raise RepairError(f"rollback: ordinal of {row_id} is not {new}")
+            restored += n
+        # lowest first: the restored rows are gone, so each row moves back down into a free place
+        for row_id, old, new in sorted(manifest.get("path_ordinal_updates", []), key=lambda u: u[1]):
+            n = conn.execute("UPDATE cfr_records SET path_ordinal = %(old)s WHERE id = %(id)s::uuid AND path_ordinal = %(new)s",
+                             {"old": old, "id": row_id, "new": new}).rowcount
+            if n != 1:
+                raise RepairError(f"rollback: path_ordinal of {row_id} is not {new}")
             restored += n
     return {"deleted": deleted, "ordinals_restored": restored}

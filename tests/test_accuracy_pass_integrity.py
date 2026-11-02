@@ -113,8 +113,17 @@ def test_an_unverified_paraphrase_of_a_requirement_is_not_called_an_omission():
 
 
 def test_a_group_addressed_only_by_an_unverifiable_paraphrase_is_not_established():
-    v, d, _ = production(FOCUSED, f"Each person making drugs needs suitable schooling and experience for the job [1]. {B} [2] {C} [3]", S211)
+    draft = f"Each person making drugs needs suitable schooling and experience for the job [1]. {B} [2] {C} [3]"
+    v, d, out = production(FOCUSED, draft, S211)
     assert v["status"] != PASS
+    # since the 23 Oct fallbacks the validator does not deliver this draft (the paraphrase is unsupported): the
+    # provision is quoted instead. The evaluator's reading of the draft itself, had it been delivered, is unchanged:
+    if out.metadata.get("fallback_type"):
+        d = evaluate_safely(out.question, draft, package=out.package, evidence=out.evidence_snapshot, citations=out.citations,
+                            validation=out.validation, coverage=out.coverage, model_called=True, fallback_type=None,
+                            scope_status=(out.metadata.get("question_analysis") or {}).get("scope_status"),
+                            answerability=out.metadata.get("answerability"), aligner=LexicalAligner()).to_dict()
+        assert question_review(d, question=out.question)["status"] != PASS
     assert completeness(d)["state"] == "not_established" and "211.25(a)" in completeness(d)["detail"]
 
 

@@ -94,6 +94,7 @@ class Status:
     adopted: list[int] = field(default_factory=list)
     pending: list[Migration] = field(default_factory=list)
     adoptable_upto: int | None = None
+    adoptable_from: int = 1          # the first migration adopt would record (after the ledger's last one)
     expected: tuple[int, str] | None = None
     message: str = ""
 
@@ -182,14 +183,15 @@ def status(conn: psycopg.Connection, migrations: Sequence[Migration], *, schema:
         st.pending = list(migrations[k:])
         st.state = "pending" if st.pending else "up_to_date"
         return st
+    # the table already holds migrations the ledger does not record: a copy of a database they were applied to (no ledger),
+    # or the reference database a repair was made on before it was written as a migration (2 Nov 2026: 0008 after 1-7)
+    for m in migrations[k:]:
+        if fp == m.fingerprint_after:
+            st.state, st.adoptable_upto, st.adoptable_from = "adoptable", m.version, k + 1
+            st.message = (f"the table already holds migrations {k + 1}-{m.version} (fingerprint {_fmt(fp)}) but the ledger "
+                          f"records {'none' if not k else f'only 1-{k}'} - adopt records them without changing any row")
+            return st
     if not k:
-        for m in migrations:
-            if fp == m.fingerprint_after:
-                st.state, st.adoptable_upto = "adoptable", m.version
-                st.message = (f"the table already holds migrations 1-{m.version} (fingerprint {_fmt(fp)}) but no ledger "
-                              "records them - a copy of a database they were applied to; adopt records them without "
-                              "changing any row")
-                return st
         st.message = (f"cfr_records is not the baseline this repository's migrations start from: fingerprint {_fmt(fp)}, "
                       f"baseline {_fmt(st.expected)}, and it matches no migration's result either. Restore the 15 Sep "
                       "2026 baseline backup into a new database, or ask for a current dump; nothing was changed")
@@ -342,32 +344,33 @@ def apply(conn: psycopg.Connection, migrations: Sequence[Migration], *, upto: in
 
 def adopt(conn: psycopg.Connection, migrations: Sequence[Migration], *, schema: str = LEDGER_SCHEMA,
           target: str = TARGET_SCHEMA) -> list[dict[str, Any]]:
-    """Record migrations 1..k as already present, without changing a row, for a database whose table is exactly the
-    state after k (a copy of a database they were applied to) and that has no ledger."""
+    """Record migrations j..k as already present, without changing a row, for a database whose table is exactly the state
+    after k while its ledger records 1..j-1 (none: a copy of a database they were applied to; some: the reference database
+    a repair was made on before it was written as a migration)."""
     st = status(conn, migrations, schema=schema, target=target)
     if st.state != "adoptable":
         raise MigrationError(f"{st.state}: nothing to adopt. {st.message}")
-    k = st.adoptable_upto
+    j, k = st.adoptable_from, st.adoptable_upto
     with conn.transaction():
         _begin(conn, schema, target)
-        if _ledger_top(conn, schema):
-            raise MigrationError("the ledger is no longer empty; nothing recorded")
-        _expect(conn, target, migrations[k - 1].fingerprint_after, f"adopt 1-{k}")
+        if _ledger_top(conn, schema) != j - 1:
+            raise MigrationError("the ledger changed since its status was read; nothing recorded")
+        _expect(conn, target, migrations[k - 1].fingerprint_after, f"adopt {j}-{k}")
         # inserted rows: every column but the place (path, path ordinal, ordinal), which later migrations may move
-        for m in migrations[:k]:
+        for m in migrations[j - 1:k]:
             later = {u["id"]: u["new"] for n in migrations[m.version:k] for u in n.update}
             rows = [{**r, **dict(zip(("paragraph_path", "path_ordinal", "ordinal"), later[r["id"]]))} if r["id"] in later else r
                     for r in m.insert]
             if _insert_mismatches(conn, target, rows):
                 raise MigrationError(f"adopt: rows {m.label} inserts differ from the file; nothing recorded")
-        for m in migrations[:k]:
+        for m in migrations[j - 1:k]:
             conn.execute(sql.SQL("INSERT INTO {}.cfr_migrations (version, name, checksum, mode, fingerprint_before, "
                                  "fingerprint_after, rows_inserted, rows_updated, client) VALUES (%s, %s, %s, 'adopted', %s, %s, %s, %s, %s)")
                          .format(sql.Identifier(schema)),
                          (m.version, m.name, m.checksum, m.fingerprint_before[1], m.fingerprint_after[1], len(m.insert),
                           len(m.update), client_string()))
             _event(conn, schema, m, "adopt", {"fingerprint_after": m.fingerprint_after[1]})
-    return [{"version": m.version, "name": m.name, "adopted": True} for m in migrations[:k]]
+    return [{"version": m.version, "name": m.name, "adopted": True} for m in migrations[j - 1:k]]
 
 
 def _rollback_one(conn: psycopg.Connection, m: Migration, schema: str, target: str) -> dict[str, Any]:
