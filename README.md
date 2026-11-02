@@ -235,7 +235,9 @@ No Hugging Face account or token is needed; Qwen3 is a public, Apache-2.0 model.
 
 ## 2. Setup
 
-All commands are run from the project root.
+All commands are run from the project root. Windows developers: the answering UI and API run there too, with the same
+model files under PyTorch; see [`README_LOCAL_SETUP.md`](README_LOCAL_SETUP.md) and
+[`docs/cross_platform_inference.md`](docs/cross_platform_inference.md).
 
 ### Windows (PowerShell)
 

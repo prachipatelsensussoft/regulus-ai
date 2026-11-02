@@ -20,6 +20,7 @@ import os
 import queue
 import re
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -29,6 +30,13 @@ from regulus.inference.repetition_text import repeated_sentence
 from regulus.inference.types import GenerationResult, Message
 
 WORKER_SCRIPT = Path(__file__).resolve().parents[3] / "scripts" / "mlx_worker.py"
+# model.worker_runtime "torch": the same protocol and model directory, run by PyTorch (Windows, Linux)
+TORCH_WORKER_SCRIPT = WORKER_SCRIPT.with_name("torch_worker.py")
+
+
+def worker_script(runtime: str) -> Path:
+    """The worker for model.worker_runtime: "mlx" (Apple Silicon) or "torch"."""
+    return TORCH_WORKER_SCRIPT if runtime == "torch" else WORKER_SCRIPT
 CHECK_EVERY = 16            # as regulus.inference.repetition.CHECK_EVERY
 STARTUP_TIMEOUT = 300.0
 GENERATION_TIMEOUT = 600.0  # longest silence tolerated between two messages from the worker
@@ -43,7 +51,18 @@ class MemoryPreflightError(RuntimeError):
 
 
 def available_memory_mb() -> tuple[float | None, int | None]:
-    """(available MB = free + inactive + speculative pages, macOS memory-pressure level), None when unknown."""
+    """(available MB = free + inactive + speculative pages, macOS memory-pressure level), None when unknown.
+    Elsewhere (the torch worker): the OS's available memory, and its memory load mapped onto macOS's levels
+    (1 normal, 2 warn from 85 % in use, 4 critical from 95 %)."""
+    if sys.platform != "darwin":
+        try:
+            import psutil
+
+            vm = psutil.virtual_memory()
+        except Exception:
+            return None, None
+        return vm.available / 2**20, (4 if vm.percent >= 95 else 2 if vm.percent >= 85 else 1)
+
     def run(cmd):
         try:
             return subprocess.run(cmd, capture_output=True, text=True, timeout=5).stdout
@@ -284,10 +303,22 @@ class MlxGenerator:
         text = self.render_prompt([{"role": "user", "content": "x"}])
         return text.rsplit("<|im_start|>assistant\n", 1)[-1]
 
+    @property
+    def runtime(self) -> str:
+        """What ran the forward passes, from the worker's own ready message: "mlx" or "torch"."""
+        return self.ready.get("runtime", "mlx")
+
     def describe(self) -> dict[str, Any]:
         q = self.quantization
-        return {"model_id": self.model_id, "model_revision": self.revision, "backend": "mlx", "device": "mlx-gpu",
-                "dtype": f"mlx-{q['bits']}bit-g{q['group_size']}" if q else "mlx-unquantized",
+        weights = f"mlx-{q['bits']}bit-g{q['group_size']}" if q else "mlx-unquantized"
+        # the torch worker computes in its own dtype over the same packed weights: runtime, device and dtype say so, so its
+        # answers never pass for the Mac's (same weights, different arithmetic). The MLX description is left exactly as it
+        # was: the reply cache keys on the whole describe(), and a new key would make every existing Mac cache miss.
+        torch_runtime = self.runtime == "torch"
+        return {"model_id": self.model_id, "model_revision": self.revision, "backend": "mlx",
+                **({"runtime": "torch"} if torch_runtime else {}),
+                "device": self.ready.get("device") if torch_runtime else "mlx-gpu",
+                "dtype": f"{weights} computed in {self.ready.get('dtype')} (torch)" if torch_runtime else weights,
                 "quantization": q, "mlx_model_path": str(self.model_path),
                 **({"adapter": {"path": self.adapter_path, "sha256": self.adapter_sha256}} if self.adapter_path else {}),
                 "runtime_versions": self.ready.get("versions"),
@@ -321,6 +352,6 @@ def load_mlx_generator(settings, *, local_files_only: bool = False, measure=avai
     preflight = memory_preflight(m.mlx_min_available_mb, measure)
     tokenizer = load_tokenizer(m, local_files_only=local_files_only)
     generator = MlxGenerator(tokenizer, settings.generation, model_id=m.id, model_path=m.mlx_model_path,
-                             python=m.mlx_python, revision=m.mlx_revision)
+                             python=m.mlx_python, revision=m.mlx_revision, worker_script=worker_script(m.worker_runtime))
     generator.preflight = preflight
     return generator

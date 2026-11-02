@@ -100,8 +100,9 @@ class Worker:
     """Stands in for MlxGenerator's constructor and describe()."""
     started: list["Worker"] = []
 
-    def __init__(self, tokenizer, gen, *, model_id, model_path, python, revision=None):
+    def __init__(self, tokenizer, gen, *, model_id, model_path, python, revision=None, worker_script=MG.WORKER_SCRIPT):
         self.model_id, self.model_path, self.revision = model_id, Path(model_path), revision
+        self.worker_script = Path(worker_script)
         Worker.started.append(self)
 
     def describe(self):
@@ -157,6 +158,42 @@ def test_start_up_runs_the_default_4b_worker_and_nothing_else(start, backend):
     ident = e.model_identity()
     assert (ident["backend"], ident["model_id"], ident["model_revision"]) == ("mlx", "Qwen/Qwen3-4B-Instruct-2507", "abc123")
     assert ident["tokenizer"]["tokenizer_json_sha256"] == start.tokenizer_sha
+
+
+def test_the_default_runtime_starts_the_mlx_worker(start):
+    e = start(backend="mlx")
+    assert e._mlx.worker_script == MG.WORKER_SCRIPT
+
+
+def test_the_torch_runtime_starts_the_same_model_in_the_torch_worker(start):
+    # Windows / Linux: the same model directory and the same checks, another worker script
+    e = start(backend="mlx", worker_runtime="torch")
+    assert Worker.started == [e._mlx] and e._mlx.worker_script == MG.TORCH_WORKER_SCRIPT
+    assert e._mlx.model_id == "Qwen/Qwen3-4B-Instruct-2507" and e._mlx.revision == "abc123"
+
+
+def test_the_mlx_identity_has_no_runtime_key_and_the_torch_identity_names_it(start, monkeypatch):
+    # records and the reply cache carry the identity: the MLX one must keep exactly its former keys
+    e = start(backend="mlx")
+    assert "runtime" not in e.model_identity() and list(e.model_identity())[:3] == ["backend", "model_id", "model_revision"]
+    monkeypatch.setattr(Worker, "describe", lambda self: {**FAKE_MLX, "runtime": "torch", "device": "cuda (GPU)"})
+    ident = e.model_identity()
+    assert ident["runtime"] == "torch" and ident["device"] == "cuda (GPU)"
+
+
+def test_a_failed_mlx_start_off_a_mac_names_the_torch_runtime(start, monkeypatch):
+    monkeypatch.setattr(UI.sys, "platform", "win32")
+
+    def no_worker(*a, **k):
+        raise MG.MlxWorkerError("the MLX worker exited (exit code 1)")
+
+    monkeypatch.setattr(MG, "MlxGenerator", no_worker)
+    with pytest.raises(SystemExit, match="REGULUS_WORKER_RUNTIME=torch"):
+        start(backend="mlx")
+    monkeypatch.setattr(UI.sys, "platform", "darwin")
+    with pytest.raises(SystemExit) as exc:
+        start(backend="mlx")
+    assert "REGULUS_WORKER_RUNTIME" not in str(exc.value)
 
 
 def test_a_1_7b_directory_still_starts_the_1_7b_worker(start):

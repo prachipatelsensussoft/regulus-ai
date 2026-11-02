@@ -1,0 +1,7 @@
+# Windows + NVIDIA GPU, installed after requirements.txt: the CUDA build of the same torch, and Triton for the answering
+# worker's fused 4-bit kernel (scripts/torch_worker.py). Without this file the worker runs on the CPU, very slowly.
+#   pip install -r requirements.txt
+#   pip install -r requirements-windows-gpu.txt
+--extra-index-url https://download.pytorch.org/whl/cu126
+torch==2.14.0+cu126
+triton-windows==3.8.0.post29

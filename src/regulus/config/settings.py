@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -59,10 +60,16 @@ class ModelConfig:
     mlx_model_path: Path | None = None
     mlx_revision: str | None = None
     mlx_min_available_mb: int = 2000
+    # What runs the worker's forward passes over that same MLX model directory: "mlx" (Apple Silicon, default) or
+    # "torch" (scripts/torch_worker.py: Windows/Linux, CUDA or CPU). Prompt, budget, repetition stop and decoding
+    # stay in this process either way. With "torch", mlx_python defaults to this interpreter (it has torch).
+    worker_runtime: str = "mlx"
 
     def validate(self) -> None:
         if self.backend not in ("transformers", "openai_compatible", "mlx"):
             raise ConfigError(f"Invalid backend {self.backend!r}; use transformers, openai_compatible or mlx")
+        if self.worker_runtime not in ("mlx", "torch"):
+            raise ConfigError(f"Invalid worker runtime {self.worker_runtime!r}; use mlx or torch")
         if self.backend == "openai_compatible" and not self.endpoint:
             raise ConfigError("backend openai_compatible needs model.endpoint (or REGULUS_MODEL_ENDPOINT)")
         if self.backend == "mlx" and (self.mlx_python is None or self.mlx_model_path is None):
@@ -183,6 +190,7 @@ def load_settings(config_path: str | Path | None = None, *, use_dotenv: bool = T
     model_data = data.get("model", {}) or {}
     gen_data = data.get("generation", {}) or {}
 
+    worker_runtime = (_env("WORKER_RUNTIME") or str(model_data.get("worker_runtime", ModelConfig.worker_runtime))).lower()
     model = ModelConfig(
         id=_env("MODEL_ID") or str(model_data.get("id", ModelConfig.id)),
         cache_dir=_resolve_path(_env("MODEL_CACHE_DIR") or model_data.get("cache_dir", "models")),
@@ -192,11 +200,13 @@ def load_settings(config_path: str | Path | None = None, *, use_dotenv: bool = T
                               else model_data.get("adapter")),
         backend=(_env("MODEL_BACKEND") or str(model_data.get("backend", "transformers"))).lower(),
         endpoint=_env("MODEL_ENDPOINT") or model_data.get("endpoint"),
-        mlx_python=_optional_path(_env("MLX_PYTHON") or model_data.get("mlx_python")),
+        mlx_python=_optional_path(_env("MLX_PYTHON") or model_data.get("mlx_python")
+                                  or (sys.executable if worker_runtime == "torch" else None)),
         mlx_model_path=_optional_path(_env("MLX_MODEL_PATH") or model_data.get("mlx_model_path")),
         mlx_revision=_env("MLX_REVISION") or model_data.get("mlx_revision"),
         mlx_min_available_mb=int(_env("MLX_MIN_AVAILABLE_MB") or model_data.get("mlx_min_available_mb",
                                                                                ModelConfig.mlx_min_available_mb)),
+        worker_runtime=worker_runtime,
     )
     model.validate()
 

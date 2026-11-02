@@ -4,3 +4,9 @@ artifacts/**/pre_edit/** -text
 
 # Data migration files are checksummed in the ledger when applied: keep their bytes exactly (no CRLF conversion)
 data/migrations/** -text
+
+# Likewise for files whose bytes are hashed by tests and tools: a Windows checkout with core.autocrlf=true would otherwise
+# write them with CRLF and fail the checks (eCFR source payloads, test fixtures, the protected evaluation datasets).
+artifacts/**/source_xml/** -text
+tests/fixtures/** -text
+data/evaluation/datasets/** -text
