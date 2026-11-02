@@ -395,6 +395,9 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
   TE1 (2 Nov, off until measured) targeted revision: a draft whose every error is one sentence's gets only those sentences
       back to correct or delete, the rest kept; a revision that does not validate falls back to the full rewrite
       (regulus.rag.pipeline.targeted_problems / apply_targeted): 49 of full300d's 86 passes rewrote whole answers for that
+  OF1 (2 Nov, off until measured) outline first: a requested section that does not fit gets its top-level paragraphs
+      ahead of the rest (regulus.rag.selection.outline_first), unless the question asks for a value or the top level is
+      over a third of the ceiling: a key section was cut in 23 of full300d's non-PASS answers
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

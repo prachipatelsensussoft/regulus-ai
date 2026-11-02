@@ -370,6 +370,36 @@ def _per_section_order(required: list[Evidence], question: str | None) -> list[E
     return [e for o in ordered for e in o]
 
 
+# OF1 (2 Nov 2026, off until measured): outline first. When the requested section does not fit, its top-level
+# paragraphs compete ahead of the rest, so every topic the section covers reaches the model before any topic's detail.
+# 101.36 (82 paragraphs, 31,000 characters) kept 28: deep items such as (b)(2)(i)(A) and the (c) proprietary-blend
+# lead-in, but not (d), the source ingredient and plant-part rule (L-013, PARTIALLY FAIL: "silent on proprietary blends
+# and part-of-plant"). 29 Oct 300Q: a key section was cut by the ceiling in 23 non-PASS answers and 3 PASS.
+# Only for a question that asks for no particular value (a deadline or amount keeps the relevance order built for it,
+# 312.32(c)(2)), and only when the section's top level is an outline - at most OF1_SHARE of the ceiling (a definitions
+# section, whose top level is all of it, is left as it is).
+OF1_SHARE = 1 / 3
+_TOP_LEVEL = re.compile(r"^\([^()]+\)$")
+
+
+def outline_first(order: list[Evidence], question: str | None, ceiling: int) -> list[Evidence]:
+    """OF1: the first section's top-level paragraphs moved ahead, in their relative order; otherwise `order`."""
+    if not order or selection_value_kind(question or "") is not None:
+        return order
+    ids = [_paragraph_of(e) for e in order]
+    if ids[0] is None:
+        return order
+    cost = {e.evidence_id: _block_chars(e, _clean(e.text), 1, False) for e in order}
+    if sum(cost.values()) + 2 * (len(order) - 1) <= ceiling:
+        return order          # everything fits: the order changes nothing
+    section = ids[0][0]
+    top = [e for e, i in zip(order, ids) if i is not None and i[0] == section and _TOP_LEVEL.match(i[1] or "")]
+    if len(top) < 2 or sum(cost[e.evidence_id] + 2 for e in top) > OF1_SHARE * ceiling:
+        return order
+    lead = {e.evidence_id for e in top}
+    return top + [e for e in order if e.evidence_id not in lead]
+
+
 def select_evidence(
     registry: EvidenceRegistry,
     policy: ContextPolicy | None = None,
@@ -414,6 +444,8 @@ def select_evidence(
     registry_order = [e for e in registry.evidence if is_required(e)]
     position = {e.evidence_id: i for i, e in enumerate(registry_order)}
     competition = _required_order(registry_order, question)
+    if _switch("OF1"):
+        competition = outline_first(competition, question, policy.hard_max_total_chars)
     keep: list[tuple[Evidence, str, bool]] = []
     for e in competition:
         text, truncated = _truncate(_clean(e.text), policy.required_max_chars_per_result)

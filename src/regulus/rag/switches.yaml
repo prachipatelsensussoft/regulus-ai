@@ -1073,6 +1073,17 @@ switches:
       six18 2 Nov B-005/B-002 spent ~4 min rewriting ~2,000 tokens each; not yet measured
     interactions: [RX1, CX1, PX1]
 
+  OF1:
+    purpose: when the requested section does not fit, its top-level paragraphs compete first (outline first) - only for a question asking no particular value, and only when the top level costs at most a third of the ceiling
+    stage: selection
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-02", commit: "this commit (OF1)"}
+    evidence: >-
+      full300d - a key section was cut by the ceiling in 23 non-PASS answers and 3 PASS; L-013 kept 28 of 101.36's 82
+      paragraphs, deep (b)(2)(i)(A) items but not (d) (source ingredients, part of plant); not yet measured
+    interactions: [CB1, HX1, RR2]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:
