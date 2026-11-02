@@ -547,6 +547,13 @@ def answer_score(text: str, package) -> float:
 PC1_MIN_SCORE = 0.5   # PC1: an uncited paragraph this relevant to the question is quoted after the answer
 PC1_MAX = 3
 PC1_LEAD = "Other paragraphs of {section} that bear on the question, verbatim:"
+# PC2 (2 Nov 2026, off until measured): PC1 for the companions. Of the 44 omission PARTIALLY FAILs of 29 Oct traced to
+# where the missing piece was, 10 had the section supplied to the model and never used (S-012, F-018, F-019, M-029 ...);
+# naming them in a note was tried (CM2) and the scorer counted a named-but-unstated provision as omitted (2 PASS lost),
+# so the provision's own words are quoted: for each supplied section the answer never cites, its paragraph the
+# cross-encoder scores highest for the question, when it reaches PC1_MIN_SCORE, for at most PC2_MAX sections.
+PC2_MAX = 2
+PC2_LEAD = "Also governing this question, verbatim:"
 TK1_MIN_TOKENS = 640   # TK1: the least room an applied answer gets
 # AL1: the answer allowance counts up to this many required units and may reach this many tokens (was 10 units / 2,048:
 # set when the prompt was capped near 2,600 tokens; CB1/HX1 now supply up to 48 paragraphs and 15,000 characters)
@@ -1331,6 +1338,43 @@ class RagPipeline:
         lines = [f"{s.citation} (eCFR, binding, verbatim): {_verbatim(whole_sentences(s.text), s.index)}"
                  for s in keep if whole_sentences(s.text)]
         return "\n".join([PC1_LEAD.format(section=labels[0])] + lines) if lines else None
+
+    def uncited_sections(self, answer: str, package, question: str) -> str | None:
+        """PC2: for each supplied 21 CFR section that no citation of the answer points to, its paragraph the
+        cross-encoder scores highest for the question (at least PC1_MIN_SCORE), at most PC2_MAX, verbatim and cited."""
+        from regulus.rag.generation import _verbatim, whole_sentences
+        from regulus.rag.section_promotion import RERANKER
+        from regulus.retrieval.rerank import reranker
+
+        section = lambda s: (re.match(r"^21 CFR (\d+\.\d+[a-z]?)", s.citation or "") or [None, None])[1]
+        cited = {int(m) for m in re.findall(r"\[(\d{1,3})\]", answer or "")}
+        named = set(re.findall(r"(?<![\d.])(\d{1,4}\.\d{1,5}[a-z]?)", answer or ""))
+        used = {section(s) for s in package.sources if s.index in cited} | named
+        if not used - {None}:
+            return None                       # an answer citing nothing is not completed from other sections
+        groups: dict[str, list] = {}
+        for s in package.sources:
+            sec = section(s)
+            if sec and sec not in used and getattr(s, "corpus", "ecfr") == "ecfr" and len(s.text or "") >= 60:
+                groups.setdefault(sec, []).append(s)
+        if not groups:
+            return None
+        rr = reranker(RERANKER) if RERANKER else None
+        if rr is None:
+            return None
+        todo = [s for g in groups.values() for s in g]
+        try:
+            scores = rr.score(question, [s.text for s in todo])
+        except Exception:  # noqa: BLE001 - an aid only
+            return None
+        best: dict[str, tuple[float, object]] = {}
+        for sc, s in zip(scores, todo):
+            if sc >= PC1_MIN_SCORE and sc > best.get(section(s), (-1.0, None))[0]:
+                best[section(s)] = (sc, s)
+        keep = sorted((s for _, s in sorted(best.values(), key=lambda x: -x[0])[:PC2_MAX]), key=lambda s: s.index)
+        lines = [f"{s.citation} (eCFR, binding, verbatim): {_verbatim(whole_sentences(s.text), s.index)}"
+                 for s in keep if whole_sentences(s.text)]
+        return "\n".join([PC2_LEAD] + lines) if lines else None
 
     def small_part_paragraphs(self, question: str, plan):
         """DV1 (27 Oct): (plan, promotion) for a question that names only one small 21 CFR part (at most DV1_MAX_SECTIONS
@@ -2211,6 +2255,12 @@ class RagPipeline:
                     if rest:
                         answer_text = answer_text.rstrip() + "\n\n" + rest
                         generation_info["relevant_paragraphs_appended"] = rest.count("\n")
+                if (fallback_type is None and precision_fix("PC2") and validation_final is not None and validation_final.ok
+                        and package.answer_style == "apply" and not getattr(package, "earlier_question", None)):
+                    rest = self.uncited_sections(answer_text, package, question)
+                    if rest:
+                        answer_text = answer_text.rstrip() + "\n\n" + rest
+                        generation_info["uncited_sections_quoted"] = rest.count("\n")
                 if fallback_type is None and precision_fix("ND1"):
                     # ND1: the bare decline sentence inside an answer that states what its cited sources say
                     # contradicts it (9 of 154 answers on 26 Oct, each scored down for "a contradictory 'not enough

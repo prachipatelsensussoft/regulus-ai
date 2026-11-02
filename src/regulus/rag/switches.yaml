@@ -1117,6 +1117,17 @@ switches:
       recorded answers (42 with a joining word before a list label) it changes K-002 only; not yet measured
     interactions: [TE1]
 
+  PC2:
+    purpose: PC1 for companions - a supplied 21 CFR section the validated answer never cites contributes its paragraph the cross-encoder scores highest for the question (>= PC1_MIN_SCORE), at most 2 sections, verbatim and cited
+    stage: post_answer
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-02", commit: "this commit (PC2)"}
+    evidence: >-
+      29 Oct 300Q - of 44 omission PARTIALLY FAILs traced, 10 had the omitted section supplied and unused; naming it in
+      a note (CM2) lost 2 PASS blind, so the provision's words are quoted instead; not yet measured
+    interactions: [PC1]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:
