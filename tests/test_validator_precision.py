@@ -32,10 +32,13 @@ def _unsupported(sentence):
 
 
 def test_the_gated_fixes_are_on_by_default():
-    # every fix that passed the exact replay and a blind A/B; SP2, SA1 and ST1 stay off (27 Oct)
+    # every fix that passed the exact replay and a blind A/B; SA1 and ST1 stay off (27 Oct); SP2 joined on 2 Nov only
+    # together with SP2F, the floor that removed its lost PASS answers; OC1 was rejected (30 Oct)
     assert validator_switches.VALIDATOR_PRECISION == frozenset(validator_switches.DEFAULT.split(",")) or \
         "REGULUS_VALIDATOR_PRECISION" in __import__("os").environ
-    assert not {"SP2", "SA1", "ST1"} & set(validator_switches.DEFAULT.split(","))
+    default = set(validator_switches.DEFAULT.split(","))
+    assert not {"SA1", "ST1", "OC1"} & default
+    assert "SP2" not in default or "SP2F" in default
 
 
 # ------------------------------------------------------------ A1 citations are not figures

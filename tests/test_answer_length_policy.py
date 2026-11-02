@@ -206,7 +206,12 @@ def test_e_the_report_names_which_limit_was_reached():
 def test_e_a_truncated_answer_is_never_presented_as_complete():
     g = ScriptedGenerator("21 CFR 820.10(b)(2): traceability [1]. 21 CFR 820.10(b)(4): advis", finished=False)
     out = RagPipeline(LexicalRetriever(TableDatabase()), g).answer(MULTI)
-    assert "Incomplete: generation stopped at the token limit" in out.answer
+    # since the 16 Oct severity fix a cut draft is not delivered with a note: the requested provisions' verified text is
+    # shown instead (P2, 43 withheld drafts: salvaging cut drafts gained no PASS and delivered wrong answers). Either way
+    # the cut answer is never presented as complete
+    assert ("Incomplete: generation stopped at the token limit" in out.answer
+            or out.metadata.get("fallback_type") == "verbatim_requested_provision")
+    assert "advis" not in out.answer.replace("advisory", "")                 # the cut fragment never reaches the page
     assert out.validation.truncated and out.validation.status == STATUS_INCOMPLETE
     assert "truncation_noted" in (out.metadata["validation"]["repair"] or "")
 
@@ -216,8 +221,9 @@ def test_e_truncation_handling_does_not_duplicate_content():
     append a second copy of what the model already said."""
     g = ScriptedGenerator("21 CFR 820.10(b)(2): traceability [1]. 21 CFR 820.10(b)(4): advis", finished=False)
     out = RagPipeline(LexicalRetriever(TableDatabase()), g).answer(MULTI)
-    assert out.answer.count("21 CFR 820.10(b)(2): traceability [1].") == 1
-    assert out.answer.count("Incomplete: generation stopped") == 1
+    assert out.answer.count("21 CFR 820.10(b)(2): traceability [1].") <= 1
+    assert out.answer.count("Incomplete: generation stopped") <= 1
+    assert out.answer.count("820.10(b)(2) body text") <= 1
     paragraphs = [p.strip() for p in out.answer.split("\n") if p.strip()]
     assert len(paragraphs) == len(set(paragraphs)), out.answer
 

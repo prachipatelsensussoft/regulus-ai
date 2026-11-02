@@ -1,4 +1,4 @@
-"""Build data/migrations/cfr/ from the repairs made on the reference database (21-30 Oct 2026). Read-only on the database.
+"""Build data/migrations/cfr/ from the repairs made on the reference database (21 Oct - 2 Nov 2026). Read-only on the database.
 
     python scripts/build_cfr_migrations.py [--runs ~/regulus_eval_runs] [--out data/migrations/cfr] [--check]
 
@@ -63,10 +63,19 @@ def manifest_ops(path: Path, reverse: bool = False) -> list[tuple]:
     for r, src in zip(rows, d["inserted"]):
         if content_hash(src["body_text"]) != src["content_sha256"]:
             raise BuildError(f"{path.name}: inserted row {r['id']}'s text does not hash to its content_sha256")
+    # since 2 Nov a manifest may also move rows' path_ordinal (a row of the anchor's path after the restored text)
+    po_ids = [u[0] for u in d.get("path_ordinal_updates", [])]
+    if len(po_ids) != len(set(po_ids)):
+        raise BuildError(f"{path.name}: a row's path_ordinal is moved twice")
+    old: dict[str, dict] = {}
+    new: dict[str, dict] = {}
+    for i, o, n in d["ordinal_updates"]:
+        old.setdefault(i, {})["ord"], new.setdefault(i, {})["ord"] = o, n
+    for i, o, n in d.get("path_ordinal_updates", []):
+        old.setdefault(i, {})["po"], new.setdefault(i, {})["po"] = o, n
     if not reverse:
-        return ([("update", i, {"ord": o}, {"ord": n}) for i, o, n in d["ordinal_updates"]]
-                + [("insert", r) for r in rows])
-    return [("delete", r) for r in rows] + [("update", i, {"ord": n}, {"ord": o}) for i, o, n in d["ordinal_updates"]]
+        return [("update", i, old[i], new[i]) for i in old] + [("insert", r) for r in rows]
+    return [("delete", r) for r in rows] + [("update", i, new[i], old[i]) for i in old]
 
 
 _UPDATE = re.compile(r"UPDATE cfr_records SET (.*?) WHERE (.*?);")
@@ -164,6 +173,7 @@ def repairs(runs: Path) -> list[dict]:
     pp = runs / "paragraph_path_repair_20261028"
     df = runs / "definition_path_repair_20261030"
     st = runs / "source_text_repair_20261030"
+    s2 = runs / "source_text_repair_20261102"
     out = [
         {"name": "restore_dropped_text_20261021", "reference_applied": "2026-10-21",
          "description": "Restore eCFR text the original ingestion dropped (EXTRACT block quotes, FP flush paragraphs) in "
@@ -207,6 +217,13 @@ def repairs(runs: Path) -> list[dict]:
                         "parts): 701 rows inserted, later rows renumbered.",
          "files": [st / "apply_manifest.json", st / "plan.json"],
          "ops": lambda: manifest_ops(st / "apply_manifest.json")},
+        {"name": "restore_dropped_text_20261102", "reference_applied": "2026-11-02",
+         "description": "Restore the eCFR text still missing after 30 Oct, plan f8e26b08: form templates, blocks over "
+                        "3,500 characters in parts, footnotes, notes and FP-n formula lines, and sections whose later "
+                        "rows of the anchor's path move up (175.300, 201.327, 343.80, 369.20, 369.21, 511.1, 1020.30): "
+                        "363 rows inserted in 82 sections, later rows renumbered.",
+         "files": [s2 / "apply_manifest.json", s2 / "plan.json"],
+         "ops": lambda: manifest_ops(s2 / "apply_manifest.json")},
     ]
     return out
 
@@ -298,8 +315,19 @@ def main() -> int:
         print("check:", "OK" if not bad and len(existing) == len(built) else f"DIFFERENT {bad}")
         return 1 if bad or len(existing) != len(built) else 0
     a.out.mkdir(parents=True, exist_ok=True)
+    # a migration already written is never rewritten (it may be applied somewhere): it must equal its rebuild, and only
+    # the new ones are written (2 Nov 2026: 0008 after 0001-0007)
+    existing = {m.version: m for m in load_migrations(a.out)}
     for header, inserts, updates in built:
         path = a.out / f"{header['version']:04d}_{header['name']}.json"
+        m = existing.get(header["version"])
+        if m is not None:
+            same = (list(m.insert), list(m.update), m.fingerprint_after) == (
+                inserts, updates, (header["fingerprint_after"]["rows"], header["fingerprint_after"]["sha256"]))
+            if not same:
+                raise BuildError(f"{path.name} exists and differs from its rebuild - an applied migration is never edited")
+            print(path.name, "exists, identical to its rebuild")
+            continue
         print(path.name, write_file(path, header, inserts, updates)[:16])
     load_migrations(a.out)
     return 0

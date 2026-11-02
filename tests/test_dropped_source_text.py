@@ -38,7 +38,8 @@ PATHS_740_11 = ["(a)(1)", "(a)(2)", "(a)(3)", "(a)(4)", "(b)(1)", "(b)(2)", "(b)
 def applied(rows: list[DT.StoredRow], plan: DT.SectionPlan) -> list[DT.StoredRow]:
     """The rows as they would be after the plan: renumbered, plus the inserted rows."""
     new_ord = {i: n for i, _, n in plan.ordinal_updates}
-    out = [replace(r, ordinal=new_ord.get(r.id, r.ordinal)) for r in rows]
+    new_po = {i: n for i, _, n in plan.path_ordinal_updates}
+    out = [replace(r, ordinal=new_ord.get(r.id, r.ordinal), path_ordinal=new_po.get(r.id, r.path_ordinal)) for r in rows]
     out += [DT.StoredRow(f"new-{k}", n.paragraph_path, n.path_ordinal, n.ordinal, n.body_text) for k, n in enumerate(plan.inserts)]
     return sorted(out, key=lambda r: r.ordinal)
 
@@ -118,11 +119,30 @@ def test_dropped_elements_after_other_anchors_are_reported_not_planned():
     assert [(d["anchor"], d["tag"], d["reason"]) for d in plan.untargeted_dropped] == [("(b)(1)", "EXTRACT", "not targeted")]
 
 
-def test_a_restored_row_that_would_number_before_a_later_row_of_its_path_is_refused():
+def test_a_later_row_of_the_anchors_path_moves_up_and_the_restored_row_takes_its_place():
+    # until 2 Nov the section was refused (175.300, 201.327, 343.80, 369.20, 369.21, 511.1, 1020.30)
     rows = stored_as_ingested("740.11", PATHS_740_11)
     rows = [replace(r, paragraph_path="(a)(1)", path_ordinal=1) if r.id == "id-1" else r for r in rows]  # (a)(1)#1 later
     _, plan = plan_740_11({"(a)(1)"}, rows)
-    assert plan.status == "misaligned" and "invert path_ordinal order" in plan.reason and not plan.inserts
+    assert plan.status == "planned" and plan.path_ordinal_updates == [("id-1", 1, 2)]
+    assert [(n.paragraph_path, n.path_ordinal, n.anchor_id) for n in plan.inserts] == [("(a)(1)", 1, "id-0")]
+    after = applied(rows, plan)
+    a1 = [(r.id, r.path_ordinal) for r in after if r.paragraph_path == "(a)(1)"]
+    assert a1 == [("id-0", 0), ("new-0", 1), ("id-1", 2)]                     # document order = path_ordinal order
+    assert len({(r.paragraph_path, r.path_ordinal) for r in after}) == len(after)
+    assert DT.plan_section("740.11", DT.sections_of(PART_740)["740.11"], after, {"(a)(1)"}).inserts == []
+
+
+def test_path_ordinals_move_highest_first_and_back_lowest_first():
+    rows = stored_as_ingested("740.11", PATHS_740_11)
+    rows = [replace(r, paragraph_path="(a)(1)", path_ordinal=1) if r.id == "id-1" else r for r in rows]
+    _, plan = plan_740_11({"(a)(1)"}, rows)
+    conn = FakeConn(rows)
+    manifest, _ = _apply(conn, plan)
+    assert manifest["path_ordinal_updates"] == [["id-1", 1, 2]]
+    assert any(s.startswith("UPDATE cfr_records SET path_ordinal") for s, _ in conn.statements)
+    back = FakeConn(rows)
+    assert DT.rollback(back, manifest) == {"deleted": 1, "ordinals_restored": len(plan.ordinal_updates) + 1}
 
 
 def test_a_paragraph_stored_split_over_two_rows_still_aligns():
@@ -437,3 +457,60 @@ def test_the_parts_are_planned_in_order_and_a_rerun_after_apply_changes_nothing(
     assert plan.status == "planned" and [n.body_text for n in plan.inserts] == [e.text for e in parts]
     assert [n.path_ordinal for n in plan.inserts] == list(range(1, len(parts) + 1))
     assert DT.plan_section("101.12", els, applied(rows, plan)).inserts == []
+
+
+def test_a_table_stored_whole_before_the_split_reads_as_stored():
+    # 23 Oct stored tables up to 4,000 characters as one row; since 30 Oct a table over 3,500 is read in parts
+    els = DT.sections_of(_big_table(120))["101.12"]
+    parts = [e for e in els if e.tag == "TABLE"]
+    rows = [DT.StoredRow("id-0", "(b)", 0, 0, els[0].text), DT.StoredRow("id-1", "(b)", 1, 1, parts[0].whole)]
+    plan = DT.plan_section("101.12", els, rows)
+    assert plan.inserts == [] and plan.already_restored == 1 and plan.status == "no_change"
+
+
+def _long_extract(n: int) -> bytes:
+    items = "".join(f"<P>Step {k}. Weigh the sample to the nearest milligram and record the mass in the log book.</P>" for k in range(n))
+    return (b'<DIV5 N="172" TYPE="PART"><DIV8 N="172.864" TYPE="SECTION"><HEAD>\xc2\xa7 172.864</HEAD>'
+            b'<P>(b) The method is:</P><EXTRACT><HD SOURCE="HD1">General Instructions</HD>' + items.encode() +
+            b"</EXTRACT></DIV8></DIV5>")
+
+
+def test_a_long_extract_is_stored_in_parts_that_name_it():
+    els = DT.sections_of(_long_extract(80))["172.864"]
+    parts = [e for e in els if e.tag == "EXTRACT"]
+    assert len(parts) > 1 and all(len(e.text) <= DT.TABLE_PART_CHARS for e in parts)
+    assert all(e.text.startswith(f"General Instructions (part {k} of {len(parts)}): ") for k, e in enumerate(parts, 1))
+    assert sum(e.text.count("Weigh the sample") for e in parts) == 80        # every paragraph once, none cut
+    rows = [DT.StoredRow("id-0", "(b)", 0, 0, els[0].text)]
+    plan = DT.plan_section("172.864", els, rows)
+    assert [n.body_text for n in plan.inserts] == [e.text for e in parts]
+    small = [e for e in DT.sections_of(_long_extract(3))["172.864"] if e.tag == "EXTRACT"]
+    assert len(small) == 1 and small[0].part == 0                          # a short block: as before
+
+
+def test_a_dropped_footnote_is_restored_but_one_inside_a_stored_row_is_left_alone():
+    xml = (b'<DIV5 N="1020" TYPE="PART"><DIV8 N="1020.30" TYPE="SECTION"><HEAD>x</HEAD>'
+           b"<P>(a) Filters of type 1100 aluminum alloy.<SU>1</SU></P><FTNT><P><SU>1</SU> The nominal composition.</P></FTNT>"
+           b"<P>(b) Next.</P></DIV8></DIV5>")
+    els = DT.sections_of(xml)["1020.30"]
+    rows = [DT.StoredRow("id-0", "(a)", 0, 0, els[0].text), DT.StoredRow("id-1", "(b)", 0, 1, els[2].text)]
+    plan = DT.plan_section("1020.30", els, rows)
+    assert [(n.source_tag, n.anchor_id) for n in plan.inserts] == [("FTNT", "id-0")]
+    merged = [DT.StoredRow("id-0", "(a)", 0, 0, els[0].text[:20]), DT.StoredRow("id-1", "(a)", 1, 1, els[0].text[20:] + " "),
+              DT.StoredRow("id-2", "(b)", 0, 2, els[2].text)]
+    assert DT.plan_section("1020.30", els, merged).status in ("planned", "no_change")
+
+
+def test_text_ahead_of_every_stored_row_takes_a_free_place_or_moves_the_path_up():
+    # 369.20 / 369.21: the first warning category ("ACETANILID.") precedes the first stored row
+    xml = (b'<DIV5 N="369" TYPE="PART"><DIV8 N="369.20" TYPE="SECTION"><HEAD>x</HEAD>'
+           b"<FP>ACETANILID.</FP><P>Warning\xe2\x80\x94Do not exceed recommended dosage.</P><P>(b) Next.</P></DIV8></DIV5>")
+    els = DT.sections_of(xml)["369.20"]
+    free = [DT.StoredRow("id-0", "", 1, 0, els[1].text), DT.StoredRow("id-1", "(b)", 0, 1, els[2].text)]
+    plan = DT.plan_section("369.20", els, free)
+    assert [(n.paragraph_path, n.path_ordinal, n.ordinal, n.anchor_id) for n in plan.inserts] == [("", 0, 0, "id-0")]
+    assert plan.path_ordinal_updates == [] and plan.ordinal_updates == [("id-0", 0, 1), ("id-1", 1, 2)]
+    full = [DT.StoredRow("id-0", "", 0, 0, els[1].text), DT.StoredRow("id-1", "(b)", 0, 1, els[2].text)]
+    plan = DT.plan_section("369.20", els, full)
+    assert [(n.paragraph_path, n.path_ordinal) for n in plan.inserts] == [("", 0)] and plan.path_ordinal_updates == [("id-0", 0, 1)]
+    assert DT.plan_section("369.20", els, applied(full, plan)).inserts == []

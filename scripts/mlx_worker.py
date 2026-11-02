@@ -28,7 +28,7 @@ import mlx.core as mx
 from mlx_lm import load
 from mlx_lm.generate import generate_step
 
-# PX1 prefix cache (28 Oct, evaluation switch REGULUS_MLX_PREFIX_CACHE=1, request field "prefix_cache"): the KV state of
+# PX1 prefix cache (28 Oct; default on since 2 Nov, REGULUS_MLX_PREFIX_CACHE=0 off; request field "prefix_cache"): the KV state of
 # the previous request is kept, trimmed to the prefix the next prompt shares with it (system prompt, rules, format), and
 # only the rest is processed - prefix reuse as llama.cpp and vLLM do it. Adopted only if answers are byte-identical.
 _PREFIX = {"cache": None, "ids": []}

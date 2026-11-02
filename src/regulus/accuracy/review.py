@@ -185,7 +185,14 @@ def _calibrated(assessment: dict, dims: dict[str, dict], verdict: str, score: in
                                   "right provision for the question is not something this check can establish.",
                    label=NOT_FULLY_EVALUATED, dims=dims, score=score)
     defects = []
-    if not verbatim and (verdict in ("incorrect", "off_topic", "abstention_incorrect") or state(R.SUBSTANTIVE) == R.FAIL):
+    # a statement the operators found to drop a condition its evidence carries - the event a time limit runs from
+    # ("7 calendar days" without "after the sponsor's initial receipt", 312.32(c)(2)), a scope extension ("whether or not
+    # ...", 211.192) - is a defect, not paraphrase uncertainty: "partial" for that reason was counted as verified, so
+    # such an answer passed (2 Nov 2026; the four tests of those fixes had failed since the calibration of 23 Oct)
+    dropped = [c for c in checked.get("claims") or () if isinstance(c, dict)
+               and c.get("support") == "partially_supported" and c.get("support_basis") == "drops_a_condition"]
+    if not verbatim and (verdict in ("incorrect", "off_topic", "abstention_incorrect") or state(R.SUBSTANTIVE) == R.FAIL
+                         or dropped):
         defects.append(R.SUBSTANTIVE)
     defects += [d for d in _DEFECT_DIMENSIONS if state(d) == R.FAIL]
     missing = [str(x) for x in (dims[R.COMPLETENESS].get("evidence") or ())]
