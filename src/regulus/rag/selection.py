@@ -350,6 +350,27 @@ def _per_section_order(required: list[Evidence], question: str | None) -> list[E
     ordered = [(_required_order(g, question) if len(g) > 1 else g) for _, g in groups]
     from regulus.rag.validator_switches import enabled as _switch
 
+    base = _sections_order(ordered, _switch)
+    if _switch("CF1") and len(ordered) > 1:
+        # CF1: each companion section's best paragraph is guaranteed, after the first section's best one
+        floor = [o[0] for o in ordered[1:] if len(_clean(o[0].text)) <= CF1_MAX_PARAGRAPH_CHARS]
+        head = [ordered[0][0]]
+        taken = {e.evidence_id for e in head + floor}
+        return head + floor + [e for e in base if e.evidence_id not in taken]
+    return base
+
+
+# CF1 (2 Nov 2026, off until measured): companion floor. RR2 lets the first section take every paragraph before its
+# companions share what is left; a long first section then leaves them nothing. F-002: 117.5 took all 35 slots and the
+# companions 117.3 (what a qualified facility is) and 117.201 reached the model with no paragraph - scored "no 117.3
+# definition or 117.201 content"; A-004: 558.6 took 48 and Part 225 (medicated feed CGMP) none. Each companion keeps
+# its one most relevant paragraph - the diversity floor of MMR-style packing - and the first section fills the rest as
+# before. A companion whose best paragraph is longer than CF1_MAX_PARAGRAPH_CHARS gets no floor (it would crowd out).
+CF1_MAX_PARAGRAPH_CHARS = 1500
+
+
+def _sections_order(ordered: list[list[Evidence]], _switch) -> list[Evidence]:
+    """The sections' paragraphs in competition order under RR2 / RR1 (or the sections in turn)."""
     if _switch("RR2") and len(ordered) > 2:
         # RR2 (28 Oct): RR1 halved S-018's 111.210 list by sharing the budget with its companions (full 300, 15:50) -
         # the first (requested or promoted) section keeps all its paragraphs first; only the sections after it share

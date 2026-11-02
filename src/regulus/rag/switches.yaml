@@ -1095,6 +1095,17 @@ switches:
       loose, 3.2(e) not cited"; 28 rows in 15 sections define a term this way; not yet measured
     interactions: [DQ1]
 
+  CF1:
+    purpose: companion floor - when a long first section would take every evidence slot, each companion section keeps its one most relevant paragraph (MMR-style diversity floor); the first section fills the rest as RR2 orders it
+    stage: selection
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-02", commit: "this commit (CF1)"}
+    evidence: >-
+      bundle 2 Nov - F-002: 117.5 took all 35 slots, companions 117.3 (the qualified facility definition) and 117.201
+      supplied nothing; A-004: 558.6 took 48, Part 225 none; not yet measured
+    interactions: [RR2, RR1, OF1, MS1]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:
