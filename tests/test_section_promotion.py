@@ -1016,3 +1016,23 @@ def test_te1_only_when_every_error_is_one_sentences():
     missing = ValidationProblem("requirement_not_addressed", "error", "21 CFR 1.1 is not addressed", requirement_id="r1")
     assert targeted_problems(report(fig))[0][0] == "B within 9 days [2]."
     assert targeted_problems(report(fig, missing)) is None                     # new content is needed: a full rewrite
+
+
+# ------------------------------------------------------------ CP1: each compared item judged on its own
+
+
+def test_cp1_compared_items_in_the_questions_words():
+    from regulus.rag.section_promotion import compared_items
+    assert compared_items("What is the difference between a Substantial Equivalence report, an Exemption from SE "
+                          "request, and a PMTA?") == ["a Substantial Equivalence report", "an Exemption from SE request", "a PMTA"]
+    assert compared_items("How does the Part 117 supply-chain program differ from the FSVP requirements for importers?") \
+        == ["the Part 117 supply-chain program", "the FSVP requirements for importers"]
+    assert compared_items("What definitions distinguish an open system from a closed system under Part 11?") \
+        == ["an open system", "a closed system"]
+    assert compared_items("What records must be kept under Part 111?") == []
+
+
+def test_cp1_an_item_query_spells_out_its_acronym():
+    from regulus.rag.section_promotion import item_query
+    assert item_query("a PMTA") == "What is a PMTA (premarket tobacco product application)?"
+    assert item_query("a recall") == "What is a recall?"

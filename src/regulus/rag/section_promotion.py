@@ -492,6 +492,36 @@ def comparison_question(question: str) -> bool:
     return bool(_COMPARISON.search(question or ""))
 
 
+# the things a comparison names: "the difference between A, B, and C", "how does A differ from B", "A versus B" -
+# a pick is judged against the item it is about ("What is a PMTA (premarket tobacco product application)?" scores 1114.1
+# 0.918; the whole T-004 question scored it 0.019, its words being mostly about substantial equivalence)
+_COMPARED = (re.compile(r"\b(?:differences? between|distinguish(?:es|ed)? between|compar(?:e|es|ed|ison of))\s+(.+?)"
+                        r"(?=\?|$|\s+(?:under|in|for)\s+(?:part|the|21)\b)", re.I),
+             re.compile(r"\bhow (?:do|does|is|are)\s+(.+?)\s+(?:differ|distinguished)\s+(?:from|between)\s+(.+?)(?=\?|$|,)", re.I),
+             re.compile(r"\bdistinguish(?:es)?\s+(.+?)\s+from\s+(.+?)(?=\?|$|,|\s+(?:under|in)\s+(?:part|the|21)\b)", re.I))
+_ITEM_SPLIT = re.compile(r"\s*,\s*(?:and\s+|or\s+)?|\s+(?:and|or|versus|vs\.?)\s+", re.I)   # "from" stays: "Exemption from SE"
+
+
+def compared_items(question: str) -> list[str]:
+    """The things a comparison question names, in its words (articles kept); [] when it names fewer than two."""
+    for pattern in _COMPARED:
+        m = pattern.search(question or "")
+        if m:
+            parts = [x for g in m.groups() if g for x in _ITEM_SPLIT.split(g)]
+            items = [x.strip(" .") for x in parts if len(x.strip(" .")) > 2]
+            if len(items) >= 2:
+                return items[:CP1_PICKS]
+    return []
+
+
+def item_query(item: str) -> str:
+    """The question about one compared item, its acronyms spelled out as the regulations do (SY4's table)."""
+    from regulus.retrieval.acronyms import expansions
+
+    spelled = expansions(item)
+    return f"What is {item}" + (f" ({', '.join(spelled)})" if spelled else "") + "?"
+
+
 def parse_picks(text: str, n: int, sections: list[str] | None = None, limit: int = 2) -> list[int]:
     """Candidate positions (1-based) the picker's reply names, best first, at most two.
 
@@ -2176,11 +2206,16 @@ class SectionPromoter:
             kept = self.__dict__.get("_order_scores")
             scores = (kept[2] if kept and kept[0] == question and set(kept[1]) == {c["section"] for c in cands}
                       else self.rerank_scores(question, cands))
+            per_item: list[dict] | None = None
             for i in picks[1:]:
                 c = cands[i - 1]
                 if c.get("statute") or c["section"] in pr.citations or c["section"] == second_cfr:
                     continue
-                if scores and scores.get(c["section"], (0.0, ""))[0] >= SP2F_MIN_SCORE:
+                if per_item is None:   # scored once, and only when a pick needs judging
+                    per_item = [self.rerank_scores(item_query(x), cands) for x in compared_items(question)]
+                best = max([scores.get(c["section"], (0.0, ""))[0] if scores else 0.0]
+                           + [s.get(c["section"], (0.0, ""))[0] for s in per_item if s])
+                if best >= SP2F_MIN_SCORE:
                     pr = replace(pr, companions=pr.companions + (c["section"],), notes=pr.notes + (f"compared: {c['section']}",))
                 else:
                     pr = replace(pr, notes=pr.notes + (f"compared pick {c['section']} below the reranker floor",))

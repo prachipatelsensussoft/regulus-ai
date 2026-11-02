@@ -1040,14 +1040,15 @@ switches:
     interactions: [DR1, AU1]
 
   CP1:
-    purpose: a question asking how several things differ reads up to 3 picker choices; a CFR pick from another part joins as a companion when the cross-encoder rates it >= REGULUS_SP2F_MIN_SCORE
+    purpose: a question asking how several things differ reads up to 3 picker choices; a CFR pick from another part joins as a companion when the cross-encoder rates it >= REGULUS_SP2F_MIN_SCORE against the question or against the compared item it is about
     stage: selection
     status: experimental
     in_default: false
     introduced: {date: "2026-11-02", commit: "this commit (CP1)"}
     evidence: >-
-      12 of 300 questions compare; T-004 picker named 1107.16, 1107.13, 1114.1 and only the first two were read
-      (1114.1 scored below the floor, so CP1 does not add it there); not yet measured
+      12 of 300 questions compare; T-004 picker named 1107.16, 1107.13, 1114.1 and only the first two were read.
+      A pick is judged against its own compared item ("What is a PMTA (premarket tobacco product application)?":
+      1114.1 0.918; the whole question scored it 0.019); not yet measured
     interactions: [SP2, SP2F]
 
   DA1:
