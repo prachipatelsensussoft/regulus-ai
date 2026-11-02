@@ -488,6 +488,17 @@ _COMPARISON = re.compile(r"\b(?:differences? between|distinguish(?:es|ed)?|compa
                          r"differs? from|how (?:do|does|is|are) .{3,80}? differ)", re.I)
 
 
+# DX1 (2 Nov 2026, off until measured): a definition that only points elsewhere ("Combination product has the meaning
+# set forth in § 3.2(e) of this chapter", 4.2) gave the model the pointer, not the definition: X-001 ("How is a
+# combination product defined ...") was scored "definition loose, 3.2(e) not cited". The paragraph pointed to joins as
+# a companion when the question names the term. 28 rows in 15 sections define a term this way.
+DX1_MAX = 2
+_ASKS_DEFINITION = re.compile(r"\b(?:defin(?:e|ed|es|ition|itions)|meaning|means|what\s+(?:is|are)\s+(?:an?|the)\b)", re.I)
+_REDIRECT = re.compile(r"(?:^|(?<=[.;:]\s)|(?<=\)\s))(?P<term>[A-Z][A-Za-z/ -]{2,60}?)(?:,[^.;]{0,100},)?\s+(?:has|have)\s+the\s+"
+                       r"(?:same\s+)?meanings?\s+(?:set\s+forth|given|defined|provided|assigned)\s+(?:in|under|by)\s+§+\s*"
+                       r"(?P<ref>\d{1,4}\.\d{1,4}[a-z]?(?:\([a-z0-9]{1,4}\))*)")
+
+
 def comparison_question(question: str) -> bool:
     return bool(_COMPARISON.search(question or ""))
 
@@ -1410,6 +1421,34 @@ class SectionPromoter:
                         break
         return out[:limit]
 
+    def definition_redirects(self, sections: list[str], question: str, limit: int = DX1_MAX) -> list[str]:
+        """DX1: the CFR paragraphs that the supplied sections' definitions point to for a term the question names -
+        "Combination product has the meaning set forth in § 3.2(e) of this chapter" (4.2) gives "3.2(e)" for "How is a
+        combination product defined". One hop; redirects to the Act ("section 201(f) of the act") are not followed."""
+        if not _ASKS_DEFINITION.search(question or ""):
+            return []      # "What does Part 4 require for a device constituent part?" does not ask what a device is
+        q = " ".join((question or "").lower().split())
+        out: list[str] = []
+        for sec in dict.fromkeys(s.split("(")[0] for s in sections):
+            try:
+                rows = self.db.query(_SECTION_SQL, {"s": sec})
+            except Exception:  # noqa: BLE001 - an aid only
+                continue
+            for r in rows:
+                for m in _REDIRECT.finditer(r["body_text"] or ""):
+                    term, ref = m.group("term").strip().lower(), m.group("ref")
+                    if ref.split("(")[0] in {s.split("(")[0] for s in sections} or ref in out:
+                        continue
+                    if not re.search(rf"(?<![a-z]){re.escape(term)}s?(?![a-z])", q):
+                        continue
+                    if "(" not in ref:   # a whole section: only the paragraph that defines the term, never all of it
+                        ref = next((ref + d["paragraph_path"] for d in self.db.query(_SECTION_SQL, {"s": ref})
+                                    if d["paragraph_path"] and re.match(rf"\(?[a-z0-9]*\)?\s*{re.escape(term)}\b",
+                                                                        d["body_text"] or "", re.I)), None)
+                    if ref and ref not in out:
+                        out.append(ref)
+        return out[:limit]
+
     def asked_definitions(self, section: str, question: str, limit: int = 2) -> list[str]:
         """DQ1 (28 Oct): the definition paragraph of a term the question asks about ("who is the 'importer'", "what is a
         qualified facility") from the promoted section's own subpart, else its part (cfr_definitions) - one paragraph,
@@ -2202,6 +2241,10 @@ class SectionPromoter:
             pr = replace(pr, rerank=round(scored[picked_c["section"]][0], 4))
         if second_cfr is not None and second_cfr not in pr.citations:
             pr = replace(pr, companions=pr.companions + (second_cfr,), notes=pr.notes + (f"second pick: {second_cfr}",))
+        if precision_fix("DX1"):
+            redirects = [r for r in self.definition_redirects(list(pr.citations), question) if r not in pr.citations]
+            if redirects:
+                pr = replace(pr, companions=pr.companions + tuple(redirects), notes=pr.notes + (f"definition: {', '.join(redirects)}",))
         if raw is not None and compares:
             kept = self.__dict__.get("_order_scores")
             scores = (kept[2] if kept and kept[0] == question and set(kept[1]) == {c["section"] for c in cands}

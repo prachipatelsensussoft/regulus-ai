@@ -1084,6 +1084,17 @@ switches:
       paragraphs, deep (b)(2)(i)(A) items but not (d) (source ingredients, part of plant); not yet measured
     interactions: [CB1, HX1, RR2]
 
+  DX1:
+    purpose: for a question asking a definition, a supplied definition that only points elsewhere ("has the meaning set forth in § 3.2(e)") brings the paragraph it points to as a companion - one hop, CFR only, a paragraph never a whole section
+    stage: selection
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-02", commit: "this commit (DX1)"}
+    evidence: >-
+      six18 2 Nov X-001 ("How is a combination product defined") had 4.2's pointer, not 3.2(e) - scored "definition
+      loose, 3.2(e) not cited"; 28 rows in 15 sections define a term this way; not yet measured
+    interactions: [DQ1]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:

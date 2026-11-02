@@ -398,6 +398,8 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
   OF1 (2 Nov, off until measured) outline first: a requested section that does not fit gets its top-level paragraphs
       ahead of the rest (regulus.rag.selection.outline_first), unless the question asks for a value or the top level is
       over a third of the ceiling: a key section was cut in 23 of full300d's non-PASS answers
+  DX1 (2 Nov, off until measured) a definition question follows a supplied definition that points elsewhere ("has the
+      meaning set forth in § 3.2(e)") to that paragraph (regulus.rag.section_promotion.definition_redirects): X-001
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

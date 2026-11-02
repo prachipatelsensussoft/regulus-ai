@@ -1036,3 +1036,31 @@ def test_cp1_an_item_query_spells_out_its_acronym():
     from regulus.rag.section_promotion import item_query
     assert item_query("a PMTA") == "What is a PMTA (premarket tobacco product application)?"
     assert item_query("a recall") == "What is a recall?"
+
+
+# ------------------------------------------------------------ DX1: a definition that points elsewhere is followed once
+
+
+class _DefDb:
+    ROWS = {"4.2": [{"paragraph_path": "", "body_text": "Combination product has the meaning set forth in § 3.2(e) of this chapter."},
+                    {"paragraph_path": "", "body_text": "Device has the meaning set forth in § 3.2(f) of this chapter."}],
+            "207.1": [{"paragraph_path": "", "body_text": "Relabeler means a person who changes the content of the labeling."}],
+            "251.2": [{"paragraph_path": "", "body_text": "Relabeler has the meaning set forth in § 207.1 of this chapter."}]}
+
+    def query(self, sql, params):
+        return self.ROWS.get(params["s"], [])
+
+
+def test_dx1_a_definition_redirect_is_followed_for_a_definition_question():
+    pr = SectionPromoter(_DefDb())
+    assert pr.definition_redirects(["4.1", "4.2"], "How is a combination product defined?") == ["3.2(e)"]
+
+
+def test_dx1_not_for_a_question_that_asks_no_definition():
+    pr = SectionPromoter(_DefDb())
+    assert pr.definition_redirects(["4.2"], "What does Part 4 require for a device constituent part?") == []
+
+
+def test_dx1_a_whole_section_is_never_added():
+    # 207.1's definitions carry no paragraph letter: the redirect is not followed rather than supplying all of 207.1
+    assert SectionPromoter(_DefDb()).definition_redirects(["251.2"], "What is a relabeler under Part 251?") == []
