@@ -379,6 +379,16 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       EVIDENCE contains the provision) in its own message, so the worker's prefix cache holds the prompt the draft was
       written from: 82 of full300d's 86 passes re-read ~3,500 prompt tokens because the retry system prompt differs at
       rule 9 (1.49 h of 8.0 h). It changes the pass's wording, so it is measured blind before it joins DEFAULT
+  LQ1 (2 Nov, off until measured) the focused verbatim quote keeps a list whole (regulus.rag.fallback.list_members): a
+      paragraph ending ":" brings its supplied items, one ending "; or" / "; and" the rest of its list, and a list that
+      does not fit the quote is skipped - 14 of full300d's 18 focused quotes showed a lead-in without its items
+  CN1 (2 Nov, off until measured) citations written as provision labels ("[4.2(a)]") are normalised to [n] markers
+      before validation (regulus.rag.validation.resolve_label_citations), so the provision checks see them: X-001 cited
+      paragraphs of 4.2 that do not exist for 4.3's text, and passed as merely "uncited"
+  SC1 (2 Nov, off until measured) statute paragraphs are indexed with their subsection's caption (regulus.retrieval.
+      paragraph_dense, regulus.retrieval.statute): T-011's 906(e) "Good manufacturing practice requirements" ranked 7th
+  CP1 (2 Nov, off until measured) a comparison question reads up to 3 picker choices, and one from another part joins
+      when the cross-encoder rates it (regulus.rag.section_promotion.comparison_question)
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

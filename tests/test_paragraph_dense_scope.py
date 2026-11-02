@@ -13,8 +13,11 @@ class _Db:
         if sql == PD._ROWS_SQL:
             return [{"section_number": "700.3", "part_number": 700, "paragraph_path": "(a)", "ordinal": 1,
                      "section_heading": "Definitions.", "body_text": "The term cosmetic means ..."}]
+        if sql == PD._OTHER_PARTS_SQL:
+            return [{"part_number": str(n)} for n in sorted({r["part_number"] for r in self.other})]
         assert sql == PD._OTHER_ROWS_SQL
-        return self.other
+        self.batches = getattr(self, "batches", 0) + 1
+        return [r for r in self.other if str(r["part_number"]) in params["parts"]]
 
 
 class _Embedder:
@@ -78,3 +81,13 @@ def test_a_failing_extension_leaves_the_core_index(tmp_path, monkeypatch):
 
     pd = PD.ParagraphDense.build(_Broken(OTHER), None, _Embedder(), scope="title21")
     assert list(pd.by_section) == ["700.3"] and len(pd.texts) == len(pd.vectors) == 1
+
+
+def test_other_parts_are_read_in_batches_with_the_same_result(tmp_path, monkeypatch):
+    # 2 Nov: one query for every other part ran into the 15 s statement timeout under load and the index fell back
+    monkeypatch.setattr(PD, "CACHE_DIR", tmp_path)
+    whole = PD.ParagraphDense.build(_Db(OTHER), None, _Embedder(), scope="title21")
+    monkeypatch.setattr(PD, "OTHER_PARTS_PER_QUERY", 1)
+    db = _Db(OTHER)
+    batched = PD.ParagraphDense.build(db, None, _Embedder(), scope="title21")
+    assert db.batches == 2 and batched.texts == whole.texts and np.array_equal(batched.vectors, whole.vectors)

@@ -18,6 +18,8 @@ Texts are deterministic and contain no model output.
 
 from __future__ import annotations
 
+import re
+
 from regulus.planning.intent import TYPE_DEFINITION, TYPE_EXPLANATION, TYPE_REQUIREMENT
 from regulus.rag import answerability as A
 from regulus.rag.answer_quality import out_of_scope_answer
@@ -197,6 +199,52 @@ FQ1_PARAGRAPHS = 40   # the character budget binds, not the count: 111.15 is 39 
 FQ1_CHARS = 6500
 
 
+# LQ1 (2 Nov 2026, off until measured): the quote kept a list's lead-in and dropped its items - 4.4(a)(1) "...; or"
+# without (a)(2) (X-002), 4.102(c)(1) "you must submit:" without the five-day and malfunction reports (X-004); 14 of the
+# 18 focused quotes of 29 Oct's 300Q end a quoted paragraph on ":" or "; or"/"; and" without its list
+_LIST_LEAD_IN = re.compile(r":\s*$")
+_LIST_ITEM_JOINED = re.compile(r"[;,]\s*(?:or|and)\s*$")
+_PARAGRAPH = re.compile(r"21 CFR (\d+\.\d+[a-z]?)((?:\([^)\s]+\))*)$")
+
+
+def list_members(bodies) -> list[set[int]]:
+    """For each (source, text) of `bodies`, the indices it must be quoted with: a paragraph ending with ":" brings its
+    supplied children, one ending with "; or" / "; and" the rest of its list (its parent's lead-in and children)."""
+    keys = []
+    for s, _ in bodies:
+        m = _PARAGRAPH.match(s.citation or "") if s.corpus != "usc" else None
+        keys.append((m.group(1), tuple(re.findall(r"\(([^)]+)\)", m.group(2)))) if m else None)
+    at = {k: i for i, k in enumerate(keys) if k}
+
+    def children(section, path):
+        return [i for i, k in enumerate(keys) if k and k[0] == section and len(k[1]) == len(path) + 1
+                and k[1][:len(path)] == path]
+
+    def close(i, seen):
+        if i in seen:
+            return
+        seen.add(i)
+        k, text = keys[i], bodies[i][1]
+        if k is None or not k[1]:
+            return
+        if _LIST_LEAD_IN.search(text):
+            for c in children(*k):
+                close(c, seen)
+        elif _LIST_ITEM_JOINED.search(text):
+            parent = at.get((k[0], k[1][:-1]))
+            if parent is not None and _LIST_LEAD_IN.search(bodies[parent][1]):
+                close(parent, seen)
+            for c in children(k[0], k[1][:-1]):
+                close(c, seen)
+
+    out = []
+    for i in range(len(bodies)):
+        seen: set[int] = set()
+        close(i, seen)
+        out.append(seen)
+    return out
+
+
 def focused_quote(package, question: str, *, limit: int = FOCUSED_QUOTE_PARAGRAPHS,
                   max_chars: int = FOCUSED_QUOTE_CHARS, lead: str = FOCUSED_QUOTE_LEAD) -> str | None:
     """The requested provisions' EXACT paragraphs (and promoted FD&C Act text) that share most subject words with the
@@ -220,13 +268,22 @@ def focused_quote(package, question: str, *, limit: int = FOCUSED_QUOTE_PARAGRAP
     bodies = [(s, b) for s, b in bodies if b]
     if not bodies or not any(asked & subject_words(b) for _, b in bodies):
         return None   # nothing supplied speaks to the question at all
-    kept, used = [], 0
+    lists = list_members(bodies) if enabled("LQ1") else None
+    kept, used, taken = [], 0, set()
     for i in rank(question, [(s.citation, b) for s, b in bodies]):
-        s, body = bodies[i]
-        if len(kept) >= limit or (kept and used + len(body) > max_chars):
+        if i in taken:
+            continue
+        unit = sorted(lists[i] - taken) if lists else [i]
+        cost = sum(len(bodies[j][1]) for j in unit)
+        if len(unit) > 1 and (len(kept) + len(unit) > limit or used + cost > max_chars):
+            if kept:
+                continue      # LQ1: a list is quoted whole or not at all, never its lead-in alone
+            unit, cost = [i], len(bodies[i][1])
+        if len(kept) >= limit or (kept and used + cost > max_chars):
             break
-        kept.append((s, body))
-        used += len(body)
+        kept += [bodies[j] for j in unit]
+        taken.update(unit)
+        used += cost
     lines = [lead]
     for s, body in sorted(kept, key=lambda x: x[0].index):
         kind = "FD&C Act, verbatim" if s.corpus == "usc" else "eCFR, binding, verbatim"

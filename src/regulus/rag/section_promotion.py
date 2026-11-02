@@ -477,7 +477,22 @@ def second_in_part(picks: list[int], cands: list[dict], picked: dict) -> str | N
     return None
 
 
-def parse_picks(text: str, n: int, sections: list[str] | None = None) -> list[int]:
+# CP1 (2 Nov 2026, off until measured): a question that asks how several things differ ("the difference between an SE
+# report, an Exemption from SE request, and a PMTA") needs each one's regulation, often in different parts. The picker
+# named 1107.16, 1107.13 and 1114.1 for T-004; only the first two were read and SP2 adds a same-part pick only, so the
+# PMTA part never reached the answer. Up to CP1_PICKS picks are read, and each CFR pick from another part joins as a
+# companion when the cross-encoder rates it at least SP2F_MIN_SCORE (SP2's measured reason for same-part-only: other-part
+# picks were a key section 1 time in 7 - outside comparisons). 12 of the 300 questions compare.
+CP1_PICKS = 3
+_COMPARISON = re.compile(r"\b(?:differences? between|distinguish(?:es|ed)?|compar(?:e|es|ed|ison)\b|versus|vs\.?|"
+                         r"differs? from|how (?:do|does|is|are) .{3,80}? differ)", re.I)
+
+
+def comparison_question(question: str) -> bool:
+    return bool(_COMPARISON.search(question or ""))
+
+
+def parse_picks(text: str, n: int, sections: list[str] | None = None, limit: int = 2) -> list[int]:
     """Candidate positions (1-based) the picker's reply names, best first, at most two.
 
     The reply is asked for citations ("21 CFR 71.2", "FD&C Act § 607"); each is mapped to the candidate carrying it.
@@ -492,13 +507,13 @@ def parse_picks(text: str, n: int, sections: list[str] | None = None) -> list[in
             if x in sections and sections.index(x) + 1 not in out:
                 out.append(sections.index(x) + 1)
         if out or _CITATION_LIKE.search(re.sub(r"\[\d+\]", " ", text)):
-            return out[:2]
+            return out[:limit]
     numbers = re.findall(r"\[(\d+)\]", text) or (re.findall(r"\d+", text) if re.fullmatch(r"[\d,\s\[\]]+", text.strip()) else [])
     for x in numbers:
         i = int(x)
         if 1 <= i <= n and i not in out:
             out.append(i)
-    return out[:2]
+    return out[:limit]
 
 
 COSMETIC_TERMS_GENERIC = frozenset({"cosmet", "label", "product", "compani", "manufactur", "make", "sell", "use"})
@@ -2047,7 +2062,7 @@ class SectionPromoter:
                                  candidates=tuple(cands), seconds=time.perf_counter() - t0,
                                  notes=(f"product types: {', '.join(found)}",),
                                  choices=tuple((k, tuple((c.section, c.heading, c.subpart) for c in v)) for k, v in found.items()))
-        raw, other, notes, second_act, second_cfr = None, None, (), None, None
+        raw, other, notes, second_act, second_cfr, compares = None, None, (), None, None, False
         act_defined = self.act_definition_asked(question) if not parts else None
         if act_defined:
             # DF2: the Act paragraph that defines what the question asks something to be classified as
@@ -2087,7 +2102,8 @@ class SectionPromoter:
                 kw = {"think_budget": PICKER_THINK_BUDGET} if getattr(self.generator, "thinking", False) is True else {}
                 result = self.generator.generate(msgs, max_new_tokens=PICKER_MAX_TOKENS, **kw)
                 raw = (getattr(result, "response", None) or "").strip()
-            picks = parse_picks(raw, len(cands), [c["section"] for c in cands])
+            compares = precision_fix("CP1") and comparison_question(question)
+            picks = parse_picks(raw, len(cands), [c["section"] for c in cands], limit=CP1_PICKS if compares else 2)
             if not picks:
                 return None
             picked_c = cands[picks[0] - 1]   # first choice; a second choice is used only from the other corpus
@@ -2156,6 +2172,18 @@ class SectionPromoter:
             pr = replace(pr, rerank=round(scored[picked_c["section"]][0], 4))
         if second_cfr is not None and second_cfr not in pr.citations:
             pr = replace(pr, companions=pr.companions + (second_cfr,), notes=pr.notes + (f"second pick: {second_cfr}",))
+        if raw is not None and compares:
+            kept = self.__dict__.get("_order_scores")
+            scores = (kept[2] if kept and kept[0] == question and set(kept[1]) == {c["section"] for c in cands}
+                      else self.rerank_scores(question, cands))
+            for i in picks[1:]:
+                c = cands[i - 1]
+                if c.get("statute") or c["section"] in pr.citations or c["section"] == second_cfr:
+                    continue
+                if scores and scores.get(c["section"], (0.0, ""))[0] >= SP2F_MIN_SCORE:
+                    pr = replace(pr, companions=pr.companions + (c["section"],), notes=pr.notes + (f"compared: {c['section']}",))
+                else:
+                    pr = replace(pr, notes=pr.notes + (f"compared pick {c['section']} below the reranker floor",))
         if precision_fix("MS1") and raw is not None:
             extra = self.reranked_companions(question, cands, pr)
             if extra:

@@ -535,6 +535,102 @@ def repoint_named_citations(text: str, package) -> tuple[str, int]:
     return (out, n) if n else (text, 0)
 
 
+# CN1 (2 Nov 2026, off until measured): a citation written as a provision label ("[4.2]", "[4.3(a), (b)]",
+# "[21 CFR 4.2(a)]") instead of the [n] form was never checked - not a marker, so its sentence was merely "uncited"
+# (warning). X-001 delivered "21 CFR 4.2 defines that a drug constituent part ... parts 210 and 211 [4.2(a)]": 4.2 has
+# no paragraph (a); the words are 4.3(a)'s. 6 of 300 model answers on 29 Oct cite this way. Normalised to markers, the
+# provision checks see them: a label naming a supplied paragraph becomes its marker; one naming none becomes the marker
+# of the supplied paragraph that states the sentence's words (REPOINT_MIN_OWN), so a sentence naming a provision it is
+# not worded from meets provision_citation_mismatch; with no such source the label is dropped (the sentence is uncited).
+_LABEL_ITEM = r"(?:(?:§§?\s*|21\s+CFR\s+(?:§\s*)?)?\d{1,4}\.\d{1,5}[a-z]?)?(?:\s*\([A-Za-z0-9]{1,6}\))*"
+LABEL_CITATION_RE = re.compile(r"\[\s*((?:§§?\s*|21\s+CFR\s+(?:§\s*)?)?\d{1,4}\.\d{1,5}[a-z]?(?:\s*\([A-Za-z0-9]{1,6}\))*"
+                               rf"(?:\s*(?:,|;|and)\s*{_LABEL_ITEM})*)\s*\]", re.I)
+_LABEL_PART = re.compile(r"(\d{1,4}\.\d{1,5}[a-z]?)?((?:\s*\([A-Za-z0-9]{1,6}\))*)")
+
+
+def _label_citations(label: str) -> list[str]:
+    """"4.3(a), (b)" -> ["21 CFR 4.3(a)", "21 CFR 4.3(b)"]: a bare "(b)" replaces the last level of the item before it."""
+    out: list[str] = []
+    section, path = None, []
+    for item in re.split(r"\s*(?:,|;|\band\b)\s*", re.sub(r"^(?:§§?\s*|21\s+CFR\s+(?:§\s*)?)", "", label.strip(), flags=re.I)):
+        m = _LABEL_PART.fullmatch(re.sub(r"^(?:§§?\s*|21\s+CFR\s+(?:§\s*)?)", "", item.strip(), flags=re.I))
+        if not m or not (m.group(1) or m.group(2)):
+            continue
+        levels = re.findall(r"\(([A-Za-z0-9]{1,6})\)", m.group(2))
+        if m.group(1):
+            section, path = m.group(1), levels
+        elif section is not None:
+            path = path[:max(len(path) - len(levels), 0)] + levels
+        else:
+            continue
+        out.append(f"21 CFR {section}" + "".join(f"({p})" for p in path))
+    return out
+
+
+# the FD&C Act's labels: "[21 U.S.C. 387e(c)]" (T-007, 2 Nov), "[FD&C Act § 905(c)]"; a "[21 U.S.C. ...]" right after
+# "§ 905(c)" is the second half of a supplied source's own label ("FD&C Act § 905(c) [21 U.S.C. 387e(c)]"), not a citation
+ACT_LABEL_RE = re.compile(r"\[\s*(?:(?:21\s*\.?\s*)?U\.?\s*S\.?\s*C\.?\s*§*\s*(?P<usc>\d{3}[a-z]{0,2})|"
+                          r"(?:FD&C\s+Act|FDCA)\s*§*\s*(?P<act>\d{3}[a-z]{0,2}))(?P<path>(?:\s*\([A-Za-z0-9]{1,6}\))*)\s*\]", re.I)
+_ACT_LABEL_TAIL = re.compile(r"§\s*\d{3}[a-z]{0,2}(?:\([A-Za-z0-9]{1,6}\))*\s*$")
+_SOURCE_ACT = re.compile(r"FD&C Act § (\d{3}[a-z]{0,2})((?:\([^)\s]+\))*) \[21 U\.S\.C\. (\d{3}[a-z]{0,2})")
+
+
+def resolve_label_citations(text: str, package) -> tuple[str, int]:
+    """(text, labels normalised): fix CN1 (regulus.rag.validator_switches); see LABEL_CITATION_RE and ACT_LABEL_RE."""
+    if not text or not (LABEL_CITATION_RE.search(text) or ACT_LABEL_RE.search(text)):
+        return text, 0
+    by_citation: dict[str, int] = {}
+    for s in package.sources:
+        by_citation.setdefault(re.sub(r"\s+", " ", s.citation or "").strip(), s.index)
+        m = _SOURCE_ACT.match(s.citation or "")
+        if m:   # an Act paragraph answers to both of its names
+            by_citation.setdefault(f"act {m.group(1)}{m.group(2)}", s.index)
+            by_citation.setdefault(f"usc {m.group(3)}{m.group(2)}", s.index)
+    sections: dict[str, list[int]] = {}
+    for s in package.sources:
+        ident = _source_identity(s)
+        if ident and ident[1]:
+            sections.setdefault(ident[1], []).append(s.index)
+    by_index = {s.index: s for s in package.sources}
+    n = 0
+
+    def marker(match: re.Match) -> str:
+        nonlocal n
+        if match.re is ACT_LABEL_RE and _ACT_LABEL_TAIL.search(match.string[:match.start()]):
+            return match.group(0)
+        n += 1
+        found: list[int] = []
+        if match.re is ACT_LABEL_RE:
+            path = re.sub(r"\s+", "", match.group("path") or "")
+            name = f"usc {match.group('usc').lower()}" if match.group("usc") else f"act {match.group('act').lower()}"
+            cites = [name + path] if path else []
+            # an Act label without a path, or one naming no supplied paragraph: the supplied paragraph(s) under it
+            under = [i for k, i in by_citation.items() if k.startswith(name + (path or "(")) or k == name + path]
+            found += [i for i in ([by_citation[c] for c in cites if c in by_citation] or sorted(set(under))[:1])]
+        for cite in (_label_citations(match.group(1)) if match.re is LABEL_CITATION_RE else ()):
+            i = by_citation.get(cite)
+            if i is None and "(" not in cite:      # a section label: its only supplied row, or its first
+                rows = sections.get(cite.split()[-1], [])
+                i = min(rows) if rows else None
+            if i is not None and i not in found:
+                found.append(i)
+        if found:
+            return "".join(f"[{i}]" for i in found)
+        # a provision that was not supplied: the source that states this sentence's words, when one clearly does
+        before = match.string[:match.start()]
+        start = max(before.rfind(". "), before.rfind("\n")) + 1
+        words = _content_words(ACT_LABEL_RE.sub(" ", LABEL_CITATION_RE.sub(" ", MARK_RE.sub(" ", before[start:]))))
+        if words:
+            share = {i: len(words & _content_words(s.text or "")) / len(words) for i, s in by_index.items()}
+            best = max(share, key=lambda i: (share[i], -i)) if share else None
+            if best is not None and share[best] >= REPOINT_MIN_OWN:
+                return f"[{best}]"
+        return ""
+
+    out = ACT_LABEL_RE.sub(marker, LABEL_CITATION_RE.sub(marker, text))
+    return re.sub(r"[ \t]+([.,;])", r"\1", out), n
+
+
 def _degenerate(text: str) -> tuple[bool, str]:
     # sentences compared normalised (citation markers, case, spacing): a sentence repeated with an
     # incrementing citation number is still the same sentence (regulus.inference.repetition_text)

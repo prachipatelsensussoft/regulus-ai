@@ -46,9 +46,16 @@ ORDER BY section_number, ordinal
 """
 _OTHER_ROWS_SQL = """
 SELECT section_number, part_number, paragraph_path, ordinal, section_heading, body_text
-FROM cfr_records WHERE removed_on IS NULL AND NOT is_reserved AND NOT (part_number = ANY(%(parts)s))
+FROM cfr_records WHERE removed_on IS NULL AND NOT is_reserved AND part_number = ANY(%(parts)s)
 ORDER BY part_number, section_number, ordinal
 """
+_OTHER_PARTS_SQL = """
+SELECT DISTINCT part_number FROM cfr_records WHERE removed_on IS NULL AND NOT is_reserved AND NOT (part_number = ANY(%(parts)s))
+"""
+# the other parts' rows are read this many parts at a time: one query for all ~65,000 rows ran into the connection's
+# 15 s statement timeout under load (2 Nov), and the index then fell back to cosmetics + the Act without a word in the
+# answer - every other part's paragraphs missing from section ranking and the cross-encoder's view
+OTHER_PARTS_PER_QUERY = 40
 
 
 @dataclass(frozen=True)
@@ -97,6 +104,9 @@ class ParagraphDense:
         for s, rows in by_sec.items():
             add("cfr", s, heads[s], rows)
         if statute is not None:
+            from regulus.rag.validator_switches import enabled
+
+            captions = enabled("SC1")
             for s, idx in statute.by_sec.items():
                 rows = []
                 for i in idx:
@@ -104,6 +114,10 @@ class ParagraphDense:
                     body = " ".join((r["body_text"] or "").split())
                     if r.get("paragraph_heading") and not body.startswith("("):
                         body = f"{r['paragraph_heading']}. {body}"
+                    if captions and r.get("top_caption") and r.get("top_caption") != r.get("paragraph_heading"):
+                        # SC1: the subsection's caption heads each of its paragraphs - 906(e)(1)(A) is "In general"
+                        # under "(e) Good manufacturing practice requirements", which nothing else in its text says
+                        body = f"{r['top_caption']}: {body}"
                     rows.append((r["paragraph_path"] or "", i, body))
                 add("fdca", s, f"FD&C Act {statute.heading(s)}.", rows)
         embedder = embedder or _embedder()
@@ -124,10 +138,12 @@ class ParagraphDense:
         own (CACHE_DIR/parts/part_<n>_<key>.npy)."""
         by_part: dict[str, dict[str, list]] = {}
         heads: dict[str, str] = {}
-        for r in db.query(_OTHER_ROWS_SQL, {"parts": sorted(COSMETIC_PARTS)}):
-            by_part.setdefault(str(r["part_number"]), {}).setdefault(r["section_number"], []).append(
-                (r["paragraph_path"] or "", int(r["ordinal"]), " ".join((r["body_text"] or "").split())))
-            heads[r["section_number"]] = r["section_heading"] or ""
+        others = sorted(str(r["part_number"]) for r in db.query(_OTHER_PARTS_SQL, {"parts": sorted(COSMETIC_PARTS)}))
+        for k in range(0, len(others), OTHER_PARTS_PER_QUERY):
+            for r in db.query(_OTHER_ROWS_SQL, {"parts": others[k:k + OTHER_PARTS_PER_QUERY]}):
+                by_part.setdefault(str(r["part_number"]), {}).setdefault(r["section_number"], []).append(
+                    (r["paragraph_path"] or "", int(r["ordinal"]), " ".join((r["body_text"] or "").split())))
+                heads[r["section_number"]] = r["section_heading"] or ""
         blocks = [vectors]
         for part in sorted(by_part, key=lambda p: (len(p), p)):
             p_paras, p_texts = [], []

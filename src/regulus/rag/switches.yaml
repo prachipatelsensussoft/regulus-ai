@@ -1006,6 +1006,50 @@ switches:
       draft's at rule 9, so the cached prefix ended there and ~3,500 tokens were read again; not yet measured
     interactions: [PX1]
 
+  LQ1:
+    purpose: the focused verbatim quote keeps a list whole - a paragraph ending ":" brings its supplied items, one ending "; or"/"; and" the rest of its list; a list that does not fit is skipped, never shown as its lead-in alone
+    stage: composer
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-02", commit: "this commit (LQ1)"}
+    evidence: >-
+      full300d - 14 of 18 focused quotes end a quoted paragraph on ":" or "; or" without its items (X-002 4.4(a)(1)
+      without (a)(2); X-004 4.102(c)(1) "you must submit:" without the five-day and malfunction reports); not yet measured
+    interactions: [FQ1, Q1]
+
+  CN1:
+    purpose: citations written as provision labels ("[4.2(a)]", "[4.3(a), (b)]") become [n] markers before validation - the supplied paragraph named, else the one stating the sentence's words, else dropped
+    stage: answer_checks
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-02", commit: "this commit (CN1)"}
+    evidence: >-
+      full300d - 6 of 300 model answers cite by label, never checked (their sentences counted as uncited, a warning);
+      six18 2 Nov X-001 cites 4.2(a)-(e), paragraphs 4.2 does not have, for 4.3's text; not yet measured
+    interactions: [A4]
+
+  SC1:
+    purpose: a statute paragraph is indexed (dense and lexical) with its subsection's caption - "(e) Good manufacturing practice requirements" heads 906(e)(1)(A) "In general"
+    stage: retrieval
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-02", commit: "this commit (SC1)"}
+    evidence: >-
+      six18 2 Nov T-011 (tobacco manufacturing practice) - 906 ranked 7th of the tobacco Act sections, 3 are offered;
+      with captions 1st (T-007: 904 ingredient listing 3rd -> 2nd); not yet measured
+    interactions: [DR1, AU1]
+
+  CP1:
+    purpose: a question asking how several things differ reads up to 3 picker choices; a CFR pick from another part joins as a companion when the cross-encoder rates it >= REGULUS_SP2F_MIN_SCORE
+    stage: selection
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-02", commit: "this commit (CP1)"}
+    evidence: >-
+      12 of 300 questions compare; T-004 picker named 1107.16, 1107.13, 1114.1 and only the first two were read
+      (1114.1 scored below the floor, so CP1 does not add it there); not yet measured
+    interactions: [SP2, SP2F]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:

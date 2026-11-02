@@ -65,7 +65,11 @@ class StatuteIndex:
     @classmethod
     def load(cls, db, path: Path = STORE) -> "StatuteIndex":
         rows = [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
-        texts = [" ".join(x for x in (r["heading"], r["paragraph_heading"], r["body_text"]) if x) for r in rows]
+        from regulus.rag.validator_switches import enabled
+
+        # SC1: a paragraph's subsection caption is indexed with it ("(e) Good manufacturing practice requirements")
+        texts = [" ".join(x for x in (r["heading"], r.get("top_caption") if enabled("SC1") else None, r["paragraph_heading"],
+                                      r["body_text"]) if x) for r in rows]
         lex = {int(r["i"]) - 1: set(r["lex"] or ()) for r in db.query(_LEX_SQL, {"t": texts})}
         idx = cls(rows, [lex.get(i, set()) for i in range(len(rows))])
         heads = {s: rows[ix[0]]["heading"] for s, ix in idx.by_sec.items()}

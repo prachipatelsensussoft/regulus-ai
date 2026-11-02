@@ -92,6 +92,7 @@ from regulus.rag.validation import (
     attach_trailing_markers,
     excise_unsupported_sentences,
     repoint_named_citations,
+    resolve_label_citations,
     strip_invalid_citations,
     validate_answer,
 )
@@ -860,6 +861,8 @@ class RagPipeline:
         text, _ = strip_plan_labels(text)
         if analysis is not None:
             text, _ = normalize_answer(text, question)
+        if precision_fix("CN1"):
+            text, _ = resolve_label_citations(text, package)
         text, _ = repoint_citations(text, [(s.index, s.text) for s in package.sources])
         if precision_fix("A4"):
             text, _ = repoint_named_citations(text, package)
@@ -916,6 +919,8 @@ class RagPipeline:
         text, _ = strip_plan_labels(text)
         if analysis is not None:
             text, _ = normalize_answer(text, question)
+        if precision_fix("CN1"):
+            text, _ = resolve_label_citations(text, package)
         text, _ = repoint_citations(text, [(s.index, s.text) for s in package.sources])
         report2 = validate_answer(text, package, gen2)
         rescored = self.claim_support(text, package)
@@ -953,6 +958,8 @@ class RagPipeline:
         text, _ = strip_plan_labels(text)
         if analysis is not None:
             text, _ = normalize_answer(text, question)
+        if precision_fix("CN1"):
+            text, _ = resolve_label_citations(text, package)
         text, _ = repoint_citations(text, [(s.index, s.text) for s in package.sources])
         if precision_fix("A4"):
             text, _ = repoint_named_citations(text, package)
@@ -1941,6 +1948,11 @@ class RagPipeline:
             # does not, is renumbered to that source (the model was measured to cite by paragraph number)
             repointed = []
             if package is not None:
+                if precision_fix("CN1"):
+                    # CN1: "[4.2(a)]"-style labels become [n] markers, so the provision checks see them
+                    answer_text, labels = resolve_label_citations(answer_text, package)
+                    if labels:
+                        generation_info["label_citations_normalised"] = labels
                 answer_text, repointed = repoint_citations(answer_text, [(s.index, s.text) for s in package.sources])
                 if precision_fix("A4"):
                     answer_text, named_repointed = repoint_named_citations(answer_text, package)
