@@ -433,7 +433,8 @@ def correction_notes(report: ValidationReport, package: GenerationPackage, limit
 TE1_CODES = frozenset({"unsupported_claim", "provision_citation_mismatch", "unsupported_figure", "obligation_strengthened",
                        "condition_not_in_cited_source", "invented_condition", "citation_mismatch", "paragraph_misattribution",
                        "figure_misattributed", "applicability_dropped", "qualifier_dropped", "false_denial"})
-TE1_TOKENS_PER_SENTENCE = 120
+TE1_TOKENS_PER_SENTENCE = 220   # 2 Nov ten-question run: 120 cut 3 of 5 replies short (160 of 160 tokens)
+TE1_TOKENS_EXTRA = 80
 TE1_MAX_SENTENCES = 6
 _TE1_LINE = re.compile(r"^\s*(\d{1,2})\s*[:.)]\s*(.+?)\s*$")
 
@@ -936,13 +937,20 @@ class RagPipeline:
                    "its source number in brackets, or write DELETE when no source states it. Answer with one line per "
                    "sentence, \"1: <sentence>\", and nothing else.")
             tmsgs = [{"role": "system", "content": messages[0]["content"]}] + list(messages[1:-1]) + [{**messages[-1], "content": ask}]
-            gen_t = self._generate(tmsgs, TE1_TOKENS_PER_SENTENCE * len(problems) + 40, None)
-            revised = apply_targeted(draft, [s for s, _ in problems], gen_t.response or "")
+            gen_t = self._generate(tmsgs, TE1_TOKENS_PER_SENTENCE * len(problems) + TE1_TOKENS_EXTRA, None)
+            cut_off = getattr(gen_t, "finished", True) is False
+            reply = gen_t.response or ""
+            if cut_off:   # the unfinished last line is dropped; complete lines before it are used
+                reply = reply.rsplit("\n", 1)[0] if "\n" in reply.rstrip() else ""
+            revised = apply_targeted(draft, [s for s, _ in problems], reply) if reply.strip() else None
             targeted_info = {"sentences": len(problems), "seconds": round(time.perf_counter() - t0, 2),
-                             "generated_tokens": getattr(gen_t, "generated_tokens", None), "spliced": revised is not None}
+                             "generated_tokens": getattr(gen_t, "generated_tokens", None), "cut_off": cut_off,
+                             "spliced": revised is not None}
             if revised is not None:
                 text = self._corrected_text(revised, package, question, analysis)
-                report_t = validate_answer(text, package, gen_t)
+                # the spliced answer is judged on its text: the short reply's own length says nothing about it (the
+                # first version passed the reply here and every reply that used its allowance read as "truncated")
+                report_t = validate_answer(text, package, None)
                 targeted_info.update(accepted=report_t.ok, codes_after=list(report_t.codes()))
                 if report_t.ok:
                     return (text, gen_t, report_t), {

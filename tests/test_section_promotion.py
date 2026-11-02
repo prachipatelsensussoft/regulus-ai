@@ -1064,3 +1064,32 @@ def test_dx1_not_for_a_question_that_asks_no_definition():
 def test_dx1_a_whole_section_is_never_added():
     # 207.1's definitions carry no paragraph letter: the redirect is not followed rather than supplying all of 207.1
     assert SectionPromoter(_DefDb()).definition_redirects(["251.2"], "What is a relabeler under Part 251?") == []
+
+
+class _CutOff(Answers):
+    """The second call (the targeted reply) is cut off at its allowance after one complete line."""
+    def generate(self, messages, max_new_tokens=None, on_text=None):
+        out = super().generate(messages, max_new_tokens)
+        if len(self.calls) == 2:
+            from dataclasses import replace as _r
+            return _r(out, finished=False)
+        return out
+
+
+def test_te1_a_reply_cut_off_after_a_complete_line_uses_that_line(monkeypatch):
+    _te1(monkeypatch)
+    g = _CutOff(TE1_DRAFT, "1: 21 CFR 820.10(b)(2) requires traceability procedures [1].\n2: and then the model kept wri",
+                "unused full rewrite")
+    out = RagPipeline(LexicalRetriever(TableDatabase()), g, RagConfig(answer_style="apply")).answer(TWO)
+    info = out.metadata["generation"]["correction_pass"]
+    assert len(g.calls) == 2 and info["targeted"]["cut_off"] is True and info["targeted"]["accepted"] is True
+    assert "30 days" not in out.answer and "kept wri" not in out.answer
+
+
+def test_te1_a_reply_cut_off_inside_its_only_line_is_not_spliced(monkeypatch):
+    _te1(monkeypatch)
+    good = "21 CFR 820.10(b)(2) requires traceability procedures [1]. 21 CFR 820.10(b)(4) requires advisory notices [2]."
+    g = _CutOff(TE1_DRAFT, "1: 21 CFR 820.10(b)(2) requires trace", good)
+    out = RagPipeline(LexicalRetriever(TableDatabase()), g, RagConfig(answer_style="apply")).answer(TWO)
+    info = out.metadata["generation"]["correction_pass"]
+    assert len(g.calls) == 3 and info["targeted"]["spliced"] is False and out.answer.startswith(good[:40])

@@ -2241,10 +2241,6 @@ class SectionPromoter:
             pr = replace(pr, rerank=round(scored[picked_c["section"]][0], 4))
         if second_cfr is not None and second_cfr not in pr.citations:
             pr = replace(pr, companions=pr.companions + (second_cfr,), notes=pr.notes + (f"second pick: {second_cfr}",))
-        if precision_fix("DX1"):
-            redirects = [r for r in self.definition_redirects(list(pr.citations), question) if r not in pr.citations]
-            if redirects:
-                pr = replace(pr, companions=pr.companions + tuple(redirects), notes=pr.notes + (f"definition: {', '.join(redirects)}",))
         if raw is not None and compares:
             kept = self.__dict__.get("_order_scores")
             scores = (kept[2] if kept and kept[0] == question and set(kept[1]) == {c["section"] for c in cands}
@@ -2280,6 +2276,10 @@ class SectionPromoter:
             extra = [s2 for s2 in self.decomposed_sections(question, parts, home) if s2.split("(")[0] not in cited][:QD1_MAX]
             if extra:
                 pr = replace(pr, companions=pr.companions + tuple(extra), notes=pr.notes + (f"sub-questions: {', '.join(extra)}",))
+        if precision_fix("DX1"):   # last: every companion is known (X-001: 4.2 arrives through MS1)
+            redirects = [r for r in self.definition_redirects(list(pr.citations), question) if r not in pr.citations]
+            if redirects:
+                pr = replace(pr, companions=pr.companions + tuple(redirects), notes=pr.notes + (f"definition: {', '.join(redirects)}",))
         return replace(pr, notes=pr.notes + notes) if notes else pr
 
     def _cfr_promotion(self, picked: list[str], question: str, lex, cands, raw, other, method: str, t0: float) -> Promotion:
