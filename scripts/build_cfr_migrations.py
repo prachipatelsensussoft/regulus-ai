@@ -174,6 +174,7 @@ def repairs(runs: Path) -> list[dict]:
     df = runs / "definition_path_repair_20261030"
     st = runs / "source_text_repair_20261030"
     s2 = runs / "source_text_repair_20261102"
+    d2 = runs / "definition_path_repair_20261103"
     out = [
         {"name": "restore_dropped_text_20261021", "reference_applied": "2026-10-21",
          "description": "Restore eCFR text the original ingestion dropped (EXTRACT block quotes, FP flush paragraphs) in "
@@ -224,6 +225,12 @@ def repairs(runs: Path) -> list[dict]:
                         "363 rows inserted in 82 sections, later rows renumbered.",
          "files": [s2 / "apply_manifest.json", s2 / "plan.json"],
          "ops": lambda: manifest_ops(s2 / "apply_manifest.json")},
+        {"name": "definition_paths_820_3_20261103", "reference_applied": "2026-11-03",
+         "description": "DEF2: 820.3's paragraph (b) definitions (Implantable medical device, Manufacturer, "
+                        "Organization, Rework, Safety and Performance) back under (b) 1-5; DEF1 had filed them under "
+                        "(a) 7-11 (regulus.ingestion.definition_paths, checked against the eCFR XML): 5 rows.",
+         "files": [d2 / "repair.sql", d2 / "rollback.sql", d2 / "corrections.tsv"],
+         "ops": lambda: sql_ops(d2 / "repair.sql", d2 / "rollback.sql")},
     ]
     return out
 

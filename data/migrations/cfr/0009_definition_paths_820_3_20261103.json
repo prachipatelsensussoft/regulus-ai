@@ -1,0 +1,46 @@
+{
+ "format": 1,
+ "version": 9,
+ "name": "definition_paths_820_3_20261103",
+ "reference_applied": "2026-11-03",
+ "description": "DEF2: 820.3's paragraph (b) definitions (Implantable medical device, Manufacturer, Organization, Rework, Safety and Performance) back under (b) 1-5; DEF1 had filed them under (a) 7-11 (regulus.ingestion.definition_paths, checked against the eCFR XML): 5 rows.",
+ "provenance": {
+  "source_files": [
+   {
+    "file": "~/regulus_eval_runs/definition_path_repair_20261103/repair.sql",
+    "sha256": "877875edc89f3acda42e99e0f7474a9cbc3db21df8f7f3847452b828e33077e0"
+   },
+   {
+    "file": "~/regulus_eval_runs/definition_path_repair_20261103/rollback.sql",
+    "sha256": "6fa7d740522cb6b8dbb41011a659c37e78ea056839cce88bc46eb0205baf5bc7"
+   },
+   {
+    "file": "~/regulus_eval_runs/definition_path_repair_20261103/corrections.tsv",
+    "sha256": "e4e568247a0af0c31c40f3b0397ef3c07c3d140e20c479cbb1fe2daeb7e81fbd"
+   }
+  ],
+  "ecfr_payloads": {
+   "820": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=820",
+    "sha256": "4fdb61ec17ff807151c290b1ca911df3ac92f995b3ace03155086c7588ee0b27",
+    "from": "rows' source_payload_sha256"
+   }
+  }
+ },
+ "fingerprint_before": {
+  "rows": 67074,
+  "sha256": "cf6240fab35e8b4623f8214c7e67a4ba389489d731cc505c009cb404d49a6fd8"
+ },
+ "fingerprint_after": {
+  "rows": 67074,
+  "sha256": "d9d8e2a3becfa4b4ab03eecda14c5eb2f7e790ac3f23bae01cd0308121855077"
+ },
+ "insert": [],
+ "update": [
+{"id": "01a07aa7-1d8d-7635-b240-fd669c66afad", "new": ["(b)", 1, 9], "old": ["(a)", 7, 9], "section": "820.3"},
+{"id": "01a07aa7-1d8e-7672-a3a8-13ca55973de6", "new": ["(b)", 2, 10], "old": ["(a)", 8, 10], "section": "820.3"},
+{"id": "01a07aa7-1d8f-785e-99d8-b6dff0a3e290", "new": ["(b)", 3, 11], "old": ["(a)", 9, 11], "section": "820.3"},
+{"id": "01a07aa7-1d90-7b30-bac8-a7571bb24052", "new": ["(b)", 4, 12], "old": ["(a)", 10, 12], "section": "820.3"},
+{"id": "01a07aa7-1d92-7890-96b1-e41335c551aa", "new": ["(b)", 5, 13], "old": ["(a)", 11, 13], "section": "820.3"}
+]
+}
