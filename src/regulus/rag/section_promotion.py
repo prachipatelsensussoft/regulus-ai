@@ -215,6 +215,28 @@ MS1_MAX = int(os.environ.get("REGULUS_MS1_MAX", "2"))
 MS1_MAX_CHARS = int(os.environ.get("REGULUS_MS1_MAX_CHARS", "6000"))
 XC1_MIN_SCORE = float(os.environ.get("REGULUS_XC1_MIN_SCORE", "0.85"))  # XC1: a candidate of another part, this sure
 XC1_MAX = 1
+# XG1: the Title 21 Chapter I subchapter a part belongs to - the programme its rules are written for. C (200-299) and D
+# (300-499) are both human drugs; 225/226 (medicated feed CGMP, Type A articles) sit in C but are animal food (E)
+_SUBCHAPTERS = ((1, 99, "A"), (100, 199, "B"), (200, 499, "CD"), (500, 599, "E"), (600, 680, "F"), (700, 799, "G"),
+                (800, 898, "H"), (900, 999, "I"), (1000, 1099, "J"), (1100, 1199, "K"), (1200, 1299, "L"))
+
+
+def subchapter(section: str) -> str | None:
+    """The programme family of a 21 CFR section or part ("211.68" -> "CD", "225.1" -> "E", "50.24" -> "A"), or None."""
+    m = re.match(r"(\d+)", section or "")
+    if m is None:
+        return None
+    part = int(m.group(1))
+    if part in (225, 226):
+        return "E"
+    return next((name for lo, hi, name in _SUBCHAPTERS if lo <= part <= hi), None)
+
+
+def same_programme(section: str, part: str) -> bool:
+    """XG1: may `section` join a promoted section of `part`? Yes within one subchapter, and whenever either is Subchapter
+    A (Parts 1-99: recalls, e-records, informed consent, IRBs, combination products, FSVP), which apply across programmes."""
+    a, b = subchapter(section), subchapter(part)
+    return a is None or b is None or a == b or "A" in (a, b)
 PL1_MAX = int(os.environ.get("REGULUS_PL1_MAX", "3"))                    # PL1: added sections allowed, paragraph-level
 PL1_WHOLE_CHARS = int(os.environ.get("REGULUS_PL1_WHOLE_CHARS", "2500"))  # PL1: a section this short is added whole
 MS2_POOL = int(os.environ.get("REGULUS_MS2_POOL", "12"))
@@ -735,6 +757,12 @@ class SectionPromoter:
         (cross-part citations, which brought 112.4 into F-020) only the question's own candidates are considered."""
         out: list[str] = []
         others = [c for c in cands if not c.get("statute") and c.get("part") != part and c["section"] not in have]
+        if precision_fix("XG1"):
+            # XG1 (3 Nov): only a candidate of the promoted section's programme. full300e: the 8 XC1 additions from
+            # another programme went 4 down / 0 up (111.30 dietary-supplement equipment beside drug 211.68, 101.7(t)
+            # food beside drug 201.51, drug 201.5/201.120 beside device 801.5/801.109, drug 211.198 beside 820.35);
+            # the 6 ups were all same-programme (213.84, 801.40, 601.12(d), 1003.10, 801.119, 830.320)
+            others = [c for c in others if same_programme(c["section"], part)]
         for c in sorted(others, key=lambda c: -scores.get(c["section"], (0.0, ""))[0]):
             score, path = scores.get(c["section"], (0.0, ""))
             if score < XC1_MIN_SCORE or len(out) >= XC1_MAX:

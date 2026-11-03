@@ -1128,6 +1128,28 @@ switches:
       a note (CM2) lost 2 PASS blind, so the provision's words are quoted instead; not yet measured
     interactions: [PC1]
 
+  # ------------------------------------------------------------------ 3 Nov: full300e partial-fail analysis
+  XG1:
+    purpose: XC1's cross-part companion must come from the promoted section's programme (Title 21 subchapter; Subchapter A, Parts 1-99, joins any)
+    stage: selection
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-03", commit: "this commit (XG1)"}
+    evidence: >-
+      full300e vs full300d - the 8 XC1 additions from another programme went 4 down / 0 up (D-008 111.30, M-021 211.198,
+      U-002 201.5, U-003 201.120; three were PASS); the 6 XC1 ups were all same-programme; not yet measured
+    interactions: [XC1]
+  MK1:
+    purpose: a source marker naming several sources ("[13–19, 21]") is not a figure for the unsupported-figure check
+    stage: answer_checks
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-03", commit: "this commit (MK1)"}
+    evidence: >-
+      full300e - 10 of the 14 drafts withheld with unsupported_figure were flagged over marker numbers only (X-002,
+      Z-005, R-006, A-004, P-009, K-003, B-002, Y-001, F-005, S-008, S-019); not yet measured
+    interactions: [A1]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:

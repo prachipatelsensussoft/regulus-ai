@@ -406,6 +406,11 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       three required conditions alternatives; 1 change in 324 recorded answers
   PC2 (2 Nov, off until measured) a supplied section the answer never cites contributes its most relevant paragraph,
       verbatim (regulus.rag.pipeline.uncited_sections): 10 of 44 omission PFs had the section and left it unused
+  XG1 (3 Nov, off until measured) XC1's cross-part companion stays in the promoted section's programme - its Title 21
+      subchapter, C and D both human drugs, 225/226 animal food; Subchapter A (Parts 1-99) joins any. full300e: the 8
+      other-programme XC1 additions went 4 down / 0 up (111.30 beside drug 211.68, 201.5 beside device 801.5)
+  MK1 (3 Nov, off until measured) a marker naming several sources ("[13-19, 21]") is taken out before the figure check:
+      10 of full300e's 14 unsupported_figure withholds were over marker numbers only
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

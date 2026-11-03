@@ -811,6 +811,11 @@ def validate_answer(answer: str, package: GenerationPackage, generation: Generat
             from regulus.rag.qmsr import PIPELINE_SENTENCES_RE
 
             figure_text = PIPELINE_SENTENCES_RE.sub(" ", figure_text)
+        if precision_fix("MK1"):
+            # MK1 (3 Nov): a source marker naming several sources ("[13–19, 21]", "[10, 11, 12]") is not a figure.
+            # _FIGURE_RE skips a number after "[" but read the "19" after the dash and the "21" after the comma as
+            # amounts: full300e withheld 10 of its 14 unsupported_figure drafts over marker numbers alone (X-002, Z-005)
+            figure_text = MALFORMED_MARK_RE.sub(" ", figure_text)
         if package.answer_style == "apply" and package.question:
             # the question's own figures ("section 721", "80 days", "12 fl oz") are facts it states - unless a source
             # states a different number in the same unit: "up to 10 percent" in the question is not supplied when

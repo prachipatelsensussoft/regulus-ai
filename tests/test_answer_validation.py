@@ -246,6 +246,21 @@ def test_figures_absent_from_every_source_are_unsupported():
     assert out.metadata["validation"]["repair"] == "extractive_replacement" and "$1,000" not in out.answer
 
 
+def test_mk1_a_marker_naming_several_sources_is_not_a_figure(monkeypatch):
+    from regulus.rag import validator_switches as VS
+    pkg = package_for("What penalty does 820.10(b)(3) specify?")
+    # X-002's shape (full300e): a range/list marker; "19" after the dash and "21" after the comma read as amounts
+    text = "21 CFR 820.10(b)(3) body text [1–19, 21]."
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION - {"MK1"})
+    assert UNSUPPORTED_FIGURE in validate_answer(text, pkg, gen("x")).codes()
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"MK1"})
+    assert UNSUPPORTED_FIGURE not in validate_answer(text, pkg, gen("x")).codes()
+    assert UNSUPPORTED_FIGURE not in validate_answer("21 CFR 820.10(b)(3) body text [10, 11, 12].", pkg, gen("x")).codes()
+    # a real invented amount is still caught beside a marker list
+    r = validate_answer("21 CFR 820.10(b)(3) specifies a penalty of $1,000 [1, 2].", pkg, gen("x"))
+    assert UNSUPPORTED_FIGURE in r.codes() and "1000" in next(p.detail for p in r.problems if p.code == UNSUPPORTED_FIGURE)
+
+
 def test_named_provision_must_be_cited_to_its_own_source():
     pkg = package_for("What does 21 CFR 820.10 say?")  # every row of the section is exact for r1
     idx = {s.citation: s.index for s in pkg.sources}

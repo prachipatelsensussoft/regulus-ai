@@ -960,6 +960,31 @@ def test_xc1_one_clearly_relevant_candidate_of_another_part_joins(monkeypatch):
     assert pr.reranked_companions("q", cands, promotion) == []              # off: other parts are never pooled
 
 
+def test_xg1_the_cross_part_companion_stays_in_the_promoted_programme(monkeypatch):
+    from regulus.rag import validator_switches as VS
+    # D-008's shape (full300e): drug 211.68 promoted, dietary-supplement 111.30 the best other-part candidate at 0.97
+    sections = {"111.30": [("(a)", "x" * 800)], "213.68": [("(a)", "y" * 800)]}
+    scores = {"111.30": (0.97, "(a)"), "213.68": (0.90, "(a)")}
+    cands = [{"section": s, "part": s.split(".")[0]} for s in sections]
+    promotion = Promotion(sections=("211.68",), companions=(), method="picker")
+    pr = _companion_promoter(monkeypatch, sections, scores)
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", (VS.VALIDATOR_PRECISION | {"XC1"}) - {"MS2", "PL1", "XG1"})
+    assert pr.reranked_companions("q", cands, promotion) == ["111.30"]      # XC1 alone: another programme's rule
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"XG1"})
+    assert pr.reranked_companions("q", cands, promotion) == ["213.68"]      # XG1: the drug candidate instead
+
+
+def test_xg1_programme_families():
+    assert SP.subchapter("211.68") == SP.subchapter("314.50") == "CD"      # Subchapters C and D: human drugs
+    assert SP.subchapter("225.1") == SP.subchapter("558.6") == "E"          # medicated feed CGMP is animal food
+    assert SP.same_programme("102.5(d)", "101") and SP.same_programme("1003.10", "1004")
+    assert not SP.same_programme("111.30", "211") and not SP.same_programme("201.5", "801")
+    assert not SP.same_programme("101.7(t)", "201") and not SP.same_programme("507.125", "117")
+    # Subchapter A applies across programmes, either way round (K-002: 812.47 beside 50.24; S-011: 1.511 beside 111.70)
+    assert SP.same_programme("812.47", "50") and SP.same_programme("1.511(a)", "111") and SP.same_programme("4.4", "820")
+    assert SP.same_programme("x", "211")                                    # unparseable: not filtered
+
+
 # ------------------------------------------------------------ TE1: targeted revision of the sentences that failed
 
 
