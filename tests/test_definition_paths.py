@@ -125,3 +125,23 @@ def test_a_deep_base_path_is_read_literally_and_left_for_review():
               Row("c", 2, "(b)(3)(iii)(f)", 2, "Meaningful means a change."), Row("d", 3, "(b)(3)(iv)", 0, "(iv) Withdrawal.")]
     plan = plan_section("314.81", definition_leads(xml)["314.81"], stored)
     assert plan.status == "deep" and not plan.updates
+
+
+def test_def2_definitions_listed_under_a_second_paragraph_stay_in_it():
+    # 820.3 (QMSR): terms under (a), then "(b) All definitions in section 201 ..." and terms under (b). DEF1 restarted
+    # every term at the first definition's paragraph and filed the (b) terms under (a) (300Q M-009 cited 820.3(a))
+    xml = b"""<ECFR><DIV8 N="820.3" TYPE="SECTION"><P>The definitions in ISO 13485 apply to this part.</P>
+    <P>(a) The following terms also apply:</P><P><I>Batch or lot</I> means one or more components.</P>
+    <P><I>Component</I> means any raw material.</P>
+    <P>(b) All definitions in section 201 of the act shall apply:</P>
+    <P><I>Rework</I> means action taken on a nonconforming product.</P>
+    <P><I>Safety and Performance</I> shall have the meaning of safety and effectiveness.</P></DIV8></ECFR>"""
+    stored = [Row("r0", 0, "", 0, "The definitions in ISO 13485 apply to this part."),
+              Row("r1", 1, "(a)", 0, "(a) The following terms also apply:"),
+              Row("r2", 2, "(a)", 1, "Batch or lot means one or more components."),
+              Row("r3", 3, "(a)", 2, "Component means any raw material."),
+              Row("r4", 4, "(b)", 0, "(b) All definitions in section 201 of the act shall apply:"),
+              Row("r5", 5, "(a)", 3, "Rework means action taken on a nonconforming product."),      # as DEF1 left it
+              Row("r6", 6, "(a)", 4, "Safety and Performance shall have the meaning of safety and effectiveness.")]
+    final = {rid: (new, po) for rid, _, _, new, po in plan_section("820.3", definition_leads(xml)["820.3"], stored).updates}
+    assert final == {"r5": ("(b)", 1), "r6": ("(b)", 2)}

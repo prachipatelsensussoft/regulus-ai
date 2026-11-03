@@ -157,7 +157,12 @@ def plan_section(section: str, leads: Sequence[str], rows: Sequence[Row]) -> Sec
             new_paths.append(r.paragraph_path)   # before the first definition: as stored
             continue
         if i in lead_rows:
-            stack = list(base)
+            # DEF2 (3 Nov): at the base level, in the paragraph open there - 820.3 lists definitions under (a) and then
+            # under (b) ("(b) All definitions in section 201 ... Implantable medical device ..."); restarting every
+            # definition at the FIRST definition's paragraph filed the (b) terms under (a) (300Q M-009 cited 820.3(a))
+            open_here = stack[:len(base)]
+            stack = (open_here if base and len(open_here) == len(base) and open_here[-1][0] == base[-1][0]
+                     else list(base))
         else:
             m = _LEAD_DESIGNATORS.match(r.body_text or "")
             if m:
