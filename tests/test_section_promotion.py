@@ -1129,3 +1129,32 @@ def test_te1_a_reply_cut_off_inside_its_only_line_is_not_spliced(monkeypatch):
     out = RagPipeline(LexicalRetriever(TableDatabase()), g, RagConfig(answer_style="apply")).answer(TWO)
     info = out.metadata["generation"]["correction_pass"]
     assert len(g.calls) == 3 and info["targeted"]["spliced"] is False and out.answer.startswith(good[:40])
+
+
+def test_pk3_a_later_pick_of_the_part_takes_the_lowest_reranked_place(monkeypatch):
+    # B-005's shape (full300e): picker "606.100, 606.140, 606.160"; 606.140 below the floor; reranker added 606.60, 606.65
+    sections = {s: [("(a)", "x" * 800)] for s in ("606.100", "606.140", "606.160", "606.60", "606.65", "606.20")}
+    scores = {"606.100": (0.70, "(a)"), "606.140": (0.30, "(a)"), "606.160": (0.80, "(a)"), "606.60": (0.75, "(a)"),
+              "606.65": (0.71, "(a)"), "606.20": (0.5, "(a)")}
+    cands = [{"section": s, "part": "606"} for s in sections]
+    promotion = Promotion(sections=("606.100",), companions=(), method="picker")
+    pr = _companion_promoter(monkeypatch, sections, scores)
+    raw = "21 CFR 606.100, 21 CFR 606.140, 21 CFR 606.160"
+    extra, swapped = pr.picker_later_picks("q", raw, cands, cands[0], promotion, None, ["606.60", "606.65"])
+    assert extra == ["606.60", "606.160"] and swapped == ["606.160"]       # one for one: the lowest reranked one gives way
+    # nothing to replace: nothing is added
+    assert pr.picker_later_picks("q", raw, cands, cands[0], promotion, None, []) == ([], [])
+    # a later pick below the second pick's floor, or already supplied, changes nothing
+    scores["606.160"] = (0.40, "(a)")
+    assert pr.picker_later_picks("q", raw, cands, cands[0], promotion, None, ["606.60", "606.65"]) == (["606.60", "606.65"], [])
+
+
+def test_pk3_never_brings_a_long_section_whole(monkeypatch):
+    sections = {"606.100": [("(a)", "x" * 800)], "606.140": [("(a)", "y" * 800)], "606.160": [("(a)", "z" * 4000)],
+                "606.60": [("(a)", "w" * 800)]}
+    scores = {s: (0.9, "(a)") for s in sections}
+    cands = [{"section": s, "part": "606"} for s in sections]
+    pr = _companion_promoter(monkeypatch, sections, scores)
+    out = pr.picker_later_picks("q", "21 CFR 606.100, 21 CFR 606.140, 21 CFR 606.160", cands, cands[0],
+                                Promotion(sections=("606.100",), companions=(), method="picker"), "606.140", ["606.60"])
+    assert out == (["606.60"], [])                                         # 4,000 characters: not added whole

@@ -420,6 +420,8 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       about, cited ones too, under A3's guards (regulus.rag.validation.excise_flagged_sentences), if the rest validates
   QS1 (3 Nov, off until measured) the QMSR effective-date status note (data/reference/status_notes_v1.json
       "qmsr-effective"), only with a question asking for the change or its compliance date (M-030)
+  PK3 (3 Nov, off until measured) the picker's later same-part picks replace the reranker's lowest additions one for one
+      (key share 50% vs 11%), within MS1's allowance; never an addition of their own
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

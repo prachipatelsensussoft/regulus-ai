@@ -215,6 +215,7 @@ MS1_MAX = int(os.environ.get("REGULUS_MS1_MAX", "2"))
 MS1_MAX_CHARS = int(os.environ.get("REGULUS_MS1_MAX_CHARS", "6000"))
 XC1_MIN_SCORE = float(os.environ.get("REGULUS_XC1_MIN_SCORE", "0.85"))  # XC1: a candidate of another part, this sure
 XC1_MAX = 1
+PK3_PICKS = 6   # PK3: picker picks read (the first two are SP2's)
 # XG1: the Title 21 Chapter I subchapter a part belongs to - the programme its rules are written for. C (200-299) and D
 # (300-499) are both human drugs; 225/226 (medicated feed CGMP, Type A articles) sit in C but are animal food (E)
 _SUBCHAPTERS = ((1, 99, "A"), (100, 199, "B"), (200, 499, "CD"), (500, 599, "E"), (600, 680, "F"), (700, 799, "G"),
@@ -748,6 +749,34 @@ class SectionPromoter:
         if precision_fix("XC1"):
             out += self._cross_part_companion(cands, scores, part, have | {x.split("(")[0] for x in out}, chars)
         return out
+
+    def picker_later_picks(self, question: str, raw: str, cands: list[dict], picked_c: dict, pr: "Promotion",
+                           second_cfr: str | None, extra: list[str]) -> tuple[list[str], list[str]]:
+        """PK3 (3 Nov): the picker's third and later picks of the promoted section's part take the places of the reranker's
+        lowest-scored additions, one for one, within MS1's character allowance - never an addition of their own.
+        full300e: of 215 reranked companions 11% were key sections; of the picker's second picks 46%, of its later
+        same-part picks 50% (B-005 606.160, P-010 812.46, Y-002 112.45-112.46). A later pick needs the second pick's
+        cross-encoder floor (SP2F_MIN_SCORE). Returns (the additions, the later picks now among them)."""
+        later = parse_picks(raw, len(cands), [c["section"] for c in cands], limit=PK3_PICKS)[2:]
+        have = {c.split("(")[0] for c in pr.citations} | {second_cfr} | {e.split("(")[0] for e in extra}
+        pool = [cands[i - 1]["section"] for i in later
+                if not cands[i - 1].get("statute") and cands[i - 1]["part"] == picked_c["part"]
+                and cands[i - 1]["section"] not in have]
+        if not pool:
+            return extra, []
+        kept = self.__dict__.get("_order_scores")
+        scores = (kept[2] if kept and kept[0] == question and set(kept[1]) == {c["section"] for c in cands}
+                  else self.rerank_scores(question, cands))
+        size = lambda label: len(self._section_text(label.split("(")[0]))   # noqa: E731
+        # a section short enough to go whole (PL1's rule); a longer one would come as a paragraph family, MS1's way
+        pool = [s for s in pool if scores and scores.get(s, (0.0, ""))[0] >= SP2F_MIN_SCORE
+                and 0 < size(s) <= PL1_WHOLE_CHARS][:len(extra)]
+        if not pool:
+            return extra, []
+        out = list(extra[:len(extra) - len(pool)]) + pool
+        if sum(size(x) for x in out) > MS1_MAX_CHARS and sum(size(x) for x in out) > sum(size(x) for x in extra):
+            return extra, []   # never more text than the reranker's own additions or its allowance
+        return out, pool
 
     def _cross_part_companion(self, cands: list[dict], scores: dict, part: str, have: set, chars: int) -> list[str]:
         """XC1 (29 Oct, step E4): the best regulation candidate from a part other than the promoted section's, when the
@@ -2288,6 +2317,10 @@ class SectionPromoter:
                     pr = replace(pr, notes=pr.notes + (f"compared pick {c['section']} below the reranker floor",))
         if precision_fix("MS1") and raw is not None:
             extra = self.reranked_companions(question, cands, pr)
+            if extra and precision_fix("PK3") and not picked_c.get("statute"):
+                extra, swapped = self.picker_later_picks(question, raw, cands, picked_c, pr, second_cfr, extra)
+                if swapped:
+                    pr = replace(pr, notes=pr.notes + (f"later pick: {', '.join(swapped)}",))
             if extra:
                 pr = replace(pr, companions=pr.companions + tuple(extra), notes=pr.notes + (f"reranked: {', '.join(extra)}",))
         if precision_fix("XP1") and pr.sections:

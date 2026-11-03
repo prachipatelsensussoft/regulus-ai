@@ -1189,6 +1189,16 @@ switches:
       full300e M-030 (PF) said the compliance date is not in the sources - no eCFR paragraph carries it; the fact is the
       final rule's, already in data/reference/qmsr_v1.json; 300Q fires 1 (M-030), bank 8; not yet measured
     interactions: [S1]
+  PK3:
+    purpose: the picker's third and later picks of the promoted section's part (at the second pick's cross-encoder floor, short enough to go whole) take the places of the reranker's lowest-scored additions, one for one, within MS1's allowance - never added on their own
+    stage: selection
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-03", commit: "this commit (PK3)"}
+    evidence: >-
+      full300e - key share of supplied additions: reranked companions 23/215 (11%), picker second picks 26/57 (46%),
+      unused later same-part picks 6/12 (50%: B-005 606.160, P-010 812.46, Y-002 112.45/112.46, C-004); not yet measured
+    interactions: [MS1, SP2, SP2F]
 
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
