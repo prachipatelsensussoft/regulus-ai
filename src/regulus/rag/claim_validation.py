@@ -216,6 +216,9 @@ _SUPPORTED_BY = {
 # certification" restates it
 _EXEMPT_SUPPORT = re.compile(r"\b(?:unless|except|exempt|other than|exception)|\b(?:is|are|be)\s+not\s+(?:necessary|required)\b|"
                              r"\bneed\s+not\b", re.I)
+# EX2 (3 Nov): "Subparts C and G of this part do not apply with respect to activities that are subject to part 123"
+# (117.5(b)) is an exemption too; the answer's "are exempt from subparts C and G" restates it (full300e F-002 withheld)
+_EXEMPT_SUPPORT_EX2 = re.compile(_EXEMPT_SUPPORT.pattern + r"|\b(?:does|do)\s+not\s+apply\b|\bnot\s+(?:be\s+)?subject\s+to\b", re.I)
 # pipeline-authored and refusal sentences are not claims about the evidence
 _NOT_A_CLAIM = re.compile(r"could not be validated|do(?:es)? not provide enough information|do(?:es)? not (?:cover|establish)|"
                           r"not found in the available|were not verified|no answer is given|verbatim\)?:|"
@@ -553,11 +556,16 @@ def check_claims(sentences: list[str], package, *, question: str | None = None, 
                     kin |= {j for j, idj in identities.items() if j not in marks and idj and idj[:2] == idi[:2]
                             and names.search(by_index[j].text or "")}
             cited_texts = cited_texts + [by_index[j].text for j in sorted(kin)]
+        if precision_fix("EX2"):
+            # EX2 (3 Nov): a cited paragraph's section heading is its text too - 117.5 "Exemptions." governs 117.5(b)
+            cited_texts = cited_texts + [by_index[i].heading for i in marks if getattr(by_index[i], "heading", None)]
         for group, pattern in _CONDITION_GROUPS.items():
             m = pattern.search(content)
             if not m:
                 continue
             supported_by = (_EXEMPT_SUPPORT if group == "exception" and precision_fix("EX1") else _SUPPORTED_BY[group])
+            if group == "exception" and precision_fix("EX2"):
+                supported_by = _EXEMPT_SUPPORT_EX2
             if not any(supported_by.search(t or "") for t in all_texts):
                 findings.append(ClaimFinding(INVENTED_CONDITION, SEVERITY[INVENTED_CONDITION],
                                              f"condition '{m.group(0)}' appears in no supplied source",

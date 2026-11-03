@@ -411,6 +411,8 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       other-programme XC1 additions went 4 down / 0 up (111.30 beside drug 211.68, 201.5 beside device 801.5)
   MK1 (3 Nov, off until measured) a marker naming several sources ("[13-19, 21]") is taken out before the figure check:
       10 of full300e's 14 unsupported_figure withholds were over marker numbers only
+  EX2 (3 Nov, off until measured) EX1 widened: a source's "does not apply" / "not subject to" supports an answer's
+      "exempt", and a cited paragraph's section heading counts as cited text (F-002: 117.5(b) "do not apply")
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

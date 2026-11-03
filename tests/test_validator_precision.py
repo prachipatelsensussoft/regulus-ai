@@ -506,3 +506,48 @@ def test_c3_a_sibling_naming_the_cited_paragraph_states_its_condition(monkeypatc
     assert "condition_not_in_cited_source" in codes()
     monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"C3"})
     assert "condition_not_in_cited_source" not in codes()
+
+
+# ------------------------------------------------------------ EX2 "do not apply" and the section heading
+
+
+def test_ex2_an_exemption_restated_from_do_not_apply_is_cited_to_its_own_paragraph(monkeypatch):
+    from types import SimpleNamespace as N
+    from regulus.rag import validator_switches as VS
+    from regulus.rag.claim_validation import check_claims
+    # full300e F-002: 117.5(b) cited for "exempt"; another supplied 117.5 paragraph says "exempt" - withheld
+    b = N(index=1, citation="21 CFR 117.5(b)", tier="exact", requirement_ids=("r1",), is_docket=False, heading=None, text=(
+        "(b) Subparts C and G of this part do not apply with respect to activities that are subject to part 123 of this "
+        "chapter (Fish and Fishery Products) at a facility if you are required to comply with, and are in compliance with, part 123."))
+    g = N(index=2, citation="21 CFR 117.5(g)", tier="exact", requirement_ids=("r1",), is_docket=False, heading=None, text=(
+        "(g) The exemption in paragraph (g)(1) applies to a facility solely engaged in the storage of raw agricultural commodities."))
+    pkg = N(sources=[b, g], answer_style="explain", question="What exemptions apply?", requirements=())
+    s = "Activities subject to part 123 are exempt from subparts C and G if the facility is in compliance with part 123 [1]."
+    codes = lambda: {f.code for f in check_claims([s], pkg)}
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION - {"EX2"})
+    assert "condition_not_in_cited_source" in codes()
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"EX2"})
+    assert "condition_not_in_cited_source" not in codes()
+    # an "exempt" claim cited to a paragraph that states no exemption at all is still flagged
+    plain = N(index=3, citation="21 CFR 117.10(a)", tier="exact", requirement_ids=("r1",), is_docket=False, heading=None,
+              text="(a) Disease control. Any person who appears to have an illness must be excluded from operations.")
+    pkg.sources.append(plain)
+    assert "condition_not_in_cited_source" in {f.code for f in check_claims(
+        ["Persons with an illness are exempt from operations under the disease control rule [3]."], pkg)}
+
+
+def test_ex2_the_cited_paragraphs_section_heading_states_the_exemption(monkeypatch):
+    from types import SimpleNamespace as N
+    from regulus.rag import validator_switches as VS
+    from regulus.rag.claim_validation import check_claims
+    d = N(index=1, citation="21 CFR 117.5(d)(1)", tier="exact", requirement_ids=("r1",), is_docket=False,
+          heading="§ 117.5 Exemptions.", text="(d)(1) Subpart B of this part applies only to the microbiological hazards.")
+    o = N(index=2, citation="21 CFR 117.5(a)", tier="exact", requirement_ids=("r1",), is_docket=False, heading=None,
+          text="(a) Except as provided by subpart E of this part, subparts C and G of this part do not apply to a qualified facility.")
+    pkg = N(sources=[d, o], answer_style="explain", question="What exemptions apply?", requirements=())
+    s = "Under this exemption, Subpart B applies only to the microbiological hazards [1]."
+    codes = lambda: {f.code for f in check_claims([s], pkg)}
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION - {"EX2"})
+    assert "condition_not_in_cited_source" in codes()
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"EX2"})
+    assert "condition_not_in_cited_source" not in codes()
