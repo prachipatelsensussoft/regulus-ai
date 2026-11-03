@@ -2337,7 +2337,7 @@ class RagPipeline:
             # program closed, 740.18 stayed, no 606 rule), appended verbatim after validation
             from regulus.rag.status_notes import status_notes
 
-            notes = status_notes(answer_text, package.sources)
+            notes = status_notes(answer_text, package.sources, question)
             if notes:
                 answer_text = answer_text.rstrip() + "\n\n" + "\n".join(n["text"] for n in notes)
                 generation_info["status_notes"] = [n["id"] for n in notes]

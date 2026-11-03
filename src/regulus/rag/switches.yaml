@@ -1179,6 +1179,16 @@ switches:
       full300e - 6 of 27 FAILs were declines although one or two sentences carried the error (D-001, C-002); quoted
       fallbacks give 18 PASS, so SR1 leaves them alone; not yet measured
     interactions: [A3]
+  QS1:
+    purpose: the QMSR effective-date status note (89 FR 7496, effective 2 Feb 2026; Subparts C-O removed and reserved; ISO 13485 incorporated by reference), appended to an answer citing part 820 only when the question asks what changed with the amendment or its compliance/effective date
+    stage: post_answer
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-03", commit: "this commit (QS1)"}
+    evidence: >-
+      full300e M-030 (PF) said the compliance date is not in the sources - no eCFR paragraph carries it; the fact is the
+      final rule's, already in data/reference/qmsr_v1.json; 300Q fires 1 (M-030), bank 8; not yet measured
+    interactions: [S1]
 
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:

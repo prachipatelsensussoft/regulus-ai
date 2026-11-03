@@ -418,6 +418,8 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       bank precision 97.4% on 231 new routes, DR1's routes unchanged
   SR1 (3 Nov, off until measured) in place of a WITHHELD answer only: the draft without the whole sentences its errors are
       about, cited ones too, under A3's guards (regulus.rag.validation.excise_flagged_sentences), if the rest validates
+  QS1 (3 Nov, off until measured) the QMSR effective-date status note (data/reference/status_notes_v1.json
+      "qmsr-effective"), only with a question asking for the change or its compliance date (M-030)
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

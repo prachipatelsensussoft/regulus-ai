@@ -20,6 +20,14 @@
       "act_sections": ["606"],
       "text": "Status note (Federal Register, checked 23 Oct 2026): FD&C Act § 606 directs FDA to issue good manufacturing practice regulations for cosmetic facilities; FDA has published no proposed or final rule under it (the only Federal Register document is the April 2023 listening-session notice, 2023-08942).",
       "source": "https://www.federalregister.gov/documents/2023/04/27/2023-08942"
+    },
+    {
+      "id": "qmsr-effective",
+      "cfr_parts": ["820"],
+      "switch": "QS1",
+      "question": "\\b(?:compliance|effective)\\s+date\\b|\\bwhen\\b[^?]*\\b(?:take|took|takes)\\s+effect\\b|\\bwhat\\s+changed\\b[^?]*\\b(?:part\\s+820|QMSR|Quality\\s+Management\\s+System\\s+Regulation|Quality\\s+System\\s+regulation)\\b",
+      "text": "Status note (Federal Register, checked 26 Oct 2026): part 820 was amended by the final rule \"Medical Devices; Quality System Regulation Amendments\" (89 FR 7496, 2 Feb 2024, Federal Register document 2024-01709), which took effect on 2 February 2026. The amended part incorporates ISO 13485:2016 by reference (21 CFR 820.7), and Subparts C through O of the former Quality System regulation were removed and reserved.",
+      "source": "data/reference/qmsr_v1.json sources.rule (Federal Register document 2024-01709); 21 CFR 820.7"
     }
   ]
 }
