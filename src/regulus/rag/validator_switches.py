@@ -413,6 +413,9 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       10 of full300e's 14 unsupported_figure withholds were over marker numbers only
   EX2 (3 Nov, off until measured) EX1 widened: a source's "does not apply" / "not subject to" supports an answer's
       "exempt", and a cited paragraph's section heading counts as cited text (F-002: 117.5(b) "do not apply")
+  DR2 (3 Nov, off until measured) DR1 for seven more programmes (device labeling, device postmarket, FSVP, seafood, juice,
+      canned/acidified foods, produce) and the tobacco APPH standard (regulus.retrieval.programmes.PROGRAMMES_DR2):
+      bank precision 97.4% on 231 new routes, DR1's routes unchanged
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

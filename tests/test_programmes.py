@@ -210,3 +210,49 @@ def test_qd3_another_parts_sub_question_section_needs_the_stricter_floor(monkeyp
     assert pr.decomposed_sections(q, None, ("822",)) == ["822.3", "801.20"]  # its own part: the 0.5 floor
     monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION - {"QD3"})
     assert pr.decomposed_sections(q, None, ("830",)) == ["822.3", "801.20"]  # off: as before
+
+
+# ------------------------------------------------------------ DR2 (3 Nov): the benchmark domains DR1 left unrouted
+
+@pytest.mark.parametrize("question,name", [
+    ("What must a seafood HACCP plan contain, and what monitoring and verification are required?", "seafood_haccp"),   # Y-009
+    ("What supplier verification activities does FSVP require and how is the appropriate activity determined?", "fsvp"),  # V-004
+    ("What must appear on a device label with respect to the name and place of business of the manufacturer?", "device_labeling"),  # U-001
+    ("What events must a device manufacturer report under the Medical Device Reporting regulation?", "device_postmarket"),  # R-001
+    ("What is the 'appropriate for the protection of the public health' standard?", "tobacco"),                          # T-002
+    ("What hazard analysis and HACCP plan requirements apply to juice processors?", "juice_haccp"),
+    ("What pH control requirements apply to acidified foods?", "canned_foods"),
+    ("What requirements apply to agricultural water under the produce safety rule?", "produce_safety"),
+    ("What labeling requirements apply to an in vitro diagnostic product?", "device_labeling"),
+])
+def test_dr2_routes_the_programmes_dr1_left_unrouted(question, name):
+    assert programme_for(question) is None or programme_for(question).name != name   # DR1 alone does not
+    assert programme_for(question, extended=True).name == name
+
+
+@pytest.mark.parametrize("question", [
+    "What does EU MDR Article 10 require of manufacturers?",                                   # SD-001: the European MDR
+    "What should I call a seafood cocktail that has only one type of seafood?",               # 102.54 naming, not HACCP
+    "Do I need to include can dimensions or volume when filing an entry for an acidified food?",  # 1.73 import entry
+    "How should a receiving facility document that an importer follows the foreign supplier verification requirements?",
+    "What kinds of products are considered in vitro diagnostic products?",                    # 201.119
+    "Is it allowed to change the labeling of a device after approval?",                       # 814.80
+])
+def test_dr2_leaves_other_programmes_questions_alone(question):
+    assert programme_for(question, extended=True) is None
+
+
+def test_dr2_keeps_every_dr1_route():
+    # an investigational device's label is 812.5's: device labeling must not take it from device submissions
+    q = "Can an investigational device label claim that it is safe or effective for the purposes of investigation?"
+    assert programme_for(q).name == programme_for(q, extended=True).name == "device_submissions"
+
+
+def test_routed_programme_uses_dr2_only_when_switched_on(monkeypatch):
+    from regulus.rag import validator_switches as VS
+    from regulus.rag.section_promotion import routed_programme
+    q = "What must a seafood HACCP plan contain?"
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", (VS.VALIDATOR_PRECISION | {"DR1"}) - {"DR2"})
+    assert routed_programme(q) is None
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"DR2"})
+    assert routed_programme(q).name == "seafood_haccp"

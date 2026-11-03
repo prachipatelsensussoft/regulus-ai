@@ -143,6 +143,75 @@ PROGRAMMES: tuple[Programme, ...] = (
                       r"VFD drugs?")),
 )
 
+# DR2 (3 Nov, off until measured): the benchmark domains DR1 left unrouted where full300e answered from another
+# programme's section - Y-009 seafood HACCP answered from juice Part 120, V-004 FSVP from Part 117's supply-chain program,
+# U-001 device label from cosmetic 701.12, R-001 Medical Device Reporting never offered 803.50, T-002 the tobacco
+# "appropriate for the protection of the public health" standard answered from 1107.1. Vocabulary is each programme's own
+# terms of art; a question naming two programmes, a 21 CFR part, or another programme's words is left as it is.
+PROGRAMMES_DR2: tuple[Programme, ...] = (
+    Programme(
+        "device_labeling", frozenset({"801", "809", "830"}), (),
+        _ci(r"device labels?", r"device labeling", r"labeling of (?:a |the )?(?:medical )?devices?", r"medical device labels?",
+            r"unique device identifiers?", r"unique device identification", r"prescription devices?",
+            # an IVD's labeling (809.10); "in vitro diagnostic products" alone is also 201.119's drug-labeling exemption
+            r"in vitro diagnostic products?\W+(?:\w+\W+){0,6}label\w*", r"label\w*\W+(?:\w+\W+){0,6}in vitro diagnostic"),
+        _cs(r"UDIs?", r"GUDID"),
+        shared=_ci(r"adequate directions for use", r"principal display panel", r"name and place of business"),
+        context=_ci(r"devices?"),
+        # labeling changes after a PMA approval are Part 814's (814.80); an investigational device's label is 812.5's
+        not_with=_ci(r"approval", r"approved", r"investigational")),
+    Programme(
+        "device_postmarket", frozenset({"803", "806", "821", "822"}), (),
+        _ci(r"medical device reports?", r"medical device reporting", r"MDR reports?", r"corrections and removals",
+            r"reports? of corrections", r"device tracking", r"postmarket surveillance", r"user facilit(?:y|ies)"),
+        _cs(r"MDRs?"),
+        # "EU MDR Article 10" is the European Medical Device Regulation (SD-001, a scope-boundary question)
+        not_with=_ci(r"EU", r"European", r"Articles? \d+")),
+    Programme(
+        # Part 1 Subpart L; the importer is this programme's own subject, not the import-entry filing _OTHER guards against
+        "fsvp", frozenset({"1"}), (),
+        _ci(r"foreign supplier verification(?: programs?)?"),
+        _cs(r"FSVPs?"),
+        # a receiving facility relying on an importer's FSVP is 117.475 / 507.175
+        not_with=_ci(r"receiving facilit(?:y|ies)"),
+        own_other=_ci(r"imports?", r"imported", r"importers?", r"importation")),
+    Programme(
+        "seafood_haccp", frozenset({"123"}), (),
+        # seafood HACCP, not seafood naming (102.54 "seafood cocktail")
+        _ci(r"seafood HACCP", r"seafood processors?", r"seafood processing", r"fish and fishery products", r"fishery products",
+            r"molluscan shellfish"), None),
+    Programme(
+        "juice_haccp", frozenset({"120"}), (),
+        _ci(r"juice HACCP", r"juice processors?", r"juice processing"), None),
+    Programme(
+        "canned_foods", frozenset({"108", "113", "114"}), (),
+        _ci(r"low-acid canned foods?", r"low-acid foods?", r"acidified foods?", r"thermally processed",
+            r"hermetically sealed containers?", r"scheduled process(?:es)?"),
+        _cs(r"LACF"),
+        # the import entry filing for these foods (1.73) is Part 1 Subpart D
+        not_with=_ci(r"entry", r"entries", r"submission identifier")),
+    Programme(
+        "produce_safety", frozenset({"112"}), (),
+        # not "sprouts" alone: the traceability rule's sprouts records (1.1330) use it too
+        _ci(r"produce safety", r"covered produce", r"agricultural water", r"biological soil amendments?"), None),
+)
+# DR2: the tobacco programme also by its own premarket standard (910(c)(4), 1114.7(l))
+_TOBACCO_DR2_WORDS = _ci(r"appropriate for the protection of the public health")
+_TOBACCO_DR2_ACRONYMS = _cs(r"APPH")
+
+
+def programmes(extended: bool = False) -> tuple[Programme, ...]:
+    """DR1's programmes, with DR2's when `extended`."""
+    if not extended:
+        return PROGRAMMES
+    from dataclasses import replace
+
+    tobacco = PROGRAMMES[0]
+    tobacco = replace(tobacco, words=re.compile(tobacco.words.pattern + "|" + _TOBACCO_DR2_WORDS.pattern, re.I),
+                      acronyms=re.compile(tobacco.acronyms.pattern + "|" + _TOBACCO_DR2_ACRONYMS.pattern))
+    return (tobacco,) + PROGRAMMES[1:] + PROGRAMMES_DR2
+
+
 _PART_NAMED = re.compile(r"\b(?:21\s*CFR|Part|Parts|§)\s*\d", re.I)
 # another product programme or the import entry filing (ACE, Part 1 Subpart D) named: routing would hide its sections.
 # Not for combination products, which are drug-device-biologic by definition
@@ -152,15 +221,19 @@ _OTHER = _ci(r"drugs?", r"over-the-counter", r"imports?", r"imported", r"importe
 _OTHER_ACRONYMS = _cs(r"OTC", r"IND", r"NDAs?", r"ANDAs?", r"ACE", r"D&C")
 
 
-def programme_for(question: str) -> Programme | None:
-    """The one programme the question names, or None (none, several, or a 21 CFR part named - the part decides)."""
+def programme_for(question: str, extended: bool = False) -> Programme | None:
+    """The one programme the question names, or None (none, several, or a 21 CFR part named - the part decides).
+    `extended`: DR2's programmes too."""
     q = question or ""
     if _PART_NAMED.search(q):
         return None
-    hits = [p for p in PROGRAMMES
+    hits = [p for p in programmes(extended)
             if p.words.search(q) or (p.acronyms is not None and p.acronyms.search(q))
             or (p.shared is not None and p.shared.search(q) and p.context is not None and p.context.search(q))]
     hits = [p for p in hits if not any(p.name in h.subsumes for h in hits)]
+    # a DR2 programme its own exclusions rule out does not compete with the one the question names ("investigational
+    # device label" is 812.5's); DR1's programmes keep their order (exclusion after the count) unchanged
+    hits = [p for p in hits if not (p in PROGRAMMES_DR2 and p.not_with is not None and p.not_with.search(q))]
     if len(hits) != 1:
         return None
     p = hits[0]

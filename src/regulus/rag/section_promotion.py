@@ -451,7 +451,7 @@ def routed_programme(question: str):
         return None
     from regulus.retrieval.programmes import programme_for
 
-    return programme_for(question)
+    return programme_for(question, extended=precision_fix("DR2"))
 
 
 def authority_sections(parts: list[str]) -> list[str]:

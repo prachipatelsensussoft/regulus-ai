@@ -1159,6 +1159,16 @@ switches:
       full300e F-002 (PF) withheld for 6 condition_not_in_cited_source findings, each "exempt" restating a 117.5
       paragraph that says "do not apply"; not yet measured
     interactions: [EX1, C2, C3]
+  DR2:
+    purpose: DR1 routing for the benchmark domains it left unrouted - device labeling/UDI/IVD labeling (801/809/830), device postmarket reporting (803/806/821/822), FSVP (Part 1), seafood HACCP (123), juice HACCP (120), low-acid canned and acidified foods (108/113/114), produce safety (112); tobacco also by its "appropriate for the protection of the public health" standard
+    stage: retrieval
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-03", commit: "this commit (DR2)"}
+    evidence: >-
+      gold-labelled bank (6,875 generated questions): 231 newly routed, 97.4% inside the gold part's programme (DR1:
+      97.6%), 0 DR1 routes changed; 300Q fires 27 (Y-009 V-004 U-001 R-001 T-002 among them); not yet measured
+    interactions: [DR1, XG1]
 
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
