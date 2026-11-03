@@ -551,3 +551,55 @@ def test_ex2_the_cited_paragraphs_section_heading_states_the_exemption(monkeypat
     assert "condition_not_in_cited_source" in codes()
     monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"EX2"})
     assert "condition_not_in_cited_source" not in codes()
+
+
+# ------------------------------------------------------------ SR1 sentence remediation in place of a withheld answer
+
+
+_SR1_DRAFT = ("Part 211 sets the minimum current good manufacturing practice for drug products [1]. "
+              "It applies to drug products for administration to humans or animals [1]. "
+              "Positron emission tomography drugs are excluded unless otherwise specified [1]. "
+              "The regulations in parts 210 and 211 supplement each other [2].")
+_SR1_BAD = "Positron emission tomography drugs are excluded unless otherwise specified [1]."
+
+
+def test_sr1_removes_a_cited_sentence_the_validator_rejected():
+    from regulus.rag.validation import excise_flagged_sentences, excise_unsupported_sentences
+    # D-001's shape (full300e FAIL, withheld): one sentence's condition is in another source, not the cited one
+    rep = _report(ValidationProblem("condition_not_in_cited_source", "error", "condition 'unless' is in a supplied source, "
+                                    "but not in the one(s) cited", sentence=_SR1_BAD))
+    out = excise_flagged_sentences(_SR1_DRAFT, rep, "What is the scope of Part 211?")
+    assert out is not None and _SR1_BAD not in out[0] and out[1] == 1 and "supplement each other [2]" in out[0]
+    # A3 alone keeps refusing cited errors and other codes: its behaviour is unchanged
+    assert excise_unsupported_sentences(_SR1_DRAFT, rep, "What is the scope of Part 211?") is None
+
+
+def test_sr1_keeps_a3s_guards():
+    from regulus.rag.validation import excise_flagged_sentences
+    q = "What is the scope of Part 211?"
+    first = _SR1_DRAFT.split(" [1]. ")[0] + " [1]."
+    # never the verdict (first) sentence
+    assert excise_flagged_sentences(_SR1_DRAFT, _report(ValidationProblem("unsupported_claim", "error", "x", sentence=first)), q) is None
+    # an error that is not one sentence's (truncation, degeneracy) leaves the draft alone
+    assert excise_flagged_sentences(_SR1_DRAFT, _report(ValidationProblem("truncated", "error", "stopped")), q) is None
+    # more than a third of the substantive sentences flagged: the draft is off its evidence, not trimmed
+    s2 = "It applies to drug products for administration to humans or animals [1]."
+    rep = _report(ValidationProblem("unsupported_claim", "error", "x", sentence=s2),
+                  ValidationProblem("condition_not_in_cited_source", "error", "x", sentence=_SR1_BAD))
+    assert excise_flagged_sentences(_SR1_DRAFT, rep, q) is None
+    # the only sentence speaking to a word of the question stays: removing it would drop part of the answer
+    q2 = "Are positron emission tomography drugs excluded?"
+    rep = _report(ValidationProblem("condition_not_in_cited_source", "error", "x", sentence=_SR1_BAD))
+    assert excise_flagged_sentences(_SR1_DRAFT, rep, q2) is None
+
+
+def test_sr1_locates_an_unsupported_figure_by_its_number():
+    from regulus.rag.validation import excise_flagged_sentences
+    draft = ("Records must be kept for 1 year after the expiration date [1]. Records may be original or true copies [2]. "
+             "Electronic records must comply with part 11 [3]. A copy must reach FDA within 45 days [1].")
+    rep = _report(ValidationProblem("unsupported_figure", "error", "figure(s) not found in any supplied source: 45"))
+    out = excise_flagged_sentences(draft, rep, "How long must records be kept?")
+    assert out is not None and "45 days" not in out[0] and "1 year" in out[0]
+    # the figure inside a source marker is not a sentence's figure
+    rep = _report(ValidationProblem("unsupported_figure", "error", "figure(s) not found in any supplied source: 3"))
+    assert excise_flagged_sentences(draft.replace("45 days [1]", "45 days"), rep, "How long?") is None

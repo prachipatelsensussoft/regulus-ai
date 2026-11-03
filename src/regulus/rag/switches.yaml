@@ -1169,6 +1169,16 @@ switches:
       gold-labelled bank (6,875 generated questions): 231 newly routed, 97.4% inside the gold part's programme (DR1:
       97.6%), 0 DR1 routes changed; 300Q fires 27 (Y-009 V-004 U-001 R-001 T-002 among them); not yet measured
     interactions: [DR1, XG1]
+  SR1:
+    purpose: an answer about to be WITHHELD whose errors are each one sentence's is delivered without those sentences (cited ones too, A3's guards otherwise), when the rest validates in full - the source's own items appended for an omission; never in place of a quoted fallback
+    stage: post_answer
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-03", commit: "this commit (SR1)"}
+    evidence: >-
+      full300e - 6 of 27 FAILs were declines although one or two sentences carried the error (D-001, C-002); quoted
+      fallbacks give 18 PASS, so SR1 leaves them alone; not yet measured
+    interactions: [A3]
 
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:

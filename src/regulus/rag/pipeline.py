@@ -91,6 +91,8 @@ from regulus.rag.validation import (
     STATUS_UNSUPPORTED,
     ValidationReport,
     attach_trailing_markers,
+    SR1_APPENDABLE,
+    excise_flagged_sentences,
     excise_unsupported_sentences,
     repoint_named_citations,
     resolve_label_citations,
@@ -1279,6 +1281,7 @@ class RagPipeline:
                     "fallback_type": fallback_type, "fallback_reason": f"the answer affirmed a premise the provision does not state: {premise[0].detail}"}
         kwargs = ({"quote": quote, "unquotable": frozenset(r.id for r in plan.requirements if r.reference.section is None),
                    "sources": sources} if gate_on else {})
+        draft = text
         text, repair = self.repair_answer(text, package, report, **kwargs)
         repair_output = text if repair is not None else None
         final = validate_answer(text, package, gen) if repair is not None else report
@@ -1301,8 +1304,34 @@ class RagPipeline:
                 text, final, fallback_type = quoted, validate_answer(quoted, package, gen), FB_FOCUSED_QUOTE
                 fallback_reason = f"{fallback_reason}; the governing provision is quoted instead"
                 repair = (repair + "+" if repair else "") + FB_FOCUSED_QUOTE
+        if fallback_type == FB_UNVALIDATED and precision_fix("SR1"):
+            # SR1 (3 Nov): an answer about to be withheld whose errors are each one sentence's is delivered without those
+            # sentences - when the rest validates in full (the source's own items appended for an omission). full300e:
+            # 6 of its 27 FAILs were declines over one or two sentences (D-001, C-002). Only in place of a decline: a
+            # quoted fallback is kept, since 18 PASS come from one
+            remedied = self.remediate_sentences(draft, package, report, gen, question, kwargs)
+            if remedied is not None:
+                text, final, how = remedied
+                repair = (repair + "+" if repair else "") + how
+                fallback_type = fallback_reason = None
         return {"text": text, "repair": repair, "repair_output": repair_output, "final": final,
                 "fallback_type": fallback_type, "fallback_reason": fallback_reason}
+
+    def remediate_sentences(self, draft: str, package: GenerationPackage, report: ValidationReport, gen, question: str,
+                            repair_kwargs: dict) -> tuple[str, ValidationReport, str] | None:
+        """SR1: (text, its validation, repair label) of `draft` without the sentences its errors are about, or None when
+        that is not safe or the rest does not validate (regulus.rag.validation.excise_flagged_sentences)."""
+        excised = excise_flagged_sentences(draft, report, question)
+        if excised is None:
+            return None
+        text, n = excised
+        final = validate_answer(text, package, gen)
+        how = f"SR1_sentences_removed:{n}"
+        if not final.ok and {p.code for p in final.errors} <= SR1_APPENDABLE:
+            text, appended = self.repair_answer(text, package, final, **repair_kwargs)
+            final = validate_answer(text, package, gen)
+            how += f"+{appended}" if appended else ""
+        return (text, final, how) if final.ok else None
 
     # -- main entry ----------------------------------------------------------
 

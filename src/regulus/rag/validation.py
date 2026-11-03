@@ -308,8 +308,46 @@ def excise_unsupported_sentences(text: str, report: "ValidationReport", question
     So at most EXCISE_MAX sentences and at most a third of the substantive ones; every question word a removed
     sentence speaks to must still be spoken to by one that stays; what stays must cite a source and must not open by
     declining. The caller validates the rest again, completeness included, and uses it only if it validates."""
-    errors = report.errors
-    if not errors or any(p.code not in EXCISABLE_CODES or not p.sentence for p in errors):
+    return _excise(text, report, question, EXCISABLE_CODES, EXCISE_MAX, cited_errors=False)
+
+
+# SR1 (3 Nov): the sentence-level errors a draft that would otherwise be WITHHELD loses whole sentences for. full300e:
+# 6 FAILs were declines although one or two sentences carried the error (D-001: "unless otherwise specified" added to
+# 211.1(a); C-002 701.9(a) cited to another paragraph). Not enumeration_incomplete / requirement_not_addressed (they
+# are repaired by appending the source's own items), truncation or degeneracy (never trimmed into a valid answer)
+SR1_CODES = frozenset({"unsupported_claim", "invented_condition", "condition_not_in_cited_source", "obligation_strengthened",
+                       "figure_misattributed", "unsupported_figure", "false_denial", "citation_mismatch",
+                       "provision_citation_mismatch"})
+SR1_APPENDABLE = frozenset({"enumeration_incomplete", "requirement_not_addressed"})
+SR1_MAX = 3
+_FIGURE_DETAIL_RE = re.compile(r"not found in any supplied source:\s*(.+)$")
+
+
+def excise_flagged_sentences(text: str, report: "ValidationReport", question: str | None = None) -> tuple[str, int] | None:
+    """SR1: the draft without the whole sentences its errors are about - cited ones too - or None. A3's guards all hold
+    (never the verdict sentence, at most SR1_MAX and a third of the substantive sentences, every question word still
+    spoken to, what stays cites a source and does not decline, the evidence-does-not-govern verdict kept); errors that
+    are not one sentence's (other than appendable omissions) leave the draft as it is. The caller validates the rest,
+    completeness included, and uses it only in place of a withheld answer."""
+    return _excise(text, report, question, SR1_CODES, SR1_MAX, cited_errors=True, appendable=SR1_APPENDABLE)
+
+
+def _flagged_sentences(p: "ValidationProblem", sentences: list[str]) -> list[str]:
+    if (p.sentence or "").strip():
+        return [p.sentence]
+    m = _FIGURE_DETAIL_RE.search(p.detail or "") if p.code == UNSUPPORTED_FIGURE else None
+    if not m:
+        return []
+    figures = [f.strip() for f in m.group(1).split(",") if f.strip()]
+    return [s for s in sentences if any(re.search(rf"(?<![\w.]){re.escape(f)}(?![\w])", MARK_RE.sub(" ", s)) for f in figures)]
+
+
+def _excise(text: str, report: "ValidationReport", question: str | None, codes: frozenset, max_n: int, *,
+            cited_errors: bool, appendable: frozenset = frozenset()) -> tuple[str, int] | None:
+    errors = [p for p in report.errors if p.code not in appendable]
+    if not errors or any(p.code not in codes for p in errors):
+        return None
+    if not cited_errors and any(not p.sentence for p in errors):
         return None
     if report.truncated or report.finished is False:
         return None   # a cut-off draft is not trimmed into a valid one (701.13-G1: repetitive and truncated, blind A/B)
@@ -319,10 +357,13 @@ def excise_unsupported_sentences(text: str, report: "ValidationReport", question
         # the verdict itself says the supplied provision does not govern the question: the evidence is the wrong
         # section, and the honest outcome is the withheld answer (UC-015: "cannot establish compliance under 700.27")
         return None
-    flagged = list(dict.fromkeys(p.sentence for p in errors))
+    located = [_flagged_sentences(p, sentences) if cited_errors else [p.sentence] for p in errors]
+    if any(not ss for ss in located):
+        return None
+    flagged = list(dict.fromkeys(s for ss in located for s in ss))
     words = lambda s: _content_words(MARK_RE.sub(" ", s))  # noqa: E731
     substantive = [s for s in sentences if len(words(s)) >= 4]
-    if len(flagged) > EXCISE_MAX or 3 * len(flagged) > max(len(substantive), 1):
+    if len(flagged) > max_n or 3 * len(flagged) > max(len(substantive), 1):
         return None
     kept = [s for s in sentences if s not in flagged]
     if not kept or not any(MARK_RE.search(s) for s in kept) or classify_answer(kept[0]) == REFUSAL:
@@ -333,9 +374,10 @@ def excise_unsupported_sentences(text: str, report: "ValidationReport", question
         if s.strip() == sentences[0].strip() or s not in attached:
             return None
         w = words(s)
-        repeats = bool(w) and any(len(w & words(q)) / len(w) >= REPEAT_OVERLAP for q in kept)
-        if MARK_RE.search(s) and not repeats:
-            return None   # a cited claim the evidence does not support is a real error, not filler
+        if not cited_errors:
+            repeats = bool(w) and any(len(w & words(q)) / len(w) >= REPEAT_OVERLAP for q in kept)
+            if MARK_RE.search(s) and not repeats:
+                return None   # a cited claim the evidence does not support is a real error, not filler
         if (w & asked) - kept_words:
             return None   # it is the only sentence that speaks to part of the question
     out = attached
