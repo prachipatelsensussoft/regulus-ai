@@ -1132,11 +1132,11 @@ switches:
   XG1:
     purpose: XC1's cross-part companion must come from the promoted section's programme (Title 21 subchapter; Subchapter A, Parts 1-99, joins any)
     stage: selection
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-11-03", commit: "this commit (XG1)"}
     evidence: >-
-      full300e vs full300d - the 8 XC1 additions from another programme went 4 down / 0 up (D-008 111.30, M-021 211.198,
+      combo4_20261103 (3 Nov) - U-003 PF->PP reproduced in 3 blind passes; D-008 M-021 G-005 D-016 same; 0 confirmed down; earlier: full300e vs full300d - the 8 XC1 additions from another programme went 4 down / 0 up (D-008 111.30, M-021 211.198,
       U-002 201.5, U-003 201.120; three were PASS); the 6 XC1 ups were all same-programme; not yet measured
     interactions: [XC1]
   MK1:
@@ -1162,11 +1162,11 @@ switches:
   DR2:
     purpose: DR1 routing for the benchmark domains it left unrouted - device labeling/UDI/IVD labeling (801/809/830), device postmarket reporting (803/806/821/822), FSVP (Part 1), seafood HACCP (123), juice HACCP (120), low-acid canned and acidified foods (108/113/114), produce safety (112); tobacco also by its "appropriate for the protection of the public health" standard
     stage: retrieval
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-11-03", commit: "this commit (DR2)"}
     evidence: >-
-      gold-labelled bank (6,875 generated questions): 231 newly routed, 97.4% inside the gold part's programme (DR1:
+      combo4_20261103 (3 Nov) - Y-009 FAIL->PASS (2 passes), V-004 FAIL->PF, U-003 PF->PP; U-002/R-001 downs (withheld drafts) not confirmed by a second scorer; U-006 PASS kept; earlier: gold-labelled bank (6,875 generated questions): 231 newly routed, 97.4% inside the gold part's programme (DR1:
       97.6%), 0 DR1 routes changed; 300Q fires 27 (Y-009 V-004 U-001 R-001 T-002 among them); not yet measured
     interactions: [DR1, XG1]
   SR1:
@@ -1182,21 +1182,21 @@ switches:
   QS1:
     purpose: the QMSR effective-date status note (89 FR 7496, effective 2 Feb 2026; Subparts C-O removed and reserved; ISO 13485 incorporated by reference), appended to an answer citing part 820 only when the question asks what changed with the amendment or its compliance/effective date
     stage: post_answer
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-11-03", commit: "this commit (QS1)"}
     evidence: >-
-      full300e M-030 (PF) said the compliance date is not in the sources - no eCFR paragraph carries it; the fact is the
+      combo4_20261103 (3 Nov) - M-030 PF->PP in 2 blind passes; 0 down; earlier: full300e M-030 (PF) said the compliance date is not in the sources - no eCFR paragraph carries it; the fact is the
       final rule's, already in data/reference/qmsr_v1.json; 300Q fires 1 (M-030), bank 8; not yet measured
     interactions: [S1]
   PK3:
     purpose: the picker's third and later picks of the promoted section's part (at the second pick's cross-encoder floor, short enough to go whole) take the places of the reranker's lowest-scored additions, one for one, within MS1's allowance - never added on their own
     stage: selection
-    status: experimental
-    in_default: false
+    status: default
+    in_default: true
     introduced: {date: "2026-11-03", commit: "this commit (PK3)"}
     evidence: >-
-      full300e - key share of supplied additions: reranked companions 23/215 (11%), picker second picks 26/57 (46%),
+      combo4_20261103 (3 Nov) - P-010 PF->PASS in 2 blind passes (812.46 supplied); S-016 PF for its new answer in 3 passes, its old answer PF in both paired passes (official PASS not reproduced); 0 confirmed down; earlier: full300e - key share of supplied additions: reranked companions 23/215 (11%), picker second picks 26/57 (46%),
       unused later same-part picks 6/12 (50%: B-005 606.160, P-010 812.46, Y-002 112.45/112.46, C-004); not yet measured
     interactions: [MS1, SP2, SP2F]
 

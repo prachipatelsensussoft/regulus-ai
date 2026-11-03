@@ -193,7 +193,8 @@ def test_qd3_another_parts_sub_question_section_needs_the_stricter_floor(monkeyp
     from regulus.rag import section_promotion as SP
     from regulus.rag import validator_switches as VS
 
-    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"QD1", "QD3"})
+    # the unrouted path (DR2 off): sub-questions are searched across every part
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", (VS.VALIDATOR_PRECISION | {"QD1", "QD3"}) - {"DR2"})
     monkeypatch.setattr(SP, "RERANKER", "stub")
 
     class Gen:
@@ -203,13 +204,22 @@ def test_qd3_another_parts_sub_question_section_needs_the_stricter_floor(monkeyp
     pr = SP.SectionPromoter.__new__(SP.SectionPromoter)
     pr.generator = Gen()
     best = {"What must be submitted to GUDID?": "822.3", "What must the label bear?": "801.20"}
-    monkeypatch.setattr(pr, "candidates", lambda sub, scope: ([], [{"section": best[sub]}]), raising=False)
+
+    def candidates(sub, scope):   # a search scoped to parts finds only sections of those parts
+        sec = best[sub]
+        return [], ([{"section": sec}] if scope is None or sec.split(".")[0] in scope else [])
+
+    monkeypatch.setattr(pr, "candidates", candidates, raising=False)
     monkeypatch.setattr(pr, "rerank_scores", lambda sub, cfr: {"822.3": (0.6, ""), "801.20": (0.8, "")}, raising=False)
     q = "What are the unique device identification requirements and what must be submitted to GUDID?"
     assert pr.decomposed_sections(q, None, ("830",)) == ["801.20"]           # 822.3 at 0.6 < 0.7 dropped
     assert pr.decomposed_sections(q, None, ("822",)) == ["822.3", "801.20"]  # its own part: the 0.5 floor
     monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION - {"QD3"})
     assert pr.decomposed_sections(q, None, ("830",)) == ["822.3", "801.20"]  # off: as before
+    # DR2 on (default since 3 Nov): the UDI question is routed to device labeling (801/809/830), its sub-questions are
+    # searched there, and postmarket 822.3 is not reachable at all, with or without QD3
+    monkeypatch.setattr(VS, "VALIDATOR_PRECISION", VS.VALIDATOR_PRECISION | {"DR2"})
+    assert pr.decomposed_sections(q, None, ("830",)) == ["801.20"]
 
 
 # ------------------------------------------------------------ DR2 (3 Nov): the benchmark domains DR1 left unrouted

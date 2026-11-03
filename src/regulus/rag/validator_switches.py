@@ -406,21 +406,21 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       three required conditions alternatives; 1 change in 324 recorded answers
   PC2 (2 Nov, off until measured) a supplied section the answer never cites contributes its most relevant paragraph,
       verbatim (regulus.rag.pipeline.uncited_sections): 10 of 44 omission PFs had the section and left it unused
-  XG1 (3 Nov, off until measured) XC1's cross-part companion stays in the promoted section's programme - its Title 21
+  XG1 (3 Nov, ON by default since the combined replay) XC1's cross-part companion stays in the promoted section's programme - its Title 21
       subchapter, C and D both human drugs, 225/226 animal food; Subchapter A (Parts 1-99) joins any. full300e: the 8
       other-programme XC1 additions went 4 down / 0 up (111.30 beside drug 211.68, 201.5 beside device 801.5)
   MK1 (3 Nov, off until measured) a marker naming several sources ("[13-19, 21]") is taken out before the figure check:
       10 of full300e's 14 unsupported_figure withholds were over marker numbers only
   EX2 (3 Nov, off until measured) EX1 widened: a source's "does not apply" / "not subject to" supports an answer's
       "exempt", and a cited paragraph's section heading counts as cited text (F-002: 117.5(b) "do not apply")
-  DR2 (3 Nov, off until measured) DR1 for seven more programmes (device labeling, device postmarket, FSVP, seafood, juice,
+  DR2 (3 Nov, ON by default since the combined replay) DR1 for seven more programmes (device labeling, device postmarket, FSVP, seafood, juice,
       canned/acidified foods, produce) and the tobacco APPH standard (regulus.retrieval.programmes.PROGRAMMES_DR2):
       bank precision 97.4% on 231 new routes, DR1's routes unchanged
   SR1 (3 Nov, off until measured) in place of a WITHHELD answer only: the draft without the whole sentences its errors are
       about, cited ones too, under A3's guards (regulus.rag.validation.excise_flagged_sentences), if the rest validates
-  QS1 (3 Nov, off until measured) the QMSR effective-date status note (data/reference/status_notes_v1.json
+  QS1 (3 Nov, ON by default since the combined replay) the QMSR effective-date status note (data/reference/status_notes_v1.json
       "qmsr-effective"), only with a question asking for the change or its compliance date (M-030)
-  PK3 (3 Nov, off until measured) the picker's later same-part picks replace the reranker's lowest additions one for one
+  PK3 (3 Nov, ON by default since the combined replay) the picker's later same-part picks replace the reranker's lowest additions one for one
       (key share 50% vs 11%), within MS1's allowance; never an addition of their own
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
@@ -454,7 +454,12 @@ DEFAULT_2NOV_RELEASE = DEFAULT_27OCT_RELEASE + (",SP2,SP2F,SP2O,SN1,DQ1,MS1,MS2,
 # 17 up / 1 down - the down was LQ1's, shown by replay): CN1 SC1 CP1 XC1; final chain (13): DX1 (X-001 PF->PASS), OF1,
 # CF1, AO1 (1 change in 324 recorded answers, the real error). Kept off: LQ1 (T-010 PASS lost), DA1 (3 PASS lost),
 # TE1 (SD-005 PASS lost), PC2 (never fired - not measured).
-DEFAULT = DEFAULT_2NOV_RELEASE + ",CN1,SC1,CP1,XC1,OF1,DX1,CF1,AO1"
+DEFAULT_3NOV_RELEASE = DEFAULT_2NOV_RELEASE + ",CN1,SC1,CP1,XC1,OF1,DX1,CF1,AO1"
+# 3 Nov 2026 (user rule: promote only on a net gain with 0 confirmed PASS lost): XG1 QS1 PK3 DR2, combined replay
+# combo4_20261103 vs full300e - 24 answers changed, each byte-identical to its single-switch arm (no interaction); blind
+# paired 10 up / 2 down, both downs (U-002, R-001: withheld drafts, verbatim fallback) not confirmed by a second scorer;
+# reproduced in every pass: U-003 PF->PP, M-030 PF->PP, Y-009 FAIL->PASS, P-010 PF->PASS. Kept off: MK1, EX2, SR1.
+DEFAULT = DEFAULT_3NOV_RELEASE + ",XG1,QS1,PK3,DR2"
 VALIDATOR_PRECISION = frozenset(x.strip().upper() for x in os.environ.get("REGULUS_VALIDATOR_PRECISION", DEFAULT).split(",")
                                  if x.strip() and x.strip().lower() not in ("off", "none"))
 
