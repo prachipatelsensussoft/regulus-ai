@@ -485,6 +485,7 @@ def select_evidence(
     material: Callable[[Evidence], bool] | None = None,
     question: str | None = None,
     similarity: dict[str, float] | None = None,
+    core_scores: list[dict[str, float]] | None = None,
 ) -> Selection:
     """Deterministic, requirement-aware selection. Same inputs, same output.
 
@@ -526,6 +527,19 @@ def select_evidence(
                    else _required_order(registry_order, question))
     if _switch("OF1"):
         competition = outline_first(competition, question, policy.hard_max_total_chars)
+    core_record = None
+    if core_scores is not None and _switch("TF1"):
+        # TF1 (regulus.rag.core_evidence): the core's lead rows and best paragraphs compete first, the rest keep their
+        # place; the kept set is still presented in document order below
+        from regulus.rag.core_evidence import choose_core, question_clauses
+
+        rows = [{"id": e.evidence_id, "section": i[0], "path": i[1], "text": e.text}
+                for e in competition if e.corpus == "ecfr" and (i := _paragraph_of(e)) is not None]
+        first, core_record = choose_core(rows, question_clauses(question or ""), core_scores, question or "")
+        if first:
+            rank = {eid: k for k, eid in enumerate(first)}
+            competition = (sorted((e for e in competition if e.evidence_id in rank), key=lambda e: rank[e.evidence_id])
+                           + [e for e in competition if e.evidence_id not in rank])
     keep: list[tuple[Evidence, str, bool]] = []
     for e in competition:
         text, truncated = _truncate(_clean(e.text), policy.required_max_chars_per_result)
@@ -655,6 +669,7 @@ def select_evidence(
         **({"required_order": "relevance"} if required_by_relevance else {}),
         **({"binding_reserved": reserved_ids} if reserved_ids else {}),
         **({"general_evidence_order": ORDER_BINDING_FIRST} if binding_first else {}),
+        **({"core_units": core_record} if core_record is not None else {}),   # TF1 only
         "tier_counts": {t: sum(1 for s in selected if s.evidence.tier == t) for t in (TIER_EXACT, TIER_STRUCTURAL, TIER_SUPPORTING, TIER_DISCOVERY)},
     }
     return Selection(tuple(selected), tuple(dropped), policy, used, diagnostics)

@@ -1282,6 +1282,17 @@ switches:
       provision got no notice; RR1 (rejected) halved S-018's list, so list items move together
       (tests/test_paragraph_ranking_lp1.py); presentation stays in document order; not yet measured
     interactions: [OF1, CF1, PP1, RR1, RR2]
+  TF1:
+    purpose: the protected Top-5 core (regulus.rag.core_evidence) - required evidence is grouped into distinct units (a section's top-level paragraph family); each ask of the question in turn takes its most similar unit until five are chosen; up to eight when the question has more asks or a core paragraph points to another paragraph ("except as provided in paragraph (d)"); each unit's lead row and best paragraph compete first for the ceiling; every unit is recorded with its score and reason; an order, never a cap
+    stage: selection
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-04", commit: "this commit (TF1)"}
+    evidence: >-
+      user brief 4 Nov (Top-5 with controlled expansion); full300e - 43 rows missed a governing section and 83 carried
+      an evidence-limit note; before TF1 the first section's paragraphs could take every place under the ceiling
+      (CF1 guards only one paragraph per companion); tests/test_core_evidence_tf1.py; not yet measured
+    interactions: [QD1, OF1, CF1, LP1]
 
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:

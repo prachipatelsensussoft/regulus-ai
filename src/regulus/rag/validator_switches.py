@@ -437,6 +437,8 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       own lead and items by position; labels of any case and length have an identity (no cross-provision merge)
   LP1 (4 Nov, off until measured) a section that does not fit ranks its paragraphs by term overlap fused with their
       paragraph-index similarity; list items move together; a cut child of a requested provision is in the notice
+  TF1 (4 Nov, off until measured) the protected Top-5 core: five distinct units, one per ask first, up to eight with a
+      recorded reason, compete first for the ceiling (regulus.rag.core_evidence); an order, never a cap
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

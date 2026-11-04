@@ -814,6 +814,14 @@ class RagPipeline:
                 out[e.evidence_id] = float(sims[pos])
         return out
 
+    def core_scores(self, registry: EvidenceRegistry, question: str | None) -> list[dict[str, float]] | None:
+        """TF1: for each ask of the question (core_evidence.question_clauses), every required eCFR row's similarity to
+        it; None without the paragraph index - selection then orders as before."""
+        from regulus.rag.core_evidence import question_clauses
+
+        out = [self.paragraph_similarity(registry, c) for c in question_clauses(question or "")]
+        return out if out and all(x is not None for x in out) else None
+
     def select(self, registry: EvidenceRegistry, shape: AnswerShape | None = None, question: str | None = None,
                promotion=None) -> Selection:
         """Stage 3 selection; with a Stage 12 shape, children of requested
@@ -825,7 +833,8 @@ class RagPipeline:
         material = self.is_subordinate if shape is not None else None
         selection = select_evidence(registry, self.config.context, optional_filter=self.is_useful, material=material,
                                     question=question,
-                                    similarity=self.paragraph_similarity(registry, question) if precision_fix("LP1") else None)
+                                    similarity=self.paragraph_similarity(registry, question) if precision_fix("LP1") else None,
+                                    core_scores=self.core_scores(registry, question) if precision_fix("TF1") else None)
         if self.advanced is not None:
             from regulus.rag.selection import _block_chars, _clean, _truncate
             selection, _ = self.advanced.extend(selection, registry, question or registry.plan.question, self.config.context,
