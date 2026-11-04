@@ -1,0 +1,2310 @@
+{
+ "name": "evidence_complete_159",
+ "rule": "every CFR section named in 'Expected citation (verified key)' appears in 'Sections supplied' (full300e); rows whose key names no section are excluded",
+ "source": {
+  "workbook": "artifacts/benchmark_baseline/full300e_20261102/Regulus_AI_Acceptance_Benchmark_REV02_300Q_RESULTS_2026-11-02.xlsx",
+  "sha256": "8f48fa55a542f5fb9c7c4bfc1ee33a14a2e4e1a90c4f972d0112eedace72b43e",
+  "sheet": "Results",
+  "run": "full300e"
+ },
+ "ids": [
+  "A-002",
+  "A-004",
+  "B-002",
+  "B-003",
+  "B-004",
+  "C-002",
+  "C-003",
+  "D-002",
+  "D-003",
+  "D-004",
+  "D-005",
+  "D-006",
+  "D-007",
+  "D-008",
+  "D-009",
+  "D-010",
+  "D-011",
+  "D-012",
+  "D-013",
+  "D-014",
+  "D-015",
+  "D-017",
+  "D-019",
+  "D-020",
+  "D-021",
+  "D-022",
+  "D-023",
+  "D-024",
+  "D-026",
+  "D-027",
+  "D-028",
+  "E-002",
+  "E-003",
+  "E-004",
+  "E-005",
+  "E-006",
+  "E-007",
+  "E-008",
+  "E-009",
+  "E-010",
+  "F-002",
+  "F-003",
+  "F-005",
+  "F-006",
+  "F-007",
+  "F-008",
+  "F-009",
+  "F-010",
+  "F-011",
+  "F-013",
+  "F-014",
+  "F-016",
+  "F-017",
+  "F-018",
+  "F-020",
+  "G-001",
+  "G-002",
+  "G-003",
+  "G-004",
+  "G-005",
+  "G-006",
+  "G-008",
+  "G-010",
+  "H-004",
+  "H-005",
+  "K-001",
+  "K-002",
+  "K-005",
+  "K-006",
+  "K-007",
+  "K-008",
+  "L-002",
+  "L-003",
+  "L-004",
+  "L-005",
+  "L-007",
+  "L-013",
+  "L-014",
+  "M-001",
+  "M-002",
+  "M-003",
+  "M-004",
+  "M-005",
+  "M-006",
+  "M-008",
+  "M-009",
+  "M-010",
+  "M-011",
+  "M-012",
+  "M-013",
+  "M-014",
+  "M-015",
+  "M-016",
+  "M-017",
+  "M-018",
+  "M-019",
+  "M-020",
+  "M-021",
+  "M-022",
+  "M-023",
+  "M-024",
+  "M-025",
+  "M-026",
+  "M-027",
+  "M-028",
+  "M-029",
+  "M-042",
+  "P-001",
+  "P-004",
+  "P-006",
+  "P-011",
+  "PB-006",
+  "PB-009",
+  "R-003",
+  "R-004",
+  "R-005",
+  "R-008",
+  "S-001",
+  "S-002",
+  "S-003",
+  "S-006",
+  "S-008",
+  "S-009",
+  "S-010",
+  "S-011",
+  "S-013",
+  "S-014",
+  "S-016",
+  "S-018",
+  "S-019",
+  "S-020",
+  "S-022",
+  "S-023",
+  "S-024",
+  "S-025",
+  "S-026",
+  "S-027",
+  "S-028",
+  "T-003",
+  "T-010",
+  "U-002",
+  "U-003",
+  "U-004",
+  "U-005",
+  "U-006",
+  "U-007",
+  "U-009",
+  "V-002",
+  "V-003",
+  "V-006",
+  "V-007",
+  "X-001",
+  "X-002",
+  "X-003",
+  "Y-007",
+  "Y-008",
+  "Z-002",
+  "Z-005",
+  "Z-006"
+ ],
+ "ids_sha256": "c2056be34239142f512c01baf8b88af535a78e2d31b0ad96334ec5713393189e",
+ "summary": {
+  "questions": 159,
+  "verdicts": {
+   "PARTIALLY FAIL": 37,
+   "FAIL": 8,
+   "PASS": 110,
+   "PARTIALLY PASS": 4
+  },
+  "pass_pp": 114,
+  "split": {
+   "dev": 118,
+   "sealed": 41
+  }
+ },
+ "questions": {
+  "A-002": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "507.33",
+    "507.34"
+   ],
+   "supplied_sections": [
+    "507.10",
+    "507.33",
+    "507.34",
+    "507.39",
+    "507.51",
+    "507.53"
+   ],
+   "missing_sections": []
+  },
+  "A-004": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "558.6"
+   ],
+   "supplied_sections": [
+    "225.1",
+    "558.274",
+    "558.4",
+    "558.5",
+    "558.59",
+    "558.6"
+   ],
+   "missing_sections": []
+  },
+  "B-002": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "600.80"
+   ],
+   "supplied_sections": [
+    "600.80",
+    "600.81",
+    "601.51"
+   ],
+   "missing_sections": []
+  },
+  "B-003": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "601.2"
+   ],
+   "supplied_sections": [
+    "601.2",
+    "601.20",
+    "601.28"
+   ],
+   "missing_sections": []
+  },
+  "B-004": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "601.12"
+   ],
+   "supplied_sections": [
+    "600.14",
+    "601.12"
+   ],
+   "missing_sections": []
+  },
+  "C-002": {
+   "split": "dev",
+   "verdict": "FAIL",
+   "expected_sections": [
+    "701.3",
+    "701.11",
+    "701.13"
+   ],
+   "supplied_sections": [
+    "701.1",
+    "701.10",
+    "701.11",
+    "701.12",
+    "701.13",
+    "701.2",
+    "701.20",
+    "701.3",
+    "701.30",
+    "701.9"
+   ],
+   "missing_sections": []
+  },
+  "C-003": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "740.10"
+   ],
+   "supplied_sections": [
+    "740.10"
+   ],
+   "missing_sections": []
+  },
+  "D-002": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.22"
+   ],
+   "supplied_sections": [
+    "211.22",
+    "213.22"
+   ],
+   "missing_sections": []
+  },
+  "D-003": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.25"
+   ],
+   "supplied_sections": [
+    "211.25"
+   ],
+   "missing_sections": []
+  },
+  "D-004": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.34"
+   ],
+   "supplied_sections": [
+    "211.1",
+    "211.100",
+    "211.101",
+    "211.103",
+    "211.105",
+    "211.110",
+    "211.111",
+    "211.113",
+    "211.115",
+    "211.122",
+    "211.125",
+    "211.130",
+    "211.132",
+    "211.134",
+    "211.137",
+    "211.142",
+    "211.150",
+    "211.160",
+    "211.165",
+    "211.166",
+    "211.167",
+    "211.170",
+    "211.173",
+    "211.176",
+    "211.180",
+    "211.182",
+    "211.184",
+    "211.186",
+    "211.188",
+    "211.192",
+    "211.194",
+    "211.34"
+   ],
+   "missing_sections": []
+  },
+  "D-005": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.42"
+   ],
+   "supplied_sections": [
+    "211.42"
+   ],
+   "missing_sections": []
+  },
+  "D-006": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.46"
+   ],
+   "supplied_sections": [
+    "211.46"
+   ],
+   "missing_sections": []
+  },
+  "D-007": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.67"
+   ],
+   "supplied_sections": [
+    "211.182",
+    "211.67"
+   ],
+   "missing_sections": []
+  },
+  "D-008": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "211.68"
+   ],
+   "supplied_sections": [
+    "111.30",
+    "211.68"
+   ],
+   "missing_sections": []
+  },
+  "D-009": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.84"
+   ],
+   "supplied_sections": [
+    "211.80",
+    "211.84"
+   ],
+   "missing_sections": []
+  },
+  "D-010": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.86",
+    "211.87",
+    "211.89"
+   ],
+   "supplied_sections": [
+    "211.80",
+    "211.84",
+    "211.86",
+    "211.87",
+    "211.89",
+    "213.84"
+   ],
+   "missing_sections": []
+  },
+  "D-011": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.100"
+   ],
+   "supplied_sections": [
+    "211.100",
+    "211.101",
+    "213.100"
+   ],
+   "missing_sections": []
+  },
+  "D-012": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.101"
+   ],
+   "supplied_sections": [
+    "211.101"
+   ],
+   "missing_sections": []
+  },
+  "D-013": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.103"
+   ],
+   "supplied_sections": [
+    "211.103"
+   ],
+   "missing_sections": []
+  },
+  "D-014": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.110"
+   ],
+   "supplied_sections": [
+    "211.110",
+    "211.160",
+    "213.110"
+   ],
+   "missing_sections": []
+  },
+  "D-015": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.111",
+    "211.113"
+   ],
+   "supplied_sections": [
+    "211.111",
+    "211.113"
+   ],
+   "missing_sections": []
+  },
+  "D-017": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.134",
+    "211.137"
+   ],
+   "supplied_sections": [
+    "201.17",
+    "211.134",
+    "211.137",
+    "211.180",
+    "211.198"
+   ],
+   "missing_sections": []
+  },
+  "D-019": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.160"
+   ],
+   "supplied_sections": [
+    "211.160",
+    "211.166",
+    "211.180",
+    "211.80"
+   ],
+   "missing_sections": []
+  },
+  "D-020": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.165"
+   ],
+   "supplied_sections": [
+    "211.165"
+   ],
+   "missing_sections": []
+  },
+  "D-021": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.166"
+   ],
+   "supplied_sections": [
+    "211.166"
+   ],
+   "missing_sections": []
+  },
+  "D-022": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.170"
+   ],
+   "supplied_sections": [
+    "211.170",
+    "211.84"
+   ],
+   "missing_sections": []
+  },
+  "D-023": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "211.192",
+    "211.160"
+   ],
+   "supplied_sections": [
+    "211.1",
+    "211.100",
+    "211.101",
+    "211.103",
+    "211.105",
+    "211.110",
+    "211.111",
+    "211.113",
+    "211.115",
+    "211.122",
+    "211.125",
+    "211.130",
+    "211.132",
+    "211.134",
+    "211.137",
+    "211.142",
+    "211.150",
+    "211.160",
+    "211.165",
+    "211.166",
+    "211.170",
+    "211.173",
+    "211.180",
+    "211.192",
+    "211.194",
+    "211.198",
+    "211.204",
+    "211.208"
+   ],
+   "missing_sections": []
+  },
+  "D-024": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.180"
+   ],
+   "supplied_sections": [
+    "211.180",
+    "211.186",
+    "211.196"
+   ],
+   "missing_sections": []
+  },
+  "D-026": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "211.192"
+   ],
+   "supplied_sections": [
+    "211.192",
+    "213.192"
+   ],
+   "missing_sections": []
+  },
+  "D-027": {
+   "split": "sealed",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "211.198"
+   ],
+   "supplied_sections": [
+    "211.198"
+   ],
+   "missing_sections": []
+  },
+  "D-028": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "211.204",
+    "211.208"
+   ],
+   "supplied_sections": [
+    "211.180",
+    "211.204",
+    "211.208"
+   ],
+   "missing_sections": []
+  },
+  "E-002": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "11.3"
+   ],
+   "supplied_sections": [
+    "11.3"
+   ],
+   "missing_sections": []
+  },
+  "E-003": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "11.10"
+   ],
+   "supplied_sections": [
+    "11.10"
+   ],
+   "missing_sections": []
+  },
+  "E-004": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "11.10"
+   ],
+   "supplied_sections": [
+    "11.10"
+   ],
+   "missing_sections": []
+  },
+  "E-005": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "11.30"
+   ],
+   "supplied_sections": [
+    "11.30"
+   ],
+   "missing_sections": []
+  },
+  "E-006": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "11.50"
+   ],
+   "supplied_sections": [
+    "11.50"
+   ],
+   "missing_sections": []
+  },
+  "E-007": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "11.70"
+   ],
+   "supplied_sections": [
+    "11.70"
+   ],
+   "missing_sections": []
+  },
+  "E-008": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "11.100"
+   ],
+   "supplied_sections": [
+    "11.100",
+    "11.300"
+   ],
+   "missing_sections": []
+  },
+  "E-009": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "11.300"
+   ],
+   "supplied_sections": [
+    "11.200",
+    "11.30",
+    "11.300"
+   ],
+   "missing_sections": []
+  },
+  "E-010": {
+   "split": "dev",
+   "verdict": "FAIL",
+   "expected_sections": [
+    "11.10",
+    "11.30"
+   ],
+   "supplied_sections": [
+    "11.1",
+    "11.10",
+    "11.100",
+    "11.2",
+    "11.200",
+    "11.3",
+    "11.30",
+    "11.300",
+    "11.50",
+    "11.70"
+   ],
+   "missing_sections": []
+  },
+  "F-002": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "117.3",
+    "117.5"
+   ],
+   "supplied_sections": [
+    "117.201",
+    "117.3",
+    "117.5"
+   ],
+   "missing_sections": []
+  },
+  "F-003": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "117.10"
+   ],
+   "supplied_sections": [
+    "117.10"
+   ],
+   "missing_sections": []
+  },
+  "F-005": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "117.40"
+   ],
+   "supplied_sections": [
+    "117.35",
+    "117.40",
+    "117.80"
+   ],
+   "missing_sections": []
+  },
+  "F-006": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "117.93"
+   ],
+   "supplied_sections": [
+    "117.10",
+    "117.93"
+   ],
+   "missing_sections": []
+  },
+  "F-007": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "117.126"
+   ],
+   "supplied_sections": [
+    "117.126",
+    "117.130",
+    "117.155",
+    "117.190"
+   ],
+   "missing_sections": []
+  },
+  "F-008": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "117.130"
+   ],
+   "supplied_sections": [
+    "117.130",
+    "117.136",
+    "117.410"
+   ],
+   "missing_sections": []
+  },
+  "F-009": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "117.135"
+   ],
+   "supplied_sections": [
+    "117.135"
+   ],
+   "missing_sections": []
+  },
+  "F-010": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "117.145"
+   ],
+   "supplied_sections": [
+    "117.135",
+    "117.140",
+    "117.145",
+    "117.165",
+    "117.180"
+   ],
+   "missing_sections": []
+  },
+  "F-011": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "117.150"
+   ],
+   "supplied_sections": [
+    "117.150"
+   ],
+   "missing_sections": []
+  },
+  "F-013": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "117.170"
+   ],
+   "supplied_sections": [
+    "117.150",
+    "117.160",
+    "117.170",
+    "117.180"
+   ],
+   "missing_sections": []
+  },
+  "F-014": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "117.139"
+   ],
+   "supplied_sections": [
+    "117.126",
+    "117.135",
+    "117.139"
+   ],
+   "missing_sections": []
+  },
+  "F-016": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "117.201"
+   ],
+   "supplied_sections": [
+    "117.201",
+    "117.206"
+   ],
+   "missing_sections": []
+  },
+  "F-017": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "117.206"
+   ],
+   "supplied_sections": [
+    "117.206"
+   ],
+   "missing_sections": []
+  },
+  "F-018": {
+   "split": "dev",
+   "verdict": "PARTIALLY PASS",
+   "expected_sections": [
+    "117.251"
+   ],
+   "supplied_sections": [
+    "117.251",
+    "117.254",
+    "117.264"
+   ],
+   "missing_sections": []
+  },
+  "F-020": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "117.405",
+    "117.410"
+   ],
+   "supplied_sections": [
+    "117.405",
+    "117.410"
+   ],
+   "missing_sections": []
+  },
+  "G-001": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "201.1"
+   ],
+   "supplied_sections": [
+    "201.1",
+    "201.100",
+    "201.2"
+   ],
+   "missing_sections": []
+  },
+  "G-002": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "201.5"
+   ],
+   "supplied_sections": [
+    "201.116",
+    "201.130",
+    "201.5"
+   ],
+   "missing_sections": []
+  },
+  "G-003": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "201.56",
+    "201.57"
+   ],
+   "supplied_sections": [
+    "201.51",
+    "201.56",
+    "201.57"
+   ],
+   "missing_sections": []
+  },
+  "G-004": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "201.66"
+   ],
+   "supplied_sections": [
+    "201.325",
+    "201.66"
+   ],
+   "missing_sections": []
+  },
+  "G-005": {
+   "split": "sealed",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "201.62"
+   ],
+   "supplied_sections": [
+    "101.7",
+    "201.51",
+    "201.62"
+   ],
+   "missing_sections": []
+  },
+  "G-006": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "201.17",
+    "211.137"
+   ],
+   "supplied_sections": [
+    "201.17",
+    "211.137"
+   ],
+   "missing_sections": []
+  },
+  "G-008": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "201.25"
+   ],
+   "supplied_sections": [
+    "201.2",
+    "201.20",
+    "201.25"
+   ],
+   "missing_sections": []
+  },
+  "G-010": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "207.33",
+    "207.41",
+    "207.49"
+   ],
+   "supplied_sections": [
+    "207.33",
+    "207.35",
+    "207.41",
+    "207.49"
+   ],
+   "missing_sections": []
+  },
+  "H-004": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "1.906",
+    "1.908"
+   ],
+   "supplied_sections": [
+    "1.904",
+    "1.906",
+    "1.908",
+    "1.910"
+   ],
+   "missing_sections": []
+  },
+  "H-005": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "1.910",
+    "1.912"
+   ],
+   "supplied_sections": [
+    "1.910",
+    "1.912"
+   ],
+   "missing_sections": []
+  },
+  "K-001": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "50.20",
+    "50.25"
+   ],
+   "supplied_sections": [
+    "50.20",
+    "50.25",
+    "50.27"
+   ],
+   "missing_sections": []
+  },
+  "K-002": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "50.24"
+   ],
+   "supplied_sections": [
+    "50.24",
+    "812.47"
+   ],
+   "missing_sections": []
+  },
+  "K-005": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "56.107",
+    "56.111"
+   ],
+   "supplied_sections": [
+    "56.107",
+    "56.108",
+    "56.111"
+   ],
+   "missing_sections": []
+  },
+  "K-006": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "56.110"
+   ],
+   "supplied_sections": [
+    "56.108",
+    "56.110"
+   ],
+   "missing_sections": []
+  },
+  "K-007": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "58.33",
+    "58.120"
+   ],
+   "supplied_sections": [
+    "58.120",
+    "58.185",
+    "58.33"
+   ],
+   "missing_sections": []
+  },
+  "K-008": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "58.195"
+   ],
+   "supplied_sections": [
+    "58.130",
+    "58.185",
+    "58.190",
+    "58.195"
+   ],
+   "missing_sections": []
+  },
+  "L-002": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "101.3"
+   ],
+   "supplied_sections": [
+    "101.17",
+    "101.3"
+   ],
+   "missing_sections": []
+  },
+  "L-003": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "101.4"
+   ],
+   "supplied_sections": [
+    "101.4",
+    "101.67"
+   ],
+   "missing_sections": []
+  },
+  "L-004": {
+   "split": "sealed",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "101.5"
+   ],
+   "supplied_sections": [
+    "101.5",
+    "201.1",
+    "501.5",
+    "701.12",
+    "801.1"
+   ],
+   "missing_sections": []
+  },
+  "L-005": {
+   "split": "dev",
+   "verdict": "FAIL",
+   "expected_sections": [
+    "101.7"
+   ],
+   "supplied_sections": [
+    "101.7",
+    "201.51",
+    "201.62",
+    "501.105",
+    "701.13",
+    "801.62"
+   ],
+   "missing_sections": []
+  },
+  "L-007": {
+   "split": "sealed",
+   "verdict": "FAIL",
+   "expected_sections": [
+    "101.9"
+   ],
+   "supplied_sections": [
+    "101.9"
+   ],
+   "missing_sections": []
+  },
+  "L-013": {
+   "split": "sealed",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "101.36"
+   ],
+   "supplied_sections": [
+    "101.36"
+   ],
+   "missing_sections": []
+  },
+  "L-014": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "101.93"
+   ],
+   "supplied_sections": [
+    "101.93"
+   ],
+   "missing_sections": []
+  },
+  "M-001": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.1"
+   ],
+   "supplied_sections": [
+    "820.1"
+   ],
+   "missing_sections": []
+  },
+  "M-002": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.1"
+   ],
+   "supplied_sections": [
+    "820.1"
+   ],
+   "missing_sections": []
+  },
+  "M-003": {
+   "split": "sealed",
+   "verdict": "PARTIALLY PASS",
+   "expected_sections": [
+    "820.1"
+   ],
+   "supplied_sections": [
+    "820.1"
+   ],
+   "missing_sections": []
+  },
+  "M-004": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.1"
+   ],
+   "supplied_sections": [
+    "820.1",
+    "820.3"
+   ],
+   "missing_sections": []
+  },
+  "M-005": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.1"
+   ],
+   "supplied_sections": [
+    "820.1"
+   ],
+   "missing_sections": []
+  },
+  "M-006": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "820.1"
+   ],
+   "supplied_sections": [
+    "820.1"
+   ],
+   "missing_sections": []
+  },
+  "M-008": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.3"
+   ],
+   "supplied_sections": [
+    "820.3"
+   ],
+   "missing_sections": []
+  },
+  "M-009": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "820.3"
+   ],
+   "supplied_sections": [
+    "820.1",
+    "820.3"
+   ],
+   "missing_sections": []
+  },
+  "M-010": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.7"
+   ],
+   "supplied_sections": [
+    "820.7"
+   ],
+   "missing_sections": []
+  },
+  "M-011": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.7"
+   ],
+   "supplied_sections": [
+    "820.7"
+   ],
+   "missing_sections": []
+  },
+  "M-012": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.10"
+   ],
+   "supplied_sections": [
+    "820.1",
+    "820.10",
+    "820.3",
+    "820.35",
+    "820.45",
+    "820.7"
+   ],
+   "missing_sections": []
+  },
+  "M-013": {
+   "split": "sealed",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "820.10"
+   ],
+   "supplied_sections": [
+    "820.10",
+    "820.35",
+    "820.45"
+   ],
+   "missing_sections": []
+  },
+  "M-014": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.10"
+   ],
+   "supplied_sections": [
+    "820.10"
+   ],
+   "missing_sections": []
+  },
+  "M-015": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.10"
+   ],
+   "supplied_sections": [
+    "820.10",
+    "820.3"
+   ],
+   "missing_sections": []
+  },
+  "M-016": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.10"
+   ],
+   "supplied_sections": [
+    "820.10"
+   ],
+   "missing_sections": []
+  },
+  "M-017": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.10"
+   ],
+   "supplied_sections": [
+    "820.10",
+    "820.7"
+   ],
+   "missing_sections": []
+  },
+  "M-018": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "820.10"
+   ],
+   "supplied_sections": [
+    "820.10"
+   ],
+   "missing_sections": []
+  },
+  "M-019": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.10"
+   ],
+   "supplied_sections": [
+    "820.1",
+    "820.10"
+   ],
+   "missing_sections": []
+  },
+  "M-020": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.35"
+   ],
+   "supplied_sections": [
+    "820.35"
+   ],
+   "missing_sections": []
+  },
+  "M-021": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "820.35"
+   ],
+   "supplied_sections": [
+    "211.198",
+    "820.35"
+   ],
+   "missing_sections": []
+  },
+  "M-022": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.35"
+   ],
+   "supplied_sections": [
+    "820.35"
+   ],
+   "missing_sections": []
+  },
+  "M-023": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.35"
+   ],
+   "supplied_sections": [
+    "820.35",
+    "820.45"
+   ],
+   "missing_sections": []
+  },
+  "M-024": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.35"
+   ],
+   "supplied_sections": [
+    "820.35"
+   ],
+   "missing_sections": []
+  },
+  "M-025": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "820.45"
+   ],
+   "supplied_sections": [
+    "820.45"
+   ],
+   "missing_sections": []
+  },
+  "M-026": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "820.45"
+   ],
+   "supplied_sections": [
+    "820.45"
+   ],
+   "missing_sections": []
+  },
+  "M-027": {
+   "split": "sealed",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "820.45"
+   ],
+   "supplied_sections": [
+    "820.45"
+   ],
+   "missing_sections": []
+  },
+  "M-028": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.45"
+   ],
+   "supplied_sections": [
+    "820.45"
+   ],
+   "missing_sections": []
+  },
+  "M-029": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "820.10",
+    "820.35",
+    "820.45"
+   ],
+   "supplied_sections": [
+    "820.1",
+    "820.10",
+    "820.3",
+    "820.35",
+    "820.45",
+    "820.7"
+   ],
+   "missing_sections": []
+  },
+  "M-042": {
+   "split": "dev",
+   "verdict": "FAIL",
+   "expected_sections": [
+    "820.10",
+    "820.35"
+   ],
+   "supplied_sections": [
+    "820.1",
+    "820.10",
+    "820.3",
+    "820.35",
+    "820.45",
+    "820.7"
+   ],
+   "missing_sections": []
+  },
+  "P-001": {
+   "split": "dev",
+   "verdict": "FAIL",
+   "expected_sections": [
+    "807.87"
+   ],
+   "supplied_sections": [
+    "807.87",
+    "807.90",
+    "807.92",
+    "807.93",
+    "812.28"
+   ],
+   "missing_sections": []
+  },
+  "P-004": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "807.92",
+    "807.93"
+   ],
+   "supplied_sections": [
+    "807.87",
+    "807.92",
+    "807.93"
+   ],
+   "missing_sections": []
+  },
+  "P-006": {
+   "split": "dev",
+   "verdict": "FAIL",
+   "expected_sections": [
+    "814.39"
+   ],
+   "supplied_sections": [
+    "814.3",
+    "814.39"
+   ],
+   "missing_sections": []
+  },
+  "P-011": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "807.20",
+    "807.21",
+    "807.22"
+   ],
+   "supplied_sections": [
+    "807.20",
+    "807.21",
+    "807.22",
+    "807.34"
+   ],
+   "missing_sections": []
+  },
+  "PB-006": {
+   "split": "dev",
+   "verdict": "FAIL",
+   "expected_sections": [
+    "820.10"
+   ],
+   "supplied_sections": [
+    "4.4",
+    "820.10"
+   ],
+   "missing_sections": []
+  },
+  "PB-009": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "820.35"
+   ],
+   "supplied_sections": [
+    "820.35"
+   ],
+   "missing_sections": []
+  },
+  "R-003": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "803.17",
+    "803.18"
+   ],
+   "supplied_sections": [
+    "803.17",
+    "803.18"
+   ],
+   "missing_sections": []
+  },
+  "R-004": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "803.30",
+    "803.40"
+   ],
+   "supplied_sections": [
+    "803.10",
+    "803.19",
+    "803.30",
+    "803.40"
+   ],
+   "missing_sections": []
+  },
+  "R-005": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "806.10"
+   ],
+   "supplied_sections": [
+    "806.1",
+    "806.10",
+    "806.20"
+   ],
+   "missing_sections": []
+  },
+  "R-008": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "7.3"
+   ],
+   "supplied_sections": [
+    "7.3",
+    "806.2"
+   ],
+   "missing_sections": []
+  },
+  "S-001": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.1"
+   ],
+   "supplied_sections": [
+    "111.1",
+    "111.155",
+    "111.5"
+   ],
+   "missing_sections": []
+  },
+  "S-002": {
+   "split": "sealed",
+   "verdict": "PARTIALLY PASS",
+   "expected_sections": [
+    "111.3"
+   ],
+   "supplied_sections": [
+    "111.3"
+   ],
+   "missing_sections": []
+  },
+  "S-003": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.12"
+   ],
+   "supplied_sections": [
+    "111.12"
+   ],
+   "missing_sections": []
+  },
+  "S-006": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.15"
+   ],
+   "supplied_sections": [
+    "111.15",
+    "111.20"
+   ],
+   "missing_sections": []
+  },
+  "S-008": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.20"
+   ],
+   "supplied_sections": [
+    "111.15",
+    "111.20"
+   ],
+   "missing_sections": []
+  },
+  "S-009": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.30"
+   ],
+   "supplied_sections": [
+    "111.117",
+    "111.25",
+    "111.27",
+    "111.30"
+   ],
+   "missing_sections": []
+  },
+  "S-010": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.55"
+   ],
+   "supplied_sections": [
+    "111.55",
+    "111.60",
+    "111.70",
+    "111.77"
+   ],
+   "missing_sections": []
+  },
+  "S-011": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.70"
+   ],
+   "supplied_sections": [
+    "1.511",
+    "111.70",
+    "111.77",
+    "111.80"
+   ],
+   "missing_sections": []
+  },
+  "S-013": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.80",
+    "111.83"
+   ],
+   "supplied_sections": [
+    "111.160",
+    "111.465",
+    "111.80",
+    "111.83"
+   ],
+   "missing_sections": []
+  },
+  "S-014": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.105"
+   ],
+   "supplied_sections": [
+    "111.105",
+    "111.113",
+    "111.77",
+    "111.87"
+   ],
+   "missing_sections": []
+  },
+  "S-016": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.155",
+    "111.160"
+   ],
+   "supplied_sections": [
+    "111.120",
+    "111.155",
+    "111.160",
+    "111.170",
+    "111.455"
+   ],
+   "missing_sections": []
+  },
+  "S-018": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.210"
+   ],
+   "supplied_sections": [
+    "111.123",
+    "111.205",
+    "111.210"
+   ],
+   "missing_sections": []
+  },
+  "S-019": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.205",
+    "111.255"
+   ],
+   "supplied_sections": [
+    "111.123",
+    "111.205",
+    "111.210",
+    "111.255",
+    "111.260"
+   ],
+   "missing_sections": []
+  },
+  "S-020": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.260"
+   ],
+   "supplied_sections": [
+    "111.140",
+    "111.255",
+    "111.260"
+   ],
+   "missing_sections": []
+  },
+  "S-022": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.320"
+   ],
+   "supplied_sections": [
+    "111.303",
+    "111.310",
+    "111.315",
+    "111.320",
+    "111.325"
+   ],
+   "missing_sections": []
+  },
+  "S-023": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.365"
+   ],
+   "supplied_sections": [
+    "111.10",
+    "111.20",
+    "111.353",
+    "111.355",
+    "111.360",
+    "111.365",
+    "111.370",
+    "111.375"
+   ],
+   "missing_sections": []
+  },
+  "S-024": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.410",
+    "111.415"
+   ],
+   "supplied_sections": [
+    "111.127",
+    "111.160",
+    "111.403",
+    "111.410",
+    "111.415",
+    "111.420",
+    "111.425",
+    "111.430"
+   ],
+   "missing_sections": []
+  },
+  "S-025": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.453",
+    "111.455",
+    "111.465"
+   ],
+   "supplied_sections": [
+    "111.453",
+    "111.455",
+    "111.460",
+    "111.465",
+    "111.470",
+    "111.475"
+   ],
+   "missing_sections": []
+  },
+  "S-026": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.510",
+    "111.515",
+    "111.520",
+    "111.525"
+   ],
+   "supplied_sections": [
+    "111.165",
+    "111.503",
+    "111.510",
+    "111.515",
+    "111.520",
+    "111.525",
+    "111.530",
+    "111.535",
+    "111.560"
+   ],
+   "missing_sections": []
+  },
+  "S-027": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.553",
+    "111.560"
+   ],
+   "supplied_sections": [
+    "111.553",
+    "111.560",
+    "111.570"
+   ],
+   "missing_sections": []
+  },
+  "S-028": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "111.605",
+    "111.610"
+   ],
+   "supplied_sections": [
+    "111.605",
+    "111.610"
+   ],
+   "missing_sections": []
+  },
+  "T-003": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "1114.41"
+   ],
+   "supplied_sections": [
+    "1114.39",
+    "1114.41",
+    "1114.45"
+   ],
+   "missing_sections": []
+  },
+  "T-010": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "1143.3"
+   ],
+   "supplied_sections": [
+    "1143.1",
+    "1143.3"
+   ],
+   "missing_sections": []
+  },
+  "U-002": {
+   "split": "sealed",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "801.5"
+   ],
+   "supplied_sections": [
+    "201.5",
+    "801.109",
+    "801.116",
+    "801.5"
+   ],
+   "missing_sections": []
+  },
+  "U-003": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "801.109"
+   ],
+   "supplied_sections": [
+    "201.120",
+    "801.109",
+    "801.110",
+    "801.116"
+   ],
+   "missing_sections": []
+  },
+  "U-004": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "809.10"
+   ],
+   "supplied_sections": [
+    "801.119",
+    "809.10",
+    "809.11",
+    "809.20"
+   ],
+   "missing_sections": []
+  },
+  "U-005": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "801.20"
+   ],
+   "supplied_sections": [
+    "801.20",
+    "801.30",
+    "801.40",
+    "830.330"
+   ],
+   "missing_sections": []
+  },
+  "U-006": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "801.40"
+   ],
+   "supplied_sections": [
+    "801.20",
+    "801.40",
+    "801.45",
+    "803.32"
+   ],
+   "missing_sections": []
+  },
+  "U-007": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "801.45"
+   ],
+   "supplied_sections": [
+    "801.20",
+    "801.30",
+    "801.45",
+    "801.55"
+   ],
+   "missing_sections": []
+  },
+  "U-009": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "830.3",
+    "830.20"
+   ],
+   "supplied_sections": [
+    "830.100",
+    "830.20",
+    "830.3",
+    "830.60"
+   ],
+   "missing_sections": []
+  },
+  "V-002": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "1.504"
+   ],
+   "supplied_sections": [
+    "1.502",
+    "1.504"
+   ],
+   "missing_sections": []
+  },
+  "V-003": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "1.505"
+   ],
+   "supplied_sections": [
+    "1.505",
+    "1.508",
+    "1.513"
+   ],
+   "missing_sections": []
+  },
+  "V-006": {
+   "split": "sealed",
+   "verdict": "PASS",
+   "expected_sections": [
+    "1.509"
+   ],
+   "supplied_sections": [
+    "1.509"
+   ],
+   "missing_sections": []
+  },
+  "V-007": {
+   "split": "sealed",
+   "verdict": "PARTIALLY PASS",
+   "expected_sections": [
+    "1.510"
+   ],
+   "supplied_sections": [
+    "1.510"
+   ],
+   "missing_sections": []
+  },
+  "X-001": {
+   "split": "sealed",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "3.2",
+    "4.1",
+    "4.2"
+   ],
+   "supplied_sections": [
+    "3.2",
+    "4.1",
+    "4.2",
+    "4.3"
+   ],
+   "missing_sections": []
+  },
+  "X-002": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "4.4"
+   ],
+   "supplied_sections": [
+    "4.4"
+   ],
+   "missing_sections": []
+  },
+  "X-003": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "4.4"
+   ],
+   "supplied_sections": [
+    "4.4"
+   ],
+   "missing_sections": []
+  },
+  "Y-007": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "120.7",
+    "120.8"
+   ],
+   "supplied_sections": [
+    "120.24",
+    "120.25",
+    "120.7",
+    "120.8",
+    "120.9"
+   ],
+   "missing_sections": []
+  },
+  "Y-008": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "120.24"
+   ],
+   "supplied_sections": [
+    "120.24",
+    "120.25"
+   ],
+   "missing_sections": []
+  },
+  "Z-002": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "900.12"
+   ],
+   "supplied_sections": [
+    "900.12"
+   ],
+   "missing_sections": []
+  },
+  "Z-005": {
+   "split": "dev",
+   "verdict": "PARTIALLY FAIL",
+   "expected_sections": [
+    "1040.10",
+    "1040.11"
+   ],
+   "supplied_sections": [
+    "1040.10",
+    "1040.11"
+   ],
+   "missing_sections": []
+  },
+  "Z-006": {
+   "split": "dev",
+   "verdict": "PASS",
+   "expected_sections": [
+    "1040.20"
+   ],
+   "supplied_sections": [
+    "1040.20"
+   ],
+   "missing_sections": []
+  }
+ }
+}
