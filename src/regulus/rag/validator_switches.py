@@ -433,6 +433,8 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       not the 9,000 default, and a block that still does not fit is recorded as dropped (evidence-limit notice)
   BU1 (4 Nov, off until measured) the evidence budget charges each block's "Tier:" line too, as the prompt renders it
       (generation.tier_line), so the SOURCES block stays within the ceiling
+  PP1 (4 Nov, off until measured) a paragraph is identified by its row where paths repeat (definitions sections): its
+      own lead and items by position; labels of any case and length have an identity (no cross-provision merge)
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

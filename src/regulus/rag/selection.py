@@ -300,11 +300,21 @@ def _required_order(required: list[Evidence], question: str | None) -> list[Evid
     states = [1 if kind and evidence_has_value(kind, [e.text]) else 0 for e in required]
     paths = [_paragraph_of(e)[1] for e in required]  # one section: _one_section checked it
     best, has = list(own), list(states)
-    for i, path in enumerate(paths):
-        for j, other in enumerate(paths):
-            if j != i and path and other.startswith(path + "("):  # j is a subparagraph of i
-                best[i] = max(best[i], own[j])
-                has[i] = max(has[i], states[j])
+    from regulus.rag.validator_switches import enabled as _switch
+
+    rows = [(paths[k], _ordinal(e)) for k, e in enumerate(required)]
+    if _switch("PP1") and len(set(paths)) < len(paths) and all(o is not None for _, o in rows):
+        # PP1 (4 Nov): where paths repeat (a definitions section, DEF1: each definition's lead at "" and its items at
+        # "(1)", "(2)" ...), a row inherits from its OWN subparagraphs - after it, before the next row of its path - so
+        # "Holding means:" travels with its items, and Farm's "(1)" does not inherit from Holding's "(1)(i)"
+        children = [_own_children(i, rows) for i in range(len(rows))]
+    else:
+        children = [[j for j, other in enumerate(paths) if j != i and path and other.startswith(path + "(")]
+                    for i, path in enumerate(paths)]   # j is a subparagraph of i
+    for i, kids in enumerate(children):
+        for j in kids:
+            best[i] = max(best[i], own[j])
+            has[i] = max(has[i], states[j])
     # What a paragraph POINTS AT belongs with it: the 15-calendar-day clock of 21 CFR
     # 312.32(c)(1) runs from the sponsor's determination "under paragraph (c)(1)(i), (c)(1)(ii),
     # (c)(1)(iii), or (c)(1)(iv)", and ranking those four against each other on incidental word
@@ -651,9 +661,47 @@ def is_complete_sentence(text: str) -> bool:
     return (text or "").rstrip().endswith(_SENTENCE_END)
 
 
+def _ordinal(evidence) -> int | None:
+    """The row's place in its section (cfr_records.ordinal), or None when the result does not carry it."""
+    o = (getattr(evidence.result, "metadata", None) or {}).get("ordinal")
+    return int(o) if o is not None else None
+
+
+def _parent_path(path: str) -> str | None:
+    """"(b)(1)" -> "(b)"; "(1)" -> "" (the section's or the definition's lead); "" -> None."""
+    return path[:path.rfind("(")] if path else None
+
+
+def _own_children(i: int, rows: list[tuple[str, int]]) -> list[int]:
+    """PP1: the rows that are row i's subparagraphs by position, not only by path - after it, under its path, and
+    before the next row that has its path (a repeated path: several definitions' items are all "(1)", "(2)" ...).
+    `rows`: (paragraph path, ordinal) of one section's rows."""
+    path, at = rows[i]
+    later_same = [o for p, o in rows if p == path and o > at]
+    stop = min(later_same) if later_same else None
+    return [j for j, (p, o) in enumerate(rows) if j != i and o > at and (stop is None or o < stop)
+            and (p.startswith(path + "(") if path else p != "")]
+
+
+def _true_parent(i: int, rows: list[tuple[str, int]]) -> int | None:
+    """PP1: row i's parent - the nearest row BEFORE it whose path is its parent path ("Holding means:" for the "(1)"
+    that follows it, never Farm's lead three definitions earlier)."""
+    path, at = rows[i]
+    parent = _parent_path(path)
+    if parent is None:
+        return None
+    before = [(o, j) for j, (p, o) in enumerate(rows) if p == parent and o < at]
+    return max(before)[1] if before else None
+
+
 def _identity(evidence) -> tuple[str, str] | None:
     """(section, paragraph path) of an eCFR row, from its citation label ("21 CFR 830.20(b)(1)")."""
-    m = re.match(r"^\d+ CFR (\d{1,4}\.\d{1,4}[a-z]?)((?:\([a-z0-9]{1,4}\))*)$", evidence.citation or "")
+    from regulus.rag.validator_switches import enabled as _switch
+
+    # PP1: labels of any case and up to 8 characters - "(A)", "(xviii)"; without it such a row has no identity and
+    # consolidate_evidence may merge its text with another provision's identical text
+    label = r"\([A-Za-z0-9]{1,8}\)" if _switch("PP1") else r"\([a-z0-9]{1,4}\)"
+    m = re.match(rf"^\d+ CFR (\d{{1,4}}\.\d{{1,4}}[a-z]?)((?:{label})*)$", evidence.citation or "")
     if m:
         return (m.group(1), m.group(2))
     # an FD&C Act passage ("FD&C Act § 201(v)(1) [21 U.S.C. 321(v)(1)]") is a provision too: never merged as a near-duplicate
@@ -672,6 +720,20 @@ def completed_by_protected_children(item, selection: Selection) -> bool:
     if own is None:
         return False
     section, path = own
+    from regulus.rag.validator_switches import enabled as _switch
+
+    if _switch("PP1"):
+        # PP1: the chain is the item's own - its parent and children by position among every retrieved row of the
+        # section (selected and dropped), so a "(1)" is completed by its own definition's lead, not by any lead
+        pool = [s.evidence for s in selection.selected] + [d.evidence for d in selection.dropped]
+        same = [(e, _identity(e), _ordinal(e)) for e in pool]
+        same = [(e, idt[1], o) for e, idt, o in same if idt is not None and idt[0] == section and o is not None]
+        if _ordinal(item.evidence) is not None and any(e is item.evidence for e, _, _ in same):
+            rows = [(p, o) for _, p, o in same]
+            me = next(k for k, (e, _, _) in enumerate(same) if e is item.evidence)
+            protected = {id(s.evidence) for s in selection.selected if s.protected and s is not item}
+            chain = _own_children(me, rows) + ([p] if (p := _true_parent(me, rows)) is not None else [])
+            return any(id(same[k][0]) in protected for k in chain)
     for o in selection.selected:
         if o is item or not o.protected or (oid := _identity(o.evidence)) is None or oid[0] != section:
             continue

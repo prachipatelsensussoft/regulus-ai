@@ -1258,6 +1258,18 @@ switches:
       only admit less evidence than today (a marginal last paragraph), so a loss of evidence is the risk to measure;
       not yet measured
     interactions: [BA1, CB1, HX1]
+  PP1:
+    purpose: a paragraph is identified by its row - where paths repeat (DEF1 definitions sections, "(1)" under each definition) a row's parent is the nearest earlier row of its parent path and its subparagraphs are the rows after it up to the next row of its own path, in the required order and in the completed-chain check; citation labels of any case and up to 8 characters have an identity, so consolidate_evidence never merges two provisions' identical text
+    stage: selection
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-04", commit: "this commit (PP1)"}
+    evidence: >-
+      4 Nov database count - 59 repeated paths (192 rows) in 24 sections, mostly definitions (117.3, 1.1310, 830.3,
+      1114.3, 1.227, 801.3); code review - a "(1)" counted as completed by any definition's lead, and "(A)"/"(xviii)"
+      labels had no identity, so identical text of two provisions could merge (tests/test_paragraph_identity_pp1.py);
+      sections with unique paths keep the prefix rule; not yet measured
+    interactions: [DEF1, DEF2, OF1, CF1]
 
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
