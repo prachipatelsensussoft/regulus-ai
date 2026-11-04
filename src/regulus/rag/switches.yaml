@@ -1234,6 +1234,18 @@ switches:
       agreement with the blind scorer's verdict is reported per arm; carries over the worktree's VC1 (partial provision
       coverage) as its incomplete reasons
     interactions: [CC1, QP1]
+  SB1:
+    purpose: co-promoted FD&C Act text shares the ceiling the regulation's evidence was selected under (CB1's 15,000 characters, from selection.policy), not the 9,000-character default; an Act block that still does not fit is recorded as dropped required evidence, so the answer's evidence-limit notice names it
+    stage: selection
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-04", commit: "this commit (SB1)"}
+    evidence: >-
+      code review 4 Nov (pipeline.statute_selection) - with a regulation over 9,000 characters every co-promoted Act block
+      was dropped although CB1 left room, and the drop then vanished (the unchanged selection was returned, so no notice);
+      statute-only promotions are capped at STATUTE_BUDGET (6,000) and do not change; tests/test_statute_budget_sb1.py;
+      not yet measured
+    interactions: [CB1, ST1]
 
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:

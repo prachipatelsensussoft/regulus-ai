@@ -823,12 +823,17 @@ class RagPipeline:
         companion = promotion.method == "statute_reference"   # ST1: Act text cited by the requested regulation
         keep = list(selection.selected) if (promotion.citations or companion) else []
         chosen, dropped, used = list(keep), [], (selection.total_chars if keep else 0)
+        # SB1 (4 Nov): Act text that follows a regulation's evidence shares the ceiling that evidence was selected under
+        # (selection.policy is the effective one: CB1's 15,000 characters), not the 9,000-character default - with the
+        # default, a regulation over 9,000 characters left no room for any Act block although the ceiling had room
+        ceiling = (selection.policy.hard_max_total_chars if keep and precision_fix("SB1")
+                   else self.config.context.hard_max_total_chars)
         for n, rows in enumerate(promotion.statute_blocks, start=1):
             result = st.block_result(list(rows))
             evidence = Evidence(f"s{n}", result, TIER_SUPPORTING)
             text, truncated = _truncate(_clean(result.text), self.config.context.required_max_chars_per_result)
             chars = _block_chars(evidence, text, len(chosen) + 1, truncated)
-            if used + 2 + chars > self.config.context.hard_max_total_chars:
+            if used + 2 + chars > ceiling:
                 if companion:
                     continue   # ST1: an optional companion that does not fit is left out, not reported as missing
                 dropped.append(DroppedEvidence(evidence, DROP_HARD_CEILING_CHARS, required=True))
@@ -838,7 +843,9 @@ class RagPipeline:
         for k, rows in enumerate(() if companion else promotion.statute_left_out, start=1):
             dropped.append(DroppedEvidence(Evidence(f"x{k}", st.block_result(list(rows)), TIER_SUPPORTING),
                                            DROP_HARD_CEILING_CHARS, required=True))
-        if len(chosen) == len(keep):
+        if len(chosen) == len(keep) and not (keep and dropped and precision_fix("SB1")):
+            # (without SB1, a co-promoted Act block that did not fit vanished here: never recorded, never named in the
+            # evidence-limit notice; SB1 keeps the drop so the answer says what was left out)
             return selection
         return Selection(tuple(chosen), tuple(selection.dropped if keep else ()) + tuple(dropped), selection.policy, used,
                          {**selection.diagnostics, "statute_promotion": list(promotion.statute)})

@@ -429,6 +429,8 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       exists but does not support, wrong section or programme, cannot verify; nothing is corrected
   AV1 (4 Nov, report-only, off) one verdict for the delivered answer (regulus.rag.answer_verdict): complete, correct but
       incomplete, unsupported, incorrect, insufficient evidence; a proxy calibrated against the blind scorer
+  SB1 (4 Nov, off until measured) co-promoted FD&C Act text shares the regulation evidence's effective ceiling (CB1),
+      not the 9,000 default, and a block that still does not fit is recorded as dropped (evidence-limit notice)
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable
