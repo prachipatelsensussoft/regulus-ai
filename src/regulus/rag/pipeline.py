@@ -24,6 +24,7 @@ from regulus.retrieval.domain import GENERAL_KNOWLEDGE
 from regulus.planning.intent import SCOPE_MIXED, SCOPE_OUT, TYPE_CITATION, QuestionAnalysis, analyze_question
 from regulus.planning.shape import MODE_COMPARISON, MODE_ENUMERATION, MODE_FOCUSED, AnswerShape, analyze_shape
 from regulus.rag import answerability as gate
+from regulus.rag import trace as _trace
 from regulus.rag.citation_repair import repoint_citations
 from regulus.rag.conversation import turn_anchor
 from regulus.rag.answer_quality import mixed_scope_note, normalize_answer, out_of_scope_answer, quality_flags, strip_plan_labels
@@ -300,7 +301,7 @@ class RagAnswer:
         out["grounding"] = self.metadata.get("grounding")
         # Stage 3 keys are added only when present so legacy runs keep their shape
         for key in ("coverage", "coverage_action", "generation", "validation", "citation_support", "answer_shape",
-                    "question_analysis", "quality_flags"):
+                    "question_analysis", "quality_flags", "trace"):
             if self.metadata.get(key) is not None:
                 out[key] = self.metadata[key]
         if self.package is not None:  # Stage 5 gate record (the legacy path keeps its shape)
@@ -1659,6 +1660,7 @@ class RagPipeline:
                 with focus("cosmetics"):
                     return self.answer(question, on_event=on_event, context=context)
         emit = on_event or (lambda kind, data: None)
+        tr = _trace.begin()   # TR1 (report-only): this question's retrieval and selection trace; None when off
         timings: dict[str, float] = {}
         t0 = time.perf_counter()
         asked = question
@@ -1704,6 +1706,7 @@ class RagPipeline:
             # relevant paragraphs, promoted as if it had cited them
             plan, promotion = dv1
             promoter, allowed, parts, promotion_error = None, None, None, None
+            _trace.lazy("pick", "DV1", lambda: {"sections": list(promotion.citations), "notes": list(promotion.notes)})
         else:
             promoter, allowed, parts, promotion_error = self.promotion_request(question, plan)
         if anchored and promoter is None and allowed == "any":
@@ -2435,6 +2438,7 @@ class RagPipeline:
                 "section_promotion": (promotion.to_dict() if promotion is not None
                                       else ({"error": promotion_error} if promotion_error else
                                             ({"named_companions": named_companions_added} if named_companions_added else None))),
+                **({"trace": tr.to_dict()} if tr is not None else {}),   # TR1 only: absent when off
                 "config": self.config.to_dict(),
                 # follow-ups: what this turn was resolved to (the next question's anchor) and how it was read
                 "spelling": [list(x) for x in spelling] if spelling else None,

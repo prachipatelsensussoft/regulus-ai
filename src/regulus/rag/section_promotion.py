@@ -32,6 +32,7 @@ from regulus.retrieval.section_index import (COSMETIC_PARTS, COSMETIC_TERMS, Sec
                                              section_index)
 from regulus.retrieval.statute import BLOCK_HEADER_CHARS, StatuteIndex, statute_index
 from regulus.rag.validator_switches import enabled as precision_fix
+from regulus.rag import trace as _trace
 
 MODES = ("off", "lexical", "picker")
 CANDIDATES = 22
@@ -660,6 +661,9 @@ class SectionPromoter:
             if sec not in best or s > best[sec][0]:
                 best[sec] = (float(s), path)
         self.__dict__["last_rerank"] = best   # diagnostics for the caller (the harness records it)
+        _trace.lazy("rank", "reranker_scores", lambda: {
+            "query": None if question == self.__dict__.get("_asked") else question,   # CP1 scores an item query
+            "passages": len(passages), "scores": {s: [v[0], v[1]] for s, v in best.items()}})
         return best
 
     def rerank_order(self, question: str, cands: list[dict]) -> list[dict]:
@@ -685,7 +689,10 @@ class SectionPromoter:
         rr_rank = {c["section"]: i for i, c in enumerate(by_rr, 1)}
         fused = sorted(cfr, key=lambda c: -(1 / (RRF_K + cfr.index(c) + 1)
                                            + (0.0 if c["section"] in listing else 1 / (RRF_K + rr_rank[c["section"]]))))
-        return fused + [c for c in cands if c.get("statute")]
+        out = fused + [c for c in cands if c.get("statute")]
+        _trace.lazy("rank", "RO1", lambda: {"before": [c["section"] for c in cands], "after": [c["section"] for c in out],
+                                            "no_reranker_credit": sorted(listing)})
+        return out
 
     def reranked_companions(self, question: str, cands: list[dict], pr: "Promotion") -> list[str]:
         """MS1 (28 Oct): rerank, threshold, budget - the other regulation candidates of the promoted section's part whose
@@ -746,6 +753,10 @@ class SectionPromoter:
                 if 0 < n and chars + n <= MS1_MAX_CHARS:
                     out.append(para)
                     chars += n
+        _trace.lazy("companions", "MS1", lambda: {
+            "part": part, "floor": MS1_MIN_SCORE, "cap": cap, "max_chars": MS1_MAX_CHARS, "chars_used": chars, "added": out,
+            "pool": [[c["section"], scores.get(c["section"], (0.0, ""))[0]]
+                     for c in sorted(pool, key=lambda c: -scores.get(c["section"], (0.0, ""))[0])]})
         if precision_fix("XC1"):
             out += self._cross_part_companion(cands, scores, part, have | {x.split("(")[0] for x in out}, chars)
         return out
@@ -786,6 +797,7 @@ class SectionPromoter:
         (cross-part citations, which brought 112.4 into F-020) only the question's own candidates are considered."""
         out: list[str] = []
         others = [c for c in cands if not c.get("statute") and c.get("part") != part and c["section"] not in have]
+        considered = others   # TR1: before XG1's programme filter
         if precision_fix("XG1"):
             # XG1 (3 Nov): only a candidate of the promoted section's programme. full300e: the 8 XC1 additions from
             # another programme went 4 down / 0 up (111.30 dietary-supplement equipment beside drug 211.68, 101.7(t)
@@ -806,6 +818,11 @@ class SectionPromoter:
             if 0 < n and chars + n <= MS1_MAX_CHARS:
                 out.append(label)
                 chars += n
+        _trace.lazy("companions", "XC1", lambda: {
+            "floor": XC1_MIN_SCORE, "added": out,
+            "other_programme": [c["section"] for c in considered if c not in others],
+            "scored": [[c["section"], scores.get(c["section"], (0.0, ""))[0]]
+                       for c in sorted(others, key=lambda c: -scores.get(c["section"], (0.0, ""))[0])][:6]})
         return out
 
     def structural_neighbours(self, section: str, limit: int = MS2_POOL) -> list[str]:
@@ -1164,7 +1181,9 @@ class SectionPromoter:
             if spelled:
                 question = f"{question} {' '.join(spelled)}"
         lex = SectionIndex.question_lexemes(self.db, question)
+        programme = None   # TR1 records which branch listed the candidates and the programme it routed to
         if parts:
+            branch = "named_parts"
             ranked = [r for r in self.index.rank(lex, limit=400) if r.part in parts]
             sub = _SUBPART_REF.search(question or "")
             subpart = None
@@ -1184,14 +1203,18 @@ class SectionPromoter:
             # a cosmetics question: candidates from the color-additive and cosmetic parts only. Food, feed and device
             # sections were picked for cosmetics questions (117.251, 111.455, 226.30; 22 Oct); on the 277-question bank
             # the restriction loses no key section and adds 3 to the candidate lists
+            branch = "cosmetics"
             ranked = [r for r in self.index.rank(lex, limit=400) if r.part in COSMETIC_PARTS][:LEXICAL_CANDIDATES]
             ranked = self._fuse_dense(question, ranked)
         elif (programme := routed_programme(asked)) is not None:
             # DR1: the same for the one programme the question names (regulus.retrieval.programmes), as deep as a general
             # question's list - the section dense index holds the cosmetics parts only, so there is no dense leg to fuse
+            branch = "programme"
             ranked = [r for r in self.index.rank(lex, limit=400) if r.part in programme.parts][:self.limit]
         else:
+            branch = "general"
             ranked = self.index.rank(lex, limit=self.limit)
+        listed = [r.section for r in ranked]   # TR1: the branch's own list, before HQ1 and the entity constraints
         if precision_fix("HQ1"):
             # HQ1 (step D): sections whose index-time questions match the question, appended after the list like the dense
             # leg (never fused into its order), inside the named part(s) or the cosmetics parts when the question is one
@@ -1203,6 +1226,12 @@ class SectionPromoter:
                 ranked = self._entity_constrained(question, lex, ranked, parts)
             except Exception:  # noqa: BLE001 - an aid: without it the ranking stands
                 pass
+        _trace.lazy("candidates", "listed", lambda: {
+            "branch": branch, "programme": getattr(programme, "name", None), "parts": parts,
+            "searched": None if question == asked else question,   # SY1-SY4 search terms added to the asked question
+            "candidates": [[r.section, r.score] for r in ranked],
+            "appended": [r.section for r in ranked if r.section not in listed],   # HQ1 matches, entity constraints
+            "removed": [s for s in listed if s not in {r.section for r in ranked}]})
         if not ranked:
             return lex, []
         rows = self.db.query(_SNIPPET_SQL, {"s": [r.section for r in ranked], "o": sorted({r.best_ordinal for r in ranked})})
@@ -1803,13 +1832,16 @@ class SectionPromoter:
         if cands and precision_fix("QX1"):
             cands = self.expanded_candidates(question, parts, cands)
         offer_statute = self.statute is not None and cosmetic_question(lex) and not parts
+        act_by = None   # TR1: which rule offered FD&C Act sections to the picker
         if offer_statute:
+            act_by = "cosmetics"
             cands = cands[:CFR_CANDIDATES_WITH_STATUTE] + self.statute_candidates(lex, question)
         elif (self.statute is not None and not parts and cands and (programme := routed_programme(question)) is not None
               and (act := tuple(x for x in programme.act_for(question) if x in self.statute.by_sec))):
             # DR1: the Act sections the programme is issued under (the tobacco keys cite 904-911, which AU1 reached only
             # through a top candidate's part - T-001's were 25.35, 1.79, 1105.10). A programme with none (biologics: the
             # PHS Act is not in the store) or none for this question (mammography) is offered AU1's, as before
+            act_by = f"DR1 {programme.name}"
             cands = cands[:CFR_CANDIDATES_WITH_STATUTE] + self.statute_candidates(lex, question, act)[:GENERAL_ACT_OFFERED]
         elif self.statute is not None and not parts and cands and (general_act_offered() or precision_fix("AU1")):
             # SA1: the FD&C Act sections a general question is most about, after the regulations
@@ -1820,7 +1852,11 @@ class SectionPromoter:
                 # structure/function claim (L-014)
                 general = tuple(x for x in authority_sections([c["part"] for c in cands[:3] if not c.get("statute")])
                                 if x in general and x not in _AU1_GENERIC)
+            act_by = "AU1" if precision_fix("AU1") else "SA1"
             cands = cands[:CFR_CANDIDATES_WITH_STATUTE] + self.statute_candidates(lex, question, general)[:GENERAL_ACT_OFFERED]
+        _trace.lazy("candidates", "act_offered", lambda: (
+            {"act": [c["section"] for c in cands if c.get("statute")], "by": act_by}
+            if act_by and any(c.get("statute") for c in cands or ()) else None))
         return (lex, cands) if cands else None
 
     def named_subpart(self, question: str, cands: list[dict]) -> list[dict]:
@@ -2223,6 +2259,7 @@ class SectionPromoter:
             if RERANKER and precision_fix("RO1"):
                 cands = self.rerank_order(question, cands)
             raw = self.cascade_pick(question, cands) if precision_fix("PC1") else None
+            cascaded = raw is not None   # TR1: the reranker decided, the language-model picker was not asked
             if raw is None:
                 msgs = [{"role": "system", "content": PICKER_SYSTEM}, {"role": "user", "content": picker_prompt(question, cands)}]
                 kw = {"think_budget": PICKER_THINK_BUDGET} if getattr(self.generator, "thinking", False) is True else {}
@@ -2230,6 +2267,8 @@ class SectionPromoter:
                 raw = (getattr(result, "response", None) or "").strip()
             compares = precision_fix("CP1") and comparison_question(question)
             picks = parse_picks(raw, len(cands), [c["section"] for c in cands], limit=CP1_PICKS if compares else 2)
+            _trace.lazy("pick", "cascade" if cascaded else "picker", lambda: {
+                "raw": raw, "picks": [cands[i - 1]["section"] for i in picks], "offered": len(cands)})
             if not picks:
                 return None
             picked_c = cands[picks[0] - 1]   # first choice; a second choice is used only from the other corpus
@@ -2251,6 +2290,10 @@ class SectionPromoter:
                     if own is not None:
                         vetoed = own
                 if vetoed is not None:
+                    _trace.lazy("pick", "veto", lambda: {
+                        "replaced": picked_c["section"], "by": vetoed["section"],
+                        "scores": {s: (self.__dict__.get("last_rerank") or {}).get(s, (None,))[0]
+                                   for s in (picked_c["section"], vetoed["section"])}})
                     notes = (f"rerank veto: {picked_c['section']} -> {vetoed['section']}",)
                     picked_c, other = vetoed, (None if other is not None and other["section"] == vetoed["section"] else other)
                     if precision_fix("VB1") and other is not None and bool(other.get("statute")) == bool(picked_c.get("statute")):
@@ -2348,21 +2391,31 @@ class SectionPromoter:
         if precision_fix("HT1"):
             picked = list(dict.fromkeys(self.general_twin(s, question) for s in picked))
         comps: list[str] = []
+        steps: list[tuple[str, int]] = []   # TR1: (step, len(comps) after it) - which step added each companion
         for s in picked:
             comps += [c for c in self.companions(s, question, lex) if c not in comps]
+        steps.append(("companions", len(comps)))
         if precision_fix("HC1"):
             for s in picked:
                 comps += [c for c in self.sibling_companions(s, question) if c not in comps and c not in picked]
+            steps.append(("HC1", len(comps)))
         if precision_fix("SP3") and picked and picked[0].split(".")[0] in SP3_PARTS:
             from regulus.rag.list_answers import _ASKS_CONTENTS
 
             if not _ASKS_CONTENTS.search(question or ""):   # a list question is answered by its own section's list (LS1)
                 comps += [c for c in self.small_subpart(picked[0]) if c not in comps and c not in picked]
+            steps.append(("SP3", len(comps)))
         if precision_fix("HM1") and picked:
             comps += [c for c in self.heading_matches(picked[0], question) if c not in comps and c not in picked]
+            steps.append(("HM1", len(comps)))
         comps += [c for c in self.definition_companions(question) if c not in comps and c not in picked]
+        steps.append(("definition_companions", len(comps)))
         if precision_fix("DQ1") and picked:
             comps += [c for c in self.asked_definitions(picked[0], question) if c not in comps and c not in picked]
+            steps.append(("DQ1", len(comps)))
+        _trace.lazy("companions", "picked_section", lambda: {
+            "picked": picked, "added_by": {name: comps[(steps[i - 1][1] if i else 0):n]
+                                           for i, (name, n) in enumerate(steps) if n > (steps[i - 1][1] if i else 0)}})
         if "70.5(a)" in comps and any(_EYE_USE.search(self._section_text(s)) for s in picked):
             comps.remove("70.5(a)")   # one promoted listing provides for eye-area use (code review: Part 82 sibling)
         if (other is not None and other.get("statute") and precision_fix("CS1") and picked

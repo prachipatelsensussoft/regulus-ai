@@ -422,6 +422,9 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       "qmsr-effective"), only with a question asking for the change or its compliance date (M-030)
   PK3 (3 Nov, ON by default since the combined replay) the picker's later same-part picks replace the reranker's lowest additions one for one
       (key share 50% vs 11%), within MS1's allowance; never an addition of their own
+  TR1 (4 Nov, report-only, off) the per-question retrieval and selection trace in the answer metadata and the measurement
+      record (regulus.rag.trace): candidate branch and scores, reranker scores, pick, veto, MS1/XC1 pools, companions by
+      step; the answer is byte-identical on or off
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

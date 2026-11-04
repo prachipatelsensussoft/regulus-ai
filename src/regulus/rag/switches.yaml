@@ -1200,6 +1200,19 @@ switches:
       unused later same-part picks 6/12 (50%: B-005 606.160, P-010 812.46, Y-002 112.45/112.46, C-004); not yet measured
     interactions: [MS1, SP2, SP2F]
 
+  # ------------------------------------------------------------------ 4 Nov: RAG improvement programme (REGULUS_RAG_IMPROVEMENT_PROGRESS.md)
+  TR1:
+    purpose: report-only per-question trace (regulus.rag.trace) - the candidate branch, routed programme and added search terms, each candidate's lexical score, the reranker scores and RO1 order, the pick and any veto, MS1/XC1 pools with scores, companions by the step that added them; the answer is byte-identical on or off
+    stage: retrieval
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-04", commit: "this commit (TR1)"}
+    evidence: >-
+      report-only - reads values the pipeline already computed, never scores or queries; tests/test_trace_tr1.py checks
+      the same answer, prompt and promotion with TR1 on and off; to be on in every arm of the 4 Nov programme, Test A
+      included
+    interactions: [RO1, MS1, XC1, XG1, PC1]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:
