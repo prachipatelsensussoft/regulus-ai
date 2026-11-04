@@ -126,3 +126,33 @@ def test_the_pipeline_answer_is_unchanged_and_only_cc1_adds_the_verdicts(monkeyp
     assert on.answer == off.answer and "citation_verdicts" not in off.metadata
     cv = on.metadata["citation_verdicts"]
     assert cv["version"] == CCV.VERSION and cv["summary"]["citations"] >= 1 and "citation_verdicts" in on.diagnostics()
+
+
+# a section stored one definition per row under one label (111.3): the citation names the provision, not the row
+DEF_TABLE = [
+    row("111.3", "", 0, text="The definitions and interpretations of terms in section 201 of the act apply. The following "
+                             "definitions also apply:"),
+    row("111.3", "", 1, text="Batch means a specific quantity of a dietary supplement that is uniform.", path_ordinal=1),
+    row("111.3", "", 2, text="Lot means a batch, or a specific identified portion of a batch, that is uniform.", path_ordinal=2),
+    row("111.10", "(a)", 0, text="(a) Any person who works in an operation must not have an illness or open lesion."),
+]
+
+
+def test_a_sentence_summarising_the_rows_of_its_cited_provision_is_supported():
+    q = "What does 21 CFR 111.3 define?"
+    pkg = _package(q, DEF_TABLE)
+    lead = next(s.index for s in pkg.sources if s.citation == "21 CFR 111.3" and "interpretations" in s.text)
+    sentence = ("Part 111 defines a batch as a specific quantity of a dietary supplement that is uniform, and a lot as an "
+                f"identified portion of a batch [{lead}].")
+    res = CCV.citation_verdicts(sentence, pkg, q)
+    item = _by_marker(res)[lead]
+    assert item["verdict"] == CCV.VALID and item["overlap"] >= 0.5   # the lead row alone shares almost no words
+
+
+def test_the_rows_of_another_provision_do_not_count():
+    q = "What do 21 CFR 111.3 and 111.10 require?"
+    pkg = _package(q, DEF_TABLE)
+    other = next(s.index for s in pkg.sources if s.citation.startswith("21 CFR 111.10"))
+    sentence = ("Part 111 defines a batch as a specific quantity of a dietary supplement that is uniform, and a lot as an "
+                f"identified portion of a batch [{other}].")
+    assert _by_marker(CCV.citation_verdicts(sentence, pkg, q))[other]["verdict"] == CCV.NOT_SUPPORTING

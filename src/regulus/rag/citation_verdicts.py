@@ -57,11 +57,30 @@ def _family(named_path: str, have_path: str) -> bool:
                                                or have_path.startswith(named_path + "("))
 
 
-def _overlap(sentence: str, src) -> float | None:
+def _provision_text(src, sources) -> str:
+    """The text of the provision a marker cites: a citation names a provision, not a database row, so every supplied row
+    with the same label (a section stored one definition or paragraph per row, 111.3) and every supplied child of the
+    cited paragraph counts as the cited text (smoke check 4 Nov, S-002: "terms ... including batch, lot ... [1]" cited
+    111.3's lead-in row while the terms are its sibling rows)."""
+    ident = V._source_identity(src)
+    parts = [src.text or "", getattr(src, "heading", "") or ""]
+    for s in sources:
+        if s is src:
+            continue
+        other = V._source_identity(s)
+        same_label = s.citation == src.citation
+        child = (ident is not None and other is not None and other[1] == ident[1]
+                 and (not ident[2] or other[2].startswith(ident[2] + "(")))
+        if same_label or child:
+            parts.append(s.text or "")
+    return " ".join(parts)
+
+
+def _overlap(sentence: str, src, sources=()) -> float | None:
     words = V._content_words(V.MARK_RE.sub("", sentence))
     if len(words) < MIN_WORDS:
         return None
-    return len(words & V._content_words(f"{src.text or ''} {getattr(src, 'heading', '') or ''}")) / len(words)
+    return len(words & V._content_words(_provision_text(src, sources))) / len(words)
 
 
 def citation_verdicts(answer: str, package, question: str | None = None) -> dict[str, Any]:
@@ -136,7 +155,7 @@ def citation_verdicts(answer: str, package, question: str | None = None) -> dict
                         break
             # 4. exists but does not support
             bad = sorted(codes & _NOT_SUPPORTING_CODES)
-            overlap = _overlap(sentence, src)
+            overlap = _overlap(sentence, src, package.sources)
             item["overlap"] = None if overlap is None else round(overlap, 3)
             if verdict == VALID and bad:
                 verdict = NOT_SUPPORTING
