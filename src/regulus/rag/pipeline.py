@@ -25,6 +25,7 @@ from regulus.planning.intent import SCOPE_MIXED, SCOPE_OUT, TYPE_CITATION, Quest
 from regulus.planning.shape import MODE_COMPARISON, MODE_ENUMERATION, MODE_FOCUSED, AnswerShape, analyze_shape
 from regulus.rag import answerability as gate
 from regulus.rag import trace as _trace
+from regulus.rag.citation_verdicts import safe_citation_verdicts
 from regulus.rag.citation_repair import repoint_citations
 from regulus.rag.conversation import turn_anchor
 from regulus.rag.answer_quality import mixed_scope_note, normalize_answer, out_of_scope_answer, quality_flags, strip_plan_labels
@@ -301,7 +302,7 @@ class RagAnswer:
         out["grounding"] = self.metadata.get("grounding")
         # Stage 3 keys are added only when present so legacy runs keep their shape
         for key in ("coverage", "coverage_action", "generation", "validation", "citation_support", "answer_shape",
-                    "question_analysis", "quality_flags", "trace"):
+                    "question_analysis", "quality_flags", "trace", "citation_verdicts"):
             if self.metadata.get(key) is not None:
                 out[key] = self.metadata[key]
         if self.package is not None:  # Stage 5 gate record (the legacy path keeps its shape)
@@ -2368,6 +2369,11 @@ class RagPipeline:
         timings["citations_ms"] = round((time.perf_counter() - t_post) * 1000, 2)
         timings["total_ms"] = round((time.perf_counter() - t0) * 1000, 2)
         t_meta = time.perf_counter()
+        # CC1 (report-only): verdicts on the delivered answer body; the closing notes appended after it (limitation,
+        # not found, evidence limit, status notes, ISO clauses) are the pipeline's own and are not claims. None when off
+        body_end = answer_body_end if answer_body_end is not None else len(answer_text or "")
+        cc1 = (safe_citation_verdicts((answer_text or "")[:body_end], package, asked)
+               if precision_fix("CC1") and package is not None else None)
         out = RagAnswer(
             question=asked,
             answer=answer_text,
@@ -2439,6 +2445,7 @@ class RagPipeline:
                                       else ({"error": promotion_error} if promotion_error else
                                             ({"named_companions": named_companions_added} if named_companions_added else None))),
                 **({"trace": tr.to_dict()} if tr is not None else {}),   # TR1 only: absent when off
+                **({"citation_verdicts": cc1} if cc1 is not None else {}),   # CC1 only: absent when off
                 "config": self.config.to_dict(),
                 # follow-ups: what this turn was resolved to (the next question's anchor) and how it was read
                 "spelling": [list(x) for x in spelling] if spelling else None,

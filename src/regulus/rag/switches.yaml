@@ -1212,6 +1212,17 @@ switches:
       the same answer, prompt and promotion with TR1 on and off; to be on in every arm of the 4 Nov programme, Test A
       included
     interactions: [RO1, MS1, XC1, XG1, PC1]
+  CC1:
+    purpose: report-only verdict for every citation of the delivered answer (regulus.rag.citation_verdicts) - valid, exists but does not support, wrong section or programme, cannot verify - from the validator's own checks re-run on the delivered text, the cited source's identity, word overlap and the question's programme; nothing is corrected
+    stage: post_answer
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-04", commit: "this commit (CC1)"}
+    evidence: >-
+      report-only, changes no answer (tests/test_citation_verdicts_cc1.py); it reports the gap the validator leaves open
+      - a paragraph path fabricated inside a supplied section-level source passes validate_answer; its machine
+      citation-accuracy figure is reported beside the scorer's column L in every arm, never instead of it
+    interactions: [A4, CN1, C82, CM1]
 
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:

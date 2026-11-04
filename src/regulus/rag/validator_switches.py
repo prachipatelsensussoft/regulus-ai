@@ -425,6 +425,8 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
   TR1 (4 Nov, report-only, off) the per-question retrieval and selection trace in the answer metadata and the measurement
       record (regulus.rag.trace): candidate branch and scores, reranker scores, pick, veto, MS1/XC1 pools, companions by
       step; the answer is byte-identical on or off
+  CC1 (4 Nov, report-only, off) one verdict per citation of the delivered answer (regulus.rag.citation_verdicts): valid,
+      exists but does not support, wrong section or programme, cannot verify; nothing is corrected
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable
