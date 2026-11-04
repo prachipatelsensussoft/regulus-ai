@@ -790,6 +790,30 @@ class RagPipeline:
         """A child paragraph of a requested provision: part of what was asked for."""
         return evidence.tier == TIER_STRUCTURAL and REL_CHILD in evidence.relations.values()
 
+    def paragraph_similarity(self, registry: EvidenceRegistry, question: str | None) -> dict[str, float] | None:
+        """LP1: each required eCFR row's similarity to the question in the Title 21 paragraph index (evidence id ->
+        cosine), for selection to rank a section's paragraphs when they do not all fit. None without the index or a
+        question - selection then ranks as before."""
+        db = getattr(self.retriever, "db", None)
+        if db is None or not question:
+            return None
+        from regulus.rag.selection import _paragraph_of, is_required
+        from regulus.retrieval.paragraph_dense import Para, paragraph_dense
+
+        pd = paragraph_dense(db)
+        if pd is None:
+            return None
+        sims = pd.similarities(question)
+        out: dict[str, float] = {}
+        for e in registry.evidence:
+            if e.corpus != "ecfr" or not is_required(e):
+                continue
+            ident, ordinal = _paragraph_of(e), (e.result.metadata or {}).get("ordinal")
+            pos = pd.position.get(Para("cfr", ident[0], ident[1], int(ordinal))) if ident and ordinal is not None else None
+            if pos is not None:
+                out[e.evidence_id] = float(sims[pos])
+        return out
+
     def select(self, registry: EvidenceRegistry, shape: AnswerShape | None = None, question: str | None = None,
                promotion=None) -> Selection:
         """Stage 3 selection; with a Stage 12 shape, children of requested
@@ -800,7 +824,8 @@ class RagPipeline:
         requested provision has more paragraphs than fit; see `selection._required_order`."""
         material = self.is_subordinate if shape is not None else None
         selection = select_evidence(registry, self.config.context, optional_filter=self.is_useful, material=material,
-                                    question=question)
+                                    question=question,
+                                    similarity=self.paragraph_similarity(registry, question) if precision_fix("LP1") else None)
         if self.advanced is not None:
             from regulus.rag.selection import _block_chars, _clean, _truncate
             selection, _ = self.advanced.extend(selection, registry, question or registry.plan.question, self.config.context,
@@ -2335,9 +2360,18 @@ class RagPipeline:
             cut = []   # that answer comes from the whole part in the database, not from the evidence the ceiling cut
         if fallback_type == FB_PRODUCT_CLARIFICATION:
             cut = []   # AMB1: a clarifying question answers nothing from the evidence, so nothing of it was left out
+        if precision_fix("LP1") and package is not None and selection is not None:
+            # LP1: a child of a requested provision that the ceiling kept out is left out of the answer's evidence too:
+            # the notice names its requested provision (before, only required rows were counted)
+            from regulus.rag.selection import DROP_HARD_CEILING_CHARS, DROP_HARD_CEILING_COUNT
+
+            cut += [d for d in selection.dropped if not d.required and d.evidence.corpus == "ecfr"
+                    and d.reason in (DROP_HARD_CEILING_CHARS, DROP_HARD_CEILING_COUNT) and self.is_subordinate(d.evidence)
+                    and not (premise is not None and premise.unsupported) and fallback_type != FB_PRODUCT_CLARIFICATION]
         if cut:
             requested = dict(package.requirements)
-            left_out = Counter(next((requested[r] for r in d.evidence.satisfies if r in requested),
+            left_out = Counter(next((requested[r] for r in d.evidence.satisfies
+                                     + (d.evidence.structural_for if precision_fix("LP1") else ()) if r in requested),
                                     (f"FD&C Act § {d.evidence.result.metadata.get('fdca_section')}" if d.evidence.corpus == "usc"
                                      else d.evidence.citation)) for d in cut)
             evidence_gap = {"reason": "hard_ceiling", "left_out": dict(left_out), "withheld": [d.evidence.citation for d in cut],

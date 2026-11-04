@@ -267,7 +267,8 @@ def _one_section(required: list[Evidence]) -> bool:
     return all(i is not None for i in ids) and len({i[0] for i in ids}) == 1
 
 
-def _required_order(required: list[Evidence], question: str | None) -> list[Evidence]:
+def _required_order(required: list[Evidence], question: str | None,
+                    similarity: dict[str, float] | None = None) -> list[Evidence]:
     """The order in which required evidence competes for the hard ceiling.
 
     Document order spends the ceiling on whatever comes first, which for a whole requested
@@ -292,11 +293,22 @@ def _required_order(required: list[Evidence], question: str | None) -> list[Evid
     """
     keys = _match_keys(question or "")
     kind = selection_value_kind(question or "")
-    if (not keys and kind is None) or len(required) < 2:
+    from regulus.rag.validator_switches import enabled as _lp1_switch
+
+    lp1 = similarity is not None and _lp1_switch("LP1")
+    if (not keys and kind is None and not lp1) or len(required) < 2:
         return required
     if not _one_section(required):
-        return _per_section_order(required, question)
+        return (_per_section_order(required, question, similarity) if similarity is not None
+                else _per_section_order(required, question))
     own = [_relevance(e.text, keys) for e in required]
+    if lp1:
+        # LP1 (4 Nov): a paragraph's relevance is the reciprocal-rank fusion of two rankings - the question's terms it
+        # contains (the rule so far) and its embedding similarity to the question (the Title 21 paragraph index) - so
+        # a paragraph that says what is asked in other words is no longer ranked as irrelevant
+        sims = [similarity.get(e.evidence_id, 0.0) for e in required]
+        term_rank, sim_rank = _dense_rank(own), _dense_rank(sims)
+        own = [1 / (LP1_RRF_K + term_rank[i]) + 1 / (LP1_RRF_K + sim_rank[i]) for i in range(len(required))]
     states = [1 if kind and evidence_has_value(kind, [e.text]) else 0 for e in required]
     paths = [_paragraph_of(e)[1] for e in required]  # one section: _one_section checked it
     best, has = list(own), list(states)
@@ -341,12 +353,36 @@ def _required_order(required: list[Evidence], question: str | None) -> list[Evid
                 if j != i and path and path in refs:
                     inherited[j] = max(inherited[j], best[i])
         best = inherited
+    if lp1 and len(set(paths)) == len(paths):
+        # LP1: the items of a list compete as one - a list cut in half reads as the whole rule (RR1 halved S-018's
+        # list); each item takes its list's best score, the list being the children of a lead that ends in ":"
+        lead = {p: e.text for p, e in zip(paths, required)}
+        groups: dict[str, list[int]] = {}
+        for i, path in enumerate(paths):
+            parent = _parent_path(path)
+            if parent and (lead.get(parent) or "").rstrip().endswith(":"):
+                groups.setdefault(parent, []).append(i)
+        for members in groups.values():
+            top = max(best[i] for i in members)
+            for i in members:
+                best[i] = top
     if not any(best) and not any(has):
         return required
     return [e for _, _, _, e in sorted(((-has[i], -best[i], i, e) for i, e in enumerate(required)))]
 
 
-def _per_section_order(required: list[Evidence], question: str | None) -> list[Evidence]:
+LP1_RRF_K = 10   # as RO1: a small constant, so the top places of either ranking count
+
+
+def _dense_rank(values) -> list[int]:
+    """1 for the highest value; equal values share a rank (a tie in term counts is no evidence either way)."""
+    distinct = sorted(set(values), reverse=True)
+    rank = {v: k for k, v in enumerate(distinct, start=1)}
+    return [rank[v] for v in values]
+
+
+def _per_section_order(required: list[Evidence], question: str | None,
+                       similarity: dict[str, float] | None = None) -> list[Evidence]:
     """Several named sections - a promoted section with its companions ("21 CFR 701.3" with 701.30): each section's
     paragraphs compete in relevance order (as one section's would), and the sections keep the order they came in.
 
@@ -366,7 +402,8 @@ def _per_section_order(required: list[Evidence], question: str | None) -> list[E
             groups.append((i[0], [e]))
     if len({g[0] for g in groups}) != len(groups):
         return required
-    ordered = [(_required_order(g, question) if len(g) > 1 else g) for _, g in groups]
+    ordered = [((_required_order(g, question, similarity) if similarity is not None else _required_order(g, question))
+                if len(g) > 1 else g) for _, g in groups]
     from regulus.rag.validator_switches import enabled as _switch
 
     base = _sections_order(ordered, _switch)
@@ -447,6 +484,7 @@ def select_evidence(
     optional_filter: Callable[[RetrievalResult], bool] | None = None,
     material: Callable[[Evidence], bool] | None = None,
     question: str | None = None,
+    similarity: dict[str, float] | None = None,
 ) -> Selection:
     """Deterministic, requirement-aware selection. Same inputs, same output.
 
@@ -483,7 +521,9 @@ def select_evidence(
         policy = _replace(policy, hard_max_total_chars=CB1_MAX_TOTAL_CHARS)
     registry_order = [e for e in registry.evidence if is_required(e)]
     position = {e.evidence_id: i for i, e in enumerate(registry_order)}
-    competition = _required_order(registry_order, question)
+    # similarity (LP1 only, evidence id -> score) is passed only when given: the call is unchanged without it
+    competition = (_required_order(registry_order, question, similarity) if similarity is not None
+                   else _required_order(registry_order, question))
     if _switch("OF1"):
         competition = outline_first(competition, question, policy.hard_max_total_chars)
     keep: list[tuple[Evidence, str, bool]] = []

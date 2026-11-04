@@ -1270,6 +1270,18 @@ switches:
       labels had no identity, so identical text of two provisions could merge (tests/test_paragraph_identity_pp1.py);
       sections with unique paths keep the prefix rule; not yet measured
     interactions: [DEF1, DEF2, OF1, CF1]
+  LP1:
+    purpose: inside a section that does not fit, a paragraph's relevance is the reciprocal-rank fusion of the question terms it contains and its similarity to the question in the Title 21 paragraph index (bge-small, already loaded); a list's items take their list's best score and compete as one; a child of a requested provision cut by the ceiling is named in the evidence-limit notice under that provision
+    stage: selection
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-04", commit: "this commit (LP1)"}
+    evidence: >-
+      full300e - 83 answers carried an evidence-limit note (57% PF/FAIL), 24 key sections exceed 15,000 characters
+      (101.9: 124,479); paragraphs were ranked by 6-letter word-prefix overlap only, and a cut child of a requested
+      provision got no notice; RR1 (rejected) halved S-018's list, so list items move together
+      (tests/test_paragraph_ranking_lp1.py); presentation stays in document order; not yet measured
+    interactions: [OF1, CF1, PP1, RR1, RR2]
 
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
