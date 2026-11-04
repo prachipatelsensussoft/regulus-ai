@@ -431,6 +431,8 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       incomplete, unsupported, incorrect, insufficient evidence; a proxy calibrated against the blind scorer
   SB1 (4 Nov, off until measured) co-promoted FD&C Act text shares the regulation evidence's effective ceiling (CB1),
       not the 9,000 default, and a block that still does not fit is recorded as dropped (evidence-limit notice)
+  BU1 (4 Nov, off until measured) the evidence budget charges each block's "Tier:" line too, as the prompt renders it
+      (generation.tier_line), so the SOURCES block stays within the ceiling
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

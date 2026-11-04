@@ -1246,6 +1246,18 @@ switches:
       statute-only promotions are capped at STATUTE_BUDGET (6,000) and do not change; tests/test_statute_budget_sb1.py;
       not yet measured
     interactions: [CB1, ST1]
+  BU1:
+    purpose: the evidence budget charges each SOURCE block with the "Tier:" line the prompt renders (generation.tier_line, shared with PackagedSource.role_line), so the SOURCES block stays within the ceiling that bounds it
+    stage: selection
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-04", commit: "this commit (BU1)"}
+    evidence: >-
+      code review 4 Nov - 40-110 uncharged characters per source, up to 2,000-5,000 past the 15,000 ceiling with 48
+      paragraphs; with BU1 the charge equals the rendered block exactly (tests/test_budget_accounting_bu1.py); it can
+      only admit less evidence than today (a marginal last paragraph), so a loss of evidence is the risk to measure;
+      not yet measured
+    interactions: [BA1, CB1, HX1]
 
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:

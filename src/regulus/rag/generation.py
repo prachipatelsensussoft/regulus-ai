@@ -266,18 +266,7 @@ class PackagedSource:
 
     def role_line(self, requirements: dict[str, str]) -> str:
         """The tier line the model sees; explicit about what the source may be used for."""
-        rids = ", ".join(self.requirement_ids)
-        if self.tier == TIER_EXACT:
-            if self.is_docket:
-                return "Tier: EXACT (the requested guidance document; non-binding)"
-            return f"Tier: EXACT (authoritative text of {rids})"
-        if self.tier == TIER_STRUCTURAL:
-            return f"Tier: STRUCTURAL (parent or child of {rids}; context only, not the requested text)"
-        if self.tier == TIER_SUPPORTING and self.corpus == "usc":
-            return "Tier: STATUTE (verbatim text from the FD&C Act section this question is about; binding law)"
-        if self.tier == TIER_SUPPORTING:
-            return "Tier: SUPPORTING (related material; does not stand in for any requested provision)"
-        return f"Tier: DISCOVERY (found by broad search{(' while looking for ' + rids) if rids else ''}; not authoritative for any requested provision)"
+        return tier_line(self.tier, self.requirement_ids, self.corpus, self.is_docket)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -285,6 +274,23 @@ class PackagedSource:
             "corpus": self.corpus, "citation": self.citation, "url": self.url, "chars": len(self.text), "truncated": self.truncated,
             "evidence_id": self.evidence_id, "key": self.key, "is_docket": self.is_docket,
         }
+
+
+def tier_line(tier: str, requirement_ids: tuple[str, ...], corpus: str, is_docket: bool = False) -> str:
+    """A SOURCE block's "Tier:" line - one function for the prompt (PackagedSource.role_line) and for the budget that
+    charges the block (BU1, selection._block_chars)."""
+    rids = ", ".join(requirement_ids)
+    if tier == TIER_EXACT:
+        if is_docket:
+            return "Tier: EXACT (the requested guidance document; non-binding)"
+        return f"Tier: EXACT (authoritative text of {rids})"
+    if tier == TIER_STRUCTURAL:
+        return f"Tier: STRUCTURAL (parent or child of {rids}; context only, not the requested text)"
+    if tier == TIER_SUPPORTING and corpus == "usc":
+        return "Tier: STATUTE (verbatim text from the FD&C Act section this question is about; binding law)"
+    if tier == TIER_SUPPORTING:
+        return "Tier: SUPPORTING (related material; does not stand in for any requested provision)"
+    return f"Tier: DISCOVERY (found by broad search{(' while looking for ' + rids) if rids else ''}; not authoritative for any requested provision)"
 
 
 @dataclass(frozen=True)

@@ -181,6 +181,15 @@ def _block_chars(evidence: Evidence, text: str, index: int, truncated: bool) -> 
         # paragraphs, 2,000-4,000 characters of the ceiling spent on text the model never sees; chosen companions were
         # dropped as hard_ceiling_chars (retrieval check 28 Oct: F-002 117.3, Z-005 1040.11)
         block = "\n".join(line for line in block.split("\n") if not line.startswith("URL: "))
+    if _switch("BU1"):
+        # BU1 (4 Nov): the prompt's block also carries a "Tier:" line (generation.render_source) that the budget never
+        # charged - 40 to 110 characters a source, so 48 paragraphs could put the SOURCES block 2,000-5,000 characters
+        # past the ceiling that was meant to bound it
+        from regulus.rag.generation import tier_line
+        from regulus.retrieval.models import METHOD_EXACT_DOCKET
+
+        rids = tuple(dict.fromkeys(evidence.satisfies + evidence.structural_for + evidence.discovered_for))
+        block += "\n" + tier_line(evidence.tier, rids, evidence.corpus, evidence.retrieval_method == METHOD_EXACT_DOCKET)
     return len(block)
 
 
