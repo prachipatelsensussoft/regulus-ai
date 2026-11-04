@@ -4,8 +4,11 @@
      "provenance": {...},                                     # where the change came from (files, eCFR payloads)
      "fingerprint_before": {"rows": 66010, "sha256": "..."},  # regulus.datamigrate.runner.FINGERPRINT_SQL
      "fingerprint_after": {"rows": 66535, "sha256": "..."},
+     "requires": ["paragraph_labels_8"],                      # optional: schema steps the runner ensures first
      "insert": [{<every column of INSERT_COLUMNS>}, ...],     # one row per line
      "update": [{"id": "...", "section": "...", "old": [path, path_ordinal, ordinal], "new": [...]}, ...]}
+
+"requires" names steps defined in regulus.datamigrate.runner (REQUIREMENTS here lists them), never SQL from a file.
 
 A file is written once by scripts/build_cfr_migrations.py and never edited: its checksum (SHA-256 of the bytes, line
 endings normalised to LF so a Windows checkout with core.autocrlf gives the same value) is recorded in the ledger when
@@ -34,6 +37,11 @@ INSERT_COLUMNS = ("id", "title", "chapter", "subchapter_code", "part_number", "s
                   "source_endpoint", "retrieved_at", "snapshot_date", "content_sha256", "source_payload_sha256",
                   "is_reserved", "incorporated_standard_id", "removed_on")
 
+# schema steps a migration may require (runner.REQUIREMENT_STEPS holds what each one does):
+#   paragraph_labels_8 - cfr_records_paragraph_path_check allows paragraph labels up to 8 characters, not 4: the eCFR
+#                        numbers paragraphs (xviii), (xxiii), (xxviii) (4 Nov 2026, 0011)
+REQUIREMENTS = ("paragraph_labels_8",)
+
 
 class MigrationFileError(RuntimeError):
     """A migration file is missing, malformed, out of sequence or does not chain to its predecessor."""
@@ -52,6 +60,7 @@ class Migration:
     fingerprint_after: tuple[int, str]
     insert: tuple[Mapping[str, Any], ...]
     update: tuple[Mapping[str, Any], ...]
+    requires: tuple[str, ...] = ()
 
     @property
     def label(self) -> str:
@@ -110,10 +119,14 @@ def load_file(path: Path) -> Migration:
         ids.add(u["id"])
     if len(ids) != len(inserts) + len(updates):
         raise MigrationFileError(f"{path.name}: a row id appears more than once")
+    requires = doc.get("requires", [])
+    if (not isinstance(requires, list) or len(set(requires)) != len(requires)
+            or any(r not in REQUIREMENTS for r in requires)):
+        raise MigrationFileError(f"{path.name}: requires {requires!r}; this runner knows {list(REQUIREMENTS)}")
     return Migration(doc["version"], doc["name"], path, checksum(raw), doc.get("description", ""),
                      doc.get("reference_applied", ""), doc.get("provenance", {}),
                      _fp(doc.get("fingerprint_before"), path.name), _fp(doc.get("fingerprint_after"), path.name),
-                     tuple(inserts), tuple(updates))
+                     tuple(inserts), tuple(updates), tuple(requires))
 
 
 def load_migrations(directory: Path = MIGRATIONS_DIR) -> list[Migration]:

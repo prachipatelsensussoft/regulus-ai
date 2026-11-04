@@ -16,12 +16,19 @@ Safety, in the order the code enforces it:
   * rollback undoes the newest migrations one transaction each, refusing while anything references a row it would
     delete, and verifies the fingerprint before each one.
 Nothing is dropped or truncated. Rows a migration does not name are never touched.
+
+A migration may "require" a schema step (REQUIREMENT_STEPS, defined here, never read from a file). Each step only
+widens a constraint, inside the migration's own transaction: it changes the definition the restored database came with
+(created by the previous platform's Prisma migrations, whose code is not part of this project) to the wider one, accepts
+the wider one as already done, and refuses any other definition. Rollback keeps the wider constraint: every row valid
+before stays valid. Prisma's ledger (_prisma_migrations), a record from that platform, is never written.
 """
 from __future__ import annotations
 
 import hashlib
 import json
 import platform
+import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -247,16 +254,57 @@ def _check_rows(conn: psycopg.Connection, target: str, wanted: Sequence[tuple[st
         raise MigrationError(f"{label}: {len(bad)}+ rows are not as recorded, e.g. {bad[0]}; rolled back, nothing changed")
 
 
-def _insert_mismatches(conn: psycopg.Connection, target: str, rows: Sequence[Mapping[str, Any]]) -> int:
-    """How many of `rows` are absent or differ from the stored row in any INSERT_COLUMNS column."""
+def _insert_matching_ids(conn: psycopg.Connection, target: str, rows: Sequence[Mapping[str, Any]]) -> set[str]:
+    """The ids of `rows` whose stored row equals them in every INSERT_COLUMNS column."""
     if not rows:
-        return 0
+        return set()
     cols = [sql.Identifier(c) for c in INSERT_COLUMNS]
     same = sql.SQL("({}) IS NOT DISTINCT FROM ({})").format(
         sql.SQL(", ").join(sql.SQL("c.{}").format(c) for c in cols), sql.SQL(", ").join(sql.SQL("p.{}").format(c) for c in cols))
-    n = conn.execute(sql.SQL("SELECT count(*) AS n FROM json_populate_recordset(NULL::{t}, %s::json) p JOIN {t} c ON c.id = p.id "
-                             "WHERE {same}").format(t=_table(target), same=same), (json.dumps(list(rows)),)).fetchone()["n"]
-    return len(rows) - n
+    return {r["id"] for r in conn.execute(
+        sql.SQL("SELECT p.id::text AS id FROM json_populate_recordset(NULL::{t}, %s::json) p JOIN {t} c ON c.id = p.id "
+                "WHERE {same}").format(t=_table(target), same=same), (json.dumps(list(rows)),)).fetchall()}
+
+
+def _insert_mismatches(conn: psycopg.Connection, target: str, rows: Sequence[Mapping[str, Any]]) -> int:
+    """How many of `rows` are absent or differ from the stored row in any INSERT_COLUMNS column."""
+    return len({r["id"] for r in rows} - _insert_matching_ids(conn, target, rows))
+
+
+# -- schema steps a migration may require ------------------------------------------------------------------------------
+
+_PATH_CHECK = "cfr_records_paragraph_path_check"
+# the CHECK as the restored database has it (the previous platform's Prisma migration 0017_regulatory_corpus), with N
+# the longest label: pg_get_constraintdef prints it as
+# CHECK (((paragraph_path = ''::text) OR (paragraph_path ~ '^(\([A-Za-z0-9]{1,N}\))+$'::text)))
+_PATH_CHECK_DEF = re.compile(r"CHECK \(+paragraph_path = ''::text\) OR \(paragraph_path ~ "
+                             r"'\^\(\\\(\[A-Za-z0-9\]\{1,(\d+)\}\\\)\)\+\$'::text\)+")
+
+
+def _paragraph_labels_8(conn: psycopg.Connection, target: str) -> str:
+    """cfr_records_paragraph_path_check: labels of 1-4 characters -> 1-8 (the eCFR's (xviii) .. (xxviii))."""
+    row = conn.execute("SELECT pg_get_constraintdef(c.oid) AS d FROM pg_constraint c JOIN pg_class t ON t.oid = c.conrelid "
+                       "JOIN pg_namespace n ON n.oid = t.relnamespace WHERE n.nspname = %s AND t.relname = 'cfr_records' "
+                       "AND c.conname = %s", (target, _PATH_CHECK)).fetchone()
+    if row is None:
+        return "no constraint"
+    m = _PATH_CHECK_DEF.fullmatch(row["d"])
+    if m is None or int(m.group(1)) < 4:
+        raise MigrationError(f"{_PATH_CHECK} is {row['d']!r}, not the definition this step widens; nothing changed")
+    if int(m.group(1)) >= 8:
+        return "already allows 8"
+    # one statement: the table is never without the check; existing rows are re-validated under the lock
+    conn.execute(sql.SQL("ALTER TABLE {} DROP CONSTRAINT {}, ADD CONSTRAINT {} ").format(
+        _table(target), sql.Identifier(_PATH_CHECK), sql.Identifier(_PATH_CHECK))
+        + sql.SQL("CHECK (paragraph_path = '' OR paragraph_path ~ '^(\\([A-Za-z0-9]{1,8}\\))+$')"))
+    return "widened from 4 to 8"
+
+
+REQUIREMENT_STEPS = {"paragraph_labels_8": _paragraph_labels_8}
+
+
+def _ensure_requirements(conn: psycopg.Connection, m: Migration, target: str) -> dict[str, str]:
+    return {name: REQUIREMENT_STEPS[name](conn, target) for name in m.requires}
 
 
 def _base36(n: int) -> str:
@@ -307,6 +355,7 @@ def _apply_one(conn: psycopg.Connection, m: Migration, schema: str, target: str)
                                  (ids,)).fetchall()
             if clash:
                 raise MigrationError(f"{m.label}: rows it inserts already exist, e.g. {clash[0]['id']}; nothing changed")
+        schema_steps = _ensure_requirements(conn, m, target)
         _move(conn, target, [(u["id"], tuple(u["old"]), tuple(u["new"])) for u in m.update], m.label)
         if m.insert:
             cols = sql.SQL(", ").join(sql.Identifier(c) for c in INSERT_COLUMNS)
@@ -322,7 +371,8 @@ def _apply_one(conn: psycopg.Connection, m: Migration, schema: str, target: str)
                      .format(sql.Identifier(schema)),
                      (m.version, m.name, m.checksum, m.fingerprint_before[1], m.fingerprint_after[1], len(m.insert),
                       len(m.update), client_string()))
-        detail = {"inserted": len(m.insert), "updated": len(m.update), "fingerprint_after": m.fingerprint_after[1]}
+        detail = {"inserted": len(m.insert), "updated": len(m.update), "fingerprint_after": m.fingerprint_after[1],
+                  **({"schema": schema_steps} if schema_steps else {})}
         _event(conn, schema, m, "apply", detail)
     return {"version": m.version, "name": m.name, **detail}
 
@@ -343,10 +393,15 @@ def apply(conn: psycopg.Connection, migrations: Sequence[Migration], *, upto: in
 
 
 def adopt(conn: psycopg.Connection, migrations: Sequence[Migration], *, schema: str = LEDGER_SCHEMA,
-          target: str = TARGET_SCHEMA) -> list[dict[str, Any]]:
+          target: str = TARGET_SCHEMA,
+          heading_values: Mapping[str, Sequence[Sequence[str]]] | None = None) -> list[dict[str, Any]]:
     """Record migrations j..k as already present, without changing a row, for a database whose table is exactly the state
     after k while its ledger records 1..j-1 (none: a copy of a database they were applied to; some: the reference database
-    a repair was made on before it was written as a migration)."""
+    a repair was made on before it was written as a migration).
+
+    heading_values: {row id: [parent_headings, ...]} that heading migrations (regulus.datamigrate.headings) set on rows,
+    accepted for an inserted row besides the file's own value - a copy taken after the heading migrations ran holds them
+    (4 Nov 2026: three rows 0007/0008 restored carry the corrected "Subpart G - Supply-Chain Program")."""
     st = status(conn, migrations, schema=schema, target=target)
     if st.state != "adoptable":
         raise MigrationError(f"{st.state}: nothing to adopt. {st.message}")
@@ -361,8 +416,13 @@ def adopt(conn: psycopg.Connection, migrations: Sequence[Migration], *, schema: 
             later = {u["id"]: u["new"] for n in migrations[m.version:k] for u in n.update}
             rows = [{**r, **dict(zip(("paragraph_path", "path_ordinal", "ordinal"), later[r["id"]]))} if r["id"] in later else r
                     for r in m.insert]
-            if _insert_mismatches(conn, target, rows):
-                raise MigrationError(f"adopt: rows {m.label} inserts differ from the file; nothing recorded")
+            bad = {r["id"] for r in rows} - _insert_matching_ids(conn, target, rows)
+            if bad and heading_values:
+                bad -= _insert_matching_ids(conn, target, [{**r, "parent_headings": list(h)} for r in rows if r["id"] in bad
+                                                           for h in heading_values.get(r["id"], ())])
+            if bad:
+                raise MigrationError(f"adopt: rows {m.label} inserts differ from the file (e.g. {sorted(bad)[0]}); "
+                                     "nothing recorded")
         for m in migrations[j - 1:k]:
             conn.execute(sql.SQL("INSERT INTO {}.cfr_migrations (version, name, checksum, mode, fingerprint_before, "
                                  "fingerprint_after, rows_inserted, rows_updated, client) VALUES (%s, %s, %s, 'adopted', %s, %s, %s, %s, %s)")
@@ -381,7 +441,9 @@ def _rollback_one(conn: psycopg.Connection, m: Migration, schema: str, target: s
             raise MigrationError(f"rollback {m.label}: the ledger's latest version is {top}; nothing changed")
         _expect(conn, target, m.fingerprint_after, f"rollback {m.label} before")
         if _insert_mismatches(conn, target, m.insert):
-            raise MigrationError(f"rollback {m.label}: rows it inserted were changed since; nothing changed")
+            raise MigrationError(f"rollback {m.label}: rows it inserted were changed since (a heading migration that "
+                                 "changed their subpart heading is rolled back first: rollback --headings --to 0); "
+                                 "nothing changed")
         ids = [r["id"] for r in m.insert]
         if ids:
             tbl = f'"{target}".cfr_records'

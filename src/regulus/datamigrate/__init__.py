@@ -1,7 +1,9 @@
 """Ordered, version-controlled data migrations of the eCFR records table (cfr_records).
 
-The schema belongs to the backend (Prisma, schema `public`). This package changes rows only: text the original
-ingestion dropped, restored, and paragraph paths it numbered wrongly, corrected - the repairs made on the reference
+The schema came with the restored database (the previous platform's Prisma migrations, schema `public`; that platform's
+code is not part of this project). This package changes rows, and widens a CHECK only where a migration requires it
+(runner.REQUIREMENT_STEPS). The rows: text the original ingestion dropped, restored, and paragraph paths it numbered
+wrongly, corrected - the repairs made on the reference
 database from 21 Oct 2026 on, so that every developer database restored from the same 15 Sep 2026 baseline reaches
 the same rows. Each migration is one JSON file under data/migrations/cfr/ (regulus.datamigrate.payload) holding every
 row it inserts and the exact old and new values of every row it updates, and the fingerprint of the whole table

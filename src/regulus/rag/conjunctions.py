@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import re
 
-_LABEL = r"\((?:[ivx]{1,4}|[a-z]|\d{1,2})\)"
+_LABEL = r"\((?:[ivxl]{1,8}|[a-z]|\d{1,2})\)"
 # the joining word right before an enumerator label: ", or (iii)", "; and\n- (iii)"
 _JOIN = re.compile(rf"([,;])(\s*)\b(and|or)\b(\s*(?:[-*•]\s*)?)({_LABEL})", re.I)
 _ITEM_LABEL = re.compile(rf"(?<![\w)]){_LABEL}\s")

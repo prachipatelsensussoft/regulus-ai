@@ -117,8 +117,10 @@ The API key in `configs/llm_model.env` (`LLM_MODEL_API_KEYS=<id>:<secret>`) is r
 ## Database data migrations (`python -m regulus.setup`)
 
 The eCFR records (`cfr_records`) are brought to the repaired data the code expects by ordered, checksummed data
-migrations in `data/migrations/cfr/`. They insert and update rows only, never delete, and never touch the schema (the
-backend's Prisma migrations own it). Full reference: [`docs/DATA_MIGRATIONS.md`](docs/DATA_MIGRATIONS.md).
+migrations in `data/migrations/cfr/`. They insert and update rows only and never delete; the one schema change is
+migration 0011 widening the paragraph-label CHECK from 4 to 8 characters. Subpart titles and headings have their own
+heading migrations in `data/migrations/headings/`, applied by the same command. Full reference:
+[`docs/DATA_MIGRATIONS.md`](docs/DATA_MIGRATIONS.md).
 
 **An admin database connection is required.** `regulus.setup` reads Prisma's `_prisma_migrations` table, keeps its
 ledger in its own `regulus_data` schema, and writes `cfr_records`. The application's `regulus_ro` role can do none of

@@ -67,7 +67,7 @@ MARK_RE = re.compile(r"(?<![A-Za-z0-9])\[(\d{1,2})\]")
 _OBLIGATION_RE = re.compile(r"\b(must|shall|required?|requires|needs? to|has to|have to|obligat\w*|mandat\w*)\b", re.I)
 _NEGATION_RE = re.compile(r"\b(not found|does not|do not|cannot|no exact|not among|not available|not provided)\b", re.I)
 _LEAD_LABEL = re.compile(
-    r"^\s*(?:[-*•]\s*|\d+[.)]\s+)?(?:\*\*)?\s*(?:21\s*C\.?F\.?R\.?\s*)?(?:§+\s*)?(?:\d{3,4}\.\d+)?\s*((?:\([a-z0-9]{1,4}\))+)", re.I)
+    r"^\s*(?:[-*•]\s*|\d+[.)]\s+)?(?:\*\*)?\s*(?:21\s*C\.?F\.?R\.?\s*)?(?:§+\s*)?(?:\d{3,4}\.\d+)?\s*((?:\((?:[a-z0-9]{1,4}|[ivxl]{5,8})\))+)", re.I)
 _SHORT_REF_RE = re.compile(r"(?<![\w)\]])((?:\([a-z]\))(?:\(\d{1,2}\))*)(?!\s*\()")
 _WORD_RE = re.compile(r"[a-z][a-z'-]{2,}")
 _STOP = {
@@ -124,7 +124,7 @@ def _anchor_patterns(anchor: str) -> list[re.Pattern[str]]:
     return [re.compile(rf"(?<![\d.]){re.escape(n.group(0))}(?![\d])")] if n else []
 
 
-_LABEL_RE = re.compile(r"(?:\d{3,4}\.\d+)?(?:\([a-z0-9]{1,4}\))+|\d{3,4}\.\d+", re.I)
+_LABEL_RE = re.compile(r"(?:\d{3,4}\.\d+)?(?:\((?:[a-z0-9]{1,4}|[ivxl]{5,8})\))+|\d{3,4}\.\d+", re.I)
 
 
 def _is_label_line(line: str) -> bool:

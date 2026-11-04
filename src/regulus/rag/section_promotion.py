@@ -451,7 +451,7 @@ def named_act_path(section: str, question: str, raw: str | None) -> str:
     was not in the sources. "" when neither names one, or AP2 is off."""
     if not precision_fix("AP2"):
         return ""
-    rx = re.compile(rf"(?<![\d.]){re.escape(section)}((?:\([A-Za-z0-9]{{1,4}}\))+)")
+    rx = re.compile(rf"(?<![\d.]){re.escape(section)}((?:\((?:[A-Za-z0-9]{{1,4}}|[ivxl]{{5,8}})\))+)")
     for text in (question, raw):
         m = rx.search(text or "")
         if m:
@@ -532,7 +532,7 @@ DX1_MAX = 2
 _ASKS_DEFINITION = re.compile(r"\b(?:defin(?:e|ed|es|ition|itions)|meaning|means|what\s+(?:is|are)\s+(?:an?|the)\b)", re.I)
 _REDIRECT = re.compile(r"(?:^|(?<=[.;:]\s)|(?<=\)\s))(?P<term>[A-Z][A-Za-z/ -]{2,60}?)(?:,[^.;]{0,100},)?\s+(?:has|have)\s+the\s+"
                        r"(?:same\s+)?meanings?\s+(?:set\s+forth|given|defined|provided|assigned)\s+(?:in|under|by)\s+§+\s*"
-                       r"(?P<ref>\d{1,4}\.\d{1,4}[a-z]?(?:\([a-z0-9]{1,4}\))*)")
+                       r"(?P<ref>\d{1,4}\.\d{1,4}[a-z]?(?:\((?:[a-z0-9]{1,4}|[ivxl]{5,8})\))*)")
 
 
 def comparison_question(question: str) -> bool:

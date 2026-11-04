@@ -1,0 +1,67 @@
+{
+ "format": 1,
+ "version": 10,
+ "name": "paragraph_path_corrections_20261104",
+ "reference_applied": "2026-11-04",
+ "description": "Chained paragraph paths (a label nested under the previous run, e.g. (a)(5)(9)(13)(17) for (a)(17)) corrected against the eCFR renderer's paragraph ids and text (ecfr_renderer_20261103/audit), for the sections whose corrected labels fit the 4-character paragraph_path CHECK: 11 rows in 101.13, 1020.32, 310.201 and 558.258.",
+ "provenance": {
+  "source_files": [
+   {
+    "file": "~/regulus_eval_runs/paragraph_path_repair_20261104/repair.sql",
+    "sha256": "543f3f9b95fdadfcc6d359d406107ac0edba537c4939d4623ce52627c2e71779"
+   },
+   {
+    "file": "~/regulus_eval_runs/paragraph_path_repair_20261104/rollback.sql",
+    "sha256": "87988d5fe8404306c64b1109f4359e8c95f416d86f78dab475d1cb44c8a4db92"
+   },
+   {
+    "file": "~/regulus_eval_runs/paragraph_path_repair_20261104/corrections.tsv",
+    "sha256": "d6464050e6e659f89cbfd1aeb6af1cd27514cefe390c3fb0139a105882f4ae1f"
+   }
+  ],
+  "ecfr_payloads": {
+   "101": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=101",
+    "sha256": "c59f29b637aae8ada55f205759bddb083ff14c10f4421ccbaec2af1e1fbdc607",
+    "from": "rows' source_payload_sha256"
+   },
+   "310": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=310",
+    "sha256": "1006a632a07c698851b76446419f669aa85026fa987a4db805ab4c494c8a48a7",
+    "from": "rows' source_payload_sha256"
+   },
+   "558": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=558",
+    "sha256": "76692683a5e98f030127f3f877cdb24da9c4dada0ae555733b281306ce02cf50",
+    "from": "rows' source_payload_sha256"
+   },
+   "1020": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=1020",
+    "sha256": "dccf91abbe3cf8c5f0d527fd918dac5d4d3ba6310ab337c1fbe7c5523ca59798",
+    "from": "rows' source_payload_sha256"
+   }
+  }
+ },
+ "fingerprint_before": {
+  "rows": 67074,
+  "sha256": "d9d8e2a3becfa4b4ab03eecda14c5eb2f7e790ac3f23bae01cd0308121855077"
+ },
+ "fingerprint_after": {
+  "rows": 67074,
+  "sha256": "b91b5bff50b3ed5203b64976b4851d981c95ee30a10a639a3521988ba3c862cc"
+ },
+ "insert": [],
+ "update": [
+{"id": "01a07aa7-0a0a-71ec-a3fd-39552f3f36d0", "new": ["(i)", 1, 23], "old": ["(i)(ii)(iii)(i)", 0, 23], "section": "101.13"},
+{"id": "01a07ab0-a115-7f9d-b547-5c84b98fe2a4", "new": ["(a)(9)", 0, 49], "old": ["(a)(5)(9)", 0, 49], "section": "310.201"},
+{"id": "01a07ab0-a12a-733b-8795-d58aa92f1a15", "new": ["(a)(17)", 0, 78], "old": ["(a)(5)(9)(13)(17)", 0, 78], "section": "310.201"},
+{"id": "01a07ab0-a13b-77d1-a82e-a45886641aa7", "new": ["(a)(20)", 0, 103], "old": ["(a)(5)(9)(13)(20)", 0, 103], "section": "310.201"},
+{"id": "01a07ab0-a159-70b9-989c-dac717fdd4c7", "new": ["(a)(25)", 0, 145], "old": ["(a)(5)(9)(13)(25)", 0, 145], "section": "310.201"},
+{"id": "01a07ab0-a16b-7984-9c4f-e22483c7d95f", "new": ["(a)(29)", 0, 171], "old": ["(a)(5)(9)(13)(29)", 0, 171], "section": "310.201"},
+{"id": "01a07ab3-0ffc-789d-87e8-833cc0b33780", "new": ["(e)(4)", 0, 25], "old": ["(e)(3)(iii)(B)(iv)(B)(4)", 0, 25], "section": "558.258"},
+{"id": "01a07ab3-0fff-7700-b191-a3ad359bfadf", "new": ["(e)(6)(i)", 0, 30], "old": ["(e)(3)(iii)(B)(iv)(B)(6)(i)", 0, 30], "section": "558.258"},
+{"id": "01a07ab6-c9dd-7723-808c-e0b273cf60ac", "new": ["", 0, 0], "old": ["", 1, 0], "section": "1020.32"},
+{"id": "01a07ab6-c9fc-7731-b711-2965ac7390bd", "new": ["(i)", 2, 60], "old": ["(i)(ii)(2)(ii)(i)", 0, 60], "section": "1020.32"},
+{"id": "01a18c12-3ee4-7bee-9f06-abb3b918777a", "new": ["(e)(3)(iii)(B)(iv)(B)(4)", 0, 26], "old": ["(e)(3)(iii)(B)(iv)(B)(4)", 1, 26], "section": "558.258"}
+]
+}

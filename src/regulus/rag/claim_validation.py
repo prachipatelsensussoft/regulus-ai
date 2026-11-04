@@ -158,7 +158,7 @@ def false_denial(sentence: str, sources, cited=None) -> tuple[int, str] | None:
 
 # FC2: the figures a sentence states - amounts, multi-digit numbers and dates, and periods ("7 working days") - after its
 # CFR citations and paragraph designators are removed; the same, written out, for the numbers a source may spell
-_FC2_REFS = re.compile(r"§+\s*|\b\d+\.\d+[a-z]?(?:\([A-Za-z0-9]+\))*|\([A-Za-z0-9]{1,4}\)"
+_FC2_REFS = re.compile(r"§+\s*|\b\d+\.\d+[a-z]?(?:\([A-Za-z0-9]+\))*|\((?:[A-Za-z0-9]{1,4}|[ivxl]{5,8})\)"
                        r"|\b(?:parts?|subparts?|sections?|titles?|chapters?)\s+\d+(?:\s*(?:,|and|or|through|to|-)\s*\d+)*"
                        # a standard's identifier and its clauses are names (M-010, M-017: "ISO 13485:2016", "Clause 7.3")
                        r"|\b(?:ISO|IEC|ASTM|AAMI|ANSI|CLSI|ICH)\s*[\d.:/-]+(?:\(E\))?|\bclauses?\s+\d+(?:\.\d+)*", re.I)
@@ -187,7 +187,7 @@ _OBLIGATION = re.compile(r"\b(?:must|shall|required?|requires|need(?:s)? to|has 
 UNSUPPORTED_MAX_SUPPORT = 0.30    # share of content words found in any supplied source
 
 _MARK = re.compile(r"(?<![A-Za-z0-9])\[(\d{1,2})\]")
-_LABEL = re.compile(r"(?:21\s*CFR\s*)?(?:§+\s*)?\d{1,4}\.\d{1,4}[a-z]?(?:\([a-z0-9]{1,4}\))*\s*:?", re.I)
+_LABEL = re.compile(r"(?:21\s*CFR\s*)?(?:§+\s*)?\d{1,4}\.\d{1,4}[a-z]?(?:\((?:[a-z0-9]{1,4}|[ivxl]{5,8})\))*\s*:?", re.I)
 _TOKEN = re.compile(r"[a-z0-9]+")
 _WORD = re.compile(r"[a-z][a-z'-]{3,}")
 _STOP = frozenset(
@@ -248,8 +248,8 @@ _LEAD = 45  # a provision label within the first characters of a statement names
 # absent, and the cited sources carry no limiting term of that kind. Unscoped denials ("there is no requirement",
 # "FDA does not regulate") are never accepted here: they caused the false-denial regression (SFT v2).
 _SCOPE_SUBJECT = (r"(?:(?:this|these|the(?:\s+(?:cited|supplied|quoted|listed))?)\s+(?:provisions?|sections?|paragraphs?|"
-                  r"regulations?|listings?|rules?|texts?)|21\s*CFR\s*§?\s*\d{1,4}\.\d+[a-z]?(?:\s*\([a-z0-9]{1,4}\))*|"
-                  r"§+\s*\d{1,4}\.\d+[a-z]?(?:\s*\([a-z0-9]{1,4}\))*)")
+                  r"regulations?|listings?|rules?|texts?)|21\s*CFR\s*§?\s*\d{1,4}\.\d+[a-z]?(?:\s*\((?:[a-z0-9]{1,4}|[ivxl]{5,8})\))*|"
+                  r"§+\s*\d{1,4}\.\d+[a-z]?(?:\s*\((?:[a-z0-9]{1,4}|[ivxl]{5,8})\))*)")
 _ABSENCE_VERB = (r"(?:do(?:es)?\s+not\s+(?:specify|set|impose|state|establish|place|provide|prescribe|include|contain|"
                  r"restrict|limit)|(?:specif(?:y|ies)|sets?|imposes?|states?|establish(?:es)?|places?|provides?|prescribes?|"
                  r"contains?)\s+no)")

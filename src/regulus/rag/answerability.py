@@ -59,7 +59,7 @@ UNDETERMINED = "UNDETERMINED"
 _REFERENCE_CUE = re.compile(r"\b(?:refers?\s+to|referenc\w*|cross-referenc\w*|meeting|meets|criteria\s+(?:of|in)|in\s+accordance\s+with"
                             r"|pursuant\s+to|as\s+defined\s+in|described\s+in|listed\s+in)\s+(?:the\s+)?(?:\S+\s+){0,2}$", re.I)
 # a provision pointed at without saying which one
-_AMBIGUOUS_RE = re.compile(r"\b(?:paragraph|subsection|clause)\s*\([a-z0-9]{1,4}\)(?:\([a-z0-9]{1,4}\))*|\b(?:this|that|the\s+same)\s+"
+_AMBIGUOUS_RE = re.compile(r"\b(?:paragraph|subsection|clause)\s*\((?:[a-z0-9]{1,4}|[ivxl]{5,8})\)(?:\((?:[a-z0-9]{1,4}|[ivxl]{5,8})\))*|\b(?:this|that|the\s+same)\s+"
                            r"(?:section|paragraph|provision|regulation|rule)\b", re.I)
 # a determination about a particular product, company or case, or a prediction
 _DETERMINATION_RE = re.compile(r"\b(?:is|are|am|was|would|will)\s+(?:my|our|this|their)\s+(?:device|product|company|firm|facility|"

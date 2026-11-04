@@ -145,7 +145,7 @@ def compose(package, question: str, former: list[tuple[str, str]], unknown: list
 
     def kind(s) -> int:
         cit = s.citation or ""
-        if not re.search(r"\([a-z0-9]{1,4}\)$", cit):
+        if not re.search(r"\((?:[a-z0-9]{1,4}|[ivxl]{5,8})\)$", cit):
             return 0                                   # the section's lead-in sentence
         if cit.endswith("820.10(a)"):
             return 1                                   # the quality management system requirement itself

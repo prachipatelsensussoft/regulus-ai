@@ -64,9 +64,9 @@ _PREFIX = 6  # a question term matches a passage on its first this-many characte
 # or (c)(1)(iv) of this section", "except as provided in paragraph (d)". Used to keep what a
 # paragraph refers to with it; see `_referenced_paths`.
 _REF_CUE_RE = re.compile(r"\bparagraphs?\b", re.I)
-_REF_RUN_RE = re.compile(r"(?:\(\s*[A-Za-z0-9]{1,4}\s*\)|[\s,;]|\band\b|\bor\b|\bthrough\b|\bto\b)+", re.I)
+_REF_RUN_RE = re.compile(r"(?:\(\s*(?:[A-Za-z0-9]{1,4}|[ivxl]{5,8})\s*\)|[\s,;]|\band\b|\bor\b|\bthrough\b|\bto\b)+", re.I)
 _REF_SPLIT_RE = re.compile(r"[,;]|\band\b|\bor\b|\bthrough\b|\bto\b", re.I)
-_REF_TOKEN_RE = re.compile(r"\(\s*([A-Za-z0-9]{1,4})\s*\)")
+_REF_TOKEN_RE = re.compile(r"\(\s*([A-Za-z0-9]{1,4}|[ivxl]{5,8})\s*\)")
 
 
 @dataclass(frozen=True)
@@ -644,7 +644,7 @@ def is_complete_sentence(text: str) -> bool:
 
 def _identity(evidence) -> tuple[str, str] | None:
     """(section, paragraph path) of an eCFR row, from its citation label ("21 CFR 830.20(b)(1)")."""
-    m = re.match(r"^\d+ CFR (\d{1,4}\.\d{1,4}[a-z]?)((?:\([a-z0-9]{1,4}\))*)$", evidence.citation or "")
+    m = re.match(r"^\d+ CFR (\d{1,4}\.\d{1,4}[a-z]?)((?:\((?:[a-z0-9]{1,4}|[ivxl]{5,8})\))*)$", evidence.citation or "")
     if m:
         return (m.group(1), m.group(2))
     # an FD&C Act passage ("FD&C Act § 201(v)(1) [21 U.S.C. 321(v)(1)]") is a provision too: never merged as a near-duplicate
@@ -689,7 +689,7 @@ def required_only(selection: Selection) -> Selection:
 
 # ---------------------------------------------------------------- evidence consolidation (Stage 8)
 
-_RESERVED_RE = re.compile(r"^\W*(?:\([a-z0-9]{1,4}\)\s*)*\[?\s*reserved\s*\]?\W*$", re.I)
+_RESERVED_RE = re.compile(r"^\W*(?:\((?:[a-z0-9]{1,4}|[ivxl]{5,8})\)\s*)*\[?\s*reserved\s*\]?\W*$", re.I)
 
 
 def _normalised(text: str) -> str:

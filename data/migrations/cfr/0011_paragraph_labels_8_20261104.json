@@ -1,0 +1,177 @@
+{
+ "format": 1,
+ "version": 11,
+ "name": "paragraph_labels_8_20261104",
+ "reference_applied": "2026-11-04",
+ "description": "The rest of the eCFR renderer audit's chained paragraph paths, whose corrected labels are longer than 4 characters ((xviii) .. (xxxvii)): 89 rows in 10.95, 1114.41, 117.5, 172.320, 175.300, 178.3870, 50.23, 558.76 and 864.1870 - 78 as the audit planned, and 11 continuation rows of 175.300 (the list, table or text after a labeled paragraph) that the plan left on the old chained path, moved with their paragraph. Requires paragraph_labels_8: the runner first widens cfr_records_paragraph_path_check from 1-4 to 1-8 characters per label.",
+ "provenance": {
+  "source_files": [
+   {
+    "file": "~/regulus_eval_runs/paragraph_labels_repair_20261104/make_repair.py",
+    "sha256": "1824fd68fe2f552f3755bcca8fa9c713cbbe22b95912c1248a787e2f40552369"
+   },
+   {
+    "file": "~/regulus_eval_runs/paragraph_labels_repair_20261104/repair.sql",
+    "sha256": "71526692f8bd2a6570743722421d8f5c82ea9e1f0294f55b448a8db3bd2a8aba"
+   },
+   {
+    "file": "~/regulus_eval_runs/paragraph_labels_repair_20261104/rollback.sql",
+    "sha256": "64e1fde53ab807668921f510748938031afcb404f3d876eb6d466f94d5d26cdf"
+   },
+   {
+    "file": "~/regulus_eval_runs/paragraph_labels_repair_20261104/corrections.tsv",
+    "sha256": "c091cfcaf29009b877b2ada5e28b4c6aca0caa0d2925dce940a1427fcdbac5c0"
+   }
+  ],
+  "ecfr_payloads": {
+   "10": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=10",
+    "sha256": "9426c9fc67a512167f169cfd31b32ad5f5574cf43633dfc3ee1d103b16bb9dd8",
+    "from": "rows' source_payload_sha256"
+   },
+   "50": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=50",
+    "sha256": "b9f14b7152660d3ad5b76cb2791ab535daaa7ac2c9de6af8572a4bf4ce554946",
+    "from": "rows' source_payload_sha256"
+   },
+   "117": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=117",
+    "sha256": "038d298d6659d35f1eb6106dc0c8cfe217396672b841a4969e58a910530a0b87",
+    "from": "rows' source_payload_sha256"
+   },
+   "172": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=172",
+    "sha256": "e4ecadd217b7ead24a9566e39c68d1c0a4a2f13e25ade2c76ad6e51b6b780e58",
+    "from": "rows' source_payload_sha256"
+   },
+   "175": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=175",
+    "sha256": "329be30ed342e08873217e74aa8eef015417d898f75b8863a24b80324cf5b44a",
+    "from": "rows' source_payload_sha256"
+   },
+   "178": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=178",
+    "sha256": "9034eea36763948f0698641af77f96b692dcb14c18ca1c88c8f04b57da3b610c",
+    "from": "rows' source_payload_sha256"
+   },
+   "558": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=558",
+    "sha256": "76692683a5e98f030127f3f877cdb24da9c4dada0ae555733b281306ce02cf50",
+    "from": "rows' source_payload_sha256"
+   },
+   "864": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=864",
+    "sha256": "0401e490c8f13517d9a1711c9b83399c44fd9317584cac6358f7d9db89da2f46",
+    "from": "rows' source_payload_sha256"
+   },
+   "1114": {
+    "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-03/title-21.xml?chapter=I&part=1114",
+    "sha256": "341d2c41d75247b24bc2e24412a6724b267cd703ad61078cf51ebf7ce0c47a76",
+    "from": "rows' source_payload_sha256"
+   }
+  }
+ },
+ "fingerprint_before": {
+  "rows": 67074,
+  "sha256": "b91b5bff50b3ed5203b64976b4851d981c95ee30a10a639a3521988ba3c862cc"
+ },
+ "fingerprint_after": {
+  "rows": 67074,
+  "sha256": "edd5cf8b6ac344d1a5ff379bbb2ca5d8e49b22765a4aa603e81039dc55d95ca9"
+ },
+ "requires": [
+  "paragraph_labels_8"
+ ],
+ "insert": [],
+ "update": [
+{"id": "01a07aaa-bb79-755a-9832-32d6a2dfc188", "new": ["(d)(8)(xviii)", 0, 44], "old": ["(d)(8)(xvii)", 1, 44], "section": "10.95"},
+{"id": "01a07aab-517a-7c10-86ff-03853d14d550", "new": ["(d)(1)(xviii)", 0, 28], "old": ["(d)(1)(xvii)", 1, 28], "section": "50.23"},
+{"id": "01a07aac-d821-79ce-8b32-32492a6bcb8c", "new": ["(g)(3)(xviii)", 0, 37], "old": ["(g)(3)(xvii)", 1, 37], "section": "117.5"},
+{"id": "01a07aac-d822-78b7-b780-b37d2d29fff4", "new": ["(g)(3)(xix)", 0, 38], "old": ["(g)(3)(xvii)(xix)", 0, 38], "section": "117.5"},
+{"id": "01a07aac-d826-703e-8712-e0c9eb518f60", "new": ["(g)(3)(xxiii)", 0, 42], "old": ["(g)(3)(xvii)(xix)(xx)(xxi)(xxii)", 1, 42], "section": "117.5"},
+{"id": "01a07aac-d83c-73a0-8c40-1974a27f8fab", "new": ["(h)(3)(xviii)", 0, 63], "old": ["(i)(ii)(iii)(iv)(v)(vi)(vii)(viii)(ix)(x)(xi)(xii)(xiii)(xiv)(xv)(xvi)(xvii)", 1, 63], "section": "117.5"},
+{"id": "01a07aac-d841-7436-85e0-fcf214e802e9", "new": ["(h)(3)(xxiii)", 0, 68], "old": ["(i)(ii)(iii)(iv)(v)(vi)(vii)(viii)(ix)(x)(xi)(xii)(xiii)(xiv)(xv)(xvi)(xvii)(xix)(xx)(xxi)(xxii)", 1, 68], "section": "117.5"},
+{"id": "01a07aac-d844-7ea4-aa51-da277a57b618", "new": ["(h)(3)(xxvii)", 0, 72], "old": ["(i)(ii)(iii)(iv)(v)(vi)(vii)(viii)(ix)(x)(xi)(xii)(xiii)(xiv)(xv)(xvi)(xvii)(xix)(xx)(xxi)(xxii)(xxiv)(xxv)(xxvi)", 1, 72], "section": "117.5"},
+{"id": "01a07aae-8aa3-731d-9394-6b75f10974a1", "new": ["", 0, 0], "old": ["", 1, 0], "section": "172.320"},
+{"id": "01a07aae-b082-7343-9fe9-a7936dce037a", "new": ["", 0, 0], "old": ["", 1, 0], "section": "175.300"},
+{"id": "01a07aae-b09e-7495-91e2-0c142d77485a", "new": ["(b)(3)(xviii)", 0, 73], "old": ["(b)(3)(xvii)", 2, 73], "section": "175.300"},
+{"id": "01a07aae-b0a2-76a1-b422-877ae87a2eb7", "new": ["(b)(3)(xxiii)", 0, 87], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)", 2, 87], "section": "175.300"},
+{"id": "01a07aae-b0a4-7c13-bcab-96509b5d58a1", "new": ["(b)(3)(xxvii)", 0, 94], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)", 1, 94], "section": "175.300"},
+{"id": "01a07aae-b0a5-7503-821d-0946b55a089c", "new": ["(b)(3)(xxviii)", 0, 96], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)", 3, 96], "section": "175.300"},
+{"id": "01a07aae-b0a9-7173-ba76-abb2e15d0e6f", "new": ["(b)(3)(xxxii)", 0, 107], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(b)(xxix)(xxx)(xxxi)", 1, 107], "section": "175.300"},
+{"id": "01a07aae-b0aa-709f-9589-2f8b093b46cb", "new": ["(b)(3)(xxxiii)", 0, 109], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(b)(xxix)(xxx)(xxxi)", 3, 109], "section": "175.300"},
+{"id": "01a07aae-b0aa-7c9f-a6c0-fddf424712da", "new": ["(b)(3)(xxxiv)", 0, 113], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(b)(xxix)(xxx)(xxxi)", 7, 113], "section": "175.300"},
+{"id": "01a07aae-b0ac-7662-b1ef-903659040d07", "new": ["(b)(3)(xxxvi)", 0, 115], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(b)(xxix)(xxx)(xxxi)(xxxv)", 1, 115], "section": "175.300"},
+{"id": "01a07aae-b0ad-70ac-bd64-63797ca83818", "new": ["(b)(3)(xxxvii)", 0, 116], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(b)(xxix)(xxx)(xxxi)(xxxv)", 2, 116], "section": "175.300"},
+{"id": "01a07aae-b0b1-745c-b430-f0a426c3bc76", "new": ["(d)", 0, 122], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(d)", 0, 122], "section": "175.300"},
+{"id": "01a07aae-b0c7-7f41-a644-bb4842a6df29", "new": ["(f)(1)", 0, 156], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(f)(1)", 0, 156], "section": "175.300"},
+{"id": "01a07aae-b0c8-789b-a3e1-9eb6893f6f6f", "new": ["(f)(2)", 0, 158], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(f)(2)", 0, 158], "section": "175.300"},
+{"id": "01a07aae-eb0c-72dd-ba51-9f79914562d9", "new": ["", 0, 0], "old": ["", 1, 0], "section": "178.3870"},
+{"id": "01a07aae-eb27-7253-b949-326e450ee4a4", "new": ["(a)(3)(xviii)", 0, 32], "old": ["(a)(3)(xvii)", 1, 32], "section": "178.3870"},
+{"id": "01a07ab3-0f04-7ca4-8ac5-206e1af78fca", "new": ["(d)(6)(xviii)", 0, 36], "old": ["(d)(6)(xvii)", 1, 36], "section": "558.76"},
+{"id": "01a07ab5-73ae-7941-82f3-35510d89f8ad", "new": ["(b)(1)(xviii)", 0, 25], "old": ["(b)(1)(xvii)(E)", 1, 25], "section": "864.1870"},
+{"id": "01a07ab5-73af-7352-8274-746040c14f6a", "new": ["(b)(1)(xviii)(A)", 0, 26], "old": ["(b)(1)(xvii)(E)(A)", 0, 26], "section": "864.1870"},
+{"id": "01a07ab5-73af-7cbf-9e93-c3c8db1aa6f6", "new": ["(b)(1)(xviii)(B)", 0, 27], "old": ["(b)(1)(xvii)(E)(B)", 0, 27], "section": "864.1870"},
+{"id": "01a07ab5-73b0-7675-bbe0-16914aba35b2", "new": ["(b)(1)(xviii)(C)", 0, 28], "old": ["(b)(1)(xvii)(E)(C)", 0, 28], "section": "864.1870"},
+{"id": "01a07ab5-73b1-71dd-9a81-b3c662508512", "new": ["(b)(1)(xviii)(D)", 0, 29], "old": ["(b)(1)(xvii)(E)(D)", 0, 29], "section": "864.1870"},
+{"id": "01a07ab5-73b1-7cd5-9315-74beac27e8f4", "new": ["(b)(1)(xviii)(E)", 0, 30], "old": ["(b)(1)(xvii)(E)(E)", 0, 30], "section": "864.1870"},
+{"id": "01a07ab7-08b5-75bd-8bd3-75fcadf0281d", "new": ["(a)(1)(xviii)", 0, 30], "old": ["(a)(1)(viii)(xi)(xii)(xiii)(xiv)(xv)(G)(xvi)(xvii)", 1, 30], "section": "1114.41"},
+{"id": "01a19ae6-4700-7403-ad53-72fce0e06573", "new": ["(a)(1)", 0, 2], "old": ["(a)", 1, 2], "section": "172.320"},
+{"id": "01a19ae6-4700-7766-a42d-881ef2e0e7d5", "new": ["(a)(2)", 0, 3], "old": ["(a)", 2, 3], "section": "172.320"},
+{"id": "01a19ae6-4700-7a09-85a3-fb361e0b7124", "new": ["(a)(3)", 0, 4], "old": ["(a)", 3, 4], "section": "172.320"},
+{"id": "01a19ae6-4700-7c81-9e01-ef7c65ba9a35", "new": ["(a)(4)", 0, 5], "old": ["(a)", 4, 5], "section": "172.320"},
+{"id": "01a19ae6-4700-7ef1-8be0-1ab02ee978dd", "new": ["(a)(5)", 0, 6], "old": ["(a)", 5, 6], "section": "172.320"},
+{"id": "01a19ae6-4701-714c-b249-e70eb83b4f77", "new": ["(a)(6)", 0, 7], "old": ["(a)", 6, 7], "section": "172.320"},
+{"id": "01a19ae6-4701-73b5-8dca-9ae9149d03ea", "new": ["(a)(7)", 0, 8], "old": ["(a)", 7, 8], "section": "172.320"},
+{"id": "01a19ae6-4701-760d-ac3e-2520ff58d7ca", "new": ["(a)(8)", 0, 9], "old": ["(a)", 8, 9], "section": "172.320"},
+{"id": "01a19ae6-4701-7864-8427-53fcbb2d250b", "new": ["(a)(9)", 0, 10], "old": ["(a)", 9, 10], "section": "172.320"},
+{"id": "01a19ae6-4701-7ad3-b56e-46e0ac3047b1", "new": ["(a)(10)", 0, 11], "old": ["(a)", 10, 11], "section": "172.320"},
+{"id": "01a19ae6-4701-7d29-a3c4-2a3955f088ba", "new": ["(a)(11)", 0, 12], "old": ["(a)", 11, 12], "section": "172.320"},
+{"id": "01a19ae6-4701-7fa3-aa59-738c5bc4ec96", "new": ["(a)(12)", 0, 13], "old": ["(a)", 12, 13], "section": "172.320"},
+{"id": "01a19ae6-4702-71f5-883e-480208a8cc69", "new": ["(a)(13)", 0, 14], "old": ["(a)", 13, 14], "section": "172.320"},
+{"id": "01a19ae6-4702-7546-b79e-b30fb44a2469", "new": ["(a)(14)", 0, 15], "old": ["(a)", 14, 15], "section": "172.320"},
+{"id": "01a19ae6-4702-77a7-8574-306cab88cd5d", "new": ["(a)(15)", 0, 16], "old": ["(a)", 15, 16], "section": "172.320"},
+{"id": "01a19ae6-4702-7a01-bd9c-acb048ae0e58", "new": ["(a)(16)", 0, 17], "old": ["(a)", 16, 17], "section": "172.320"},
+{"id": "01a19ae6-4702-7c59-92de-bb2a3431a67c", "new": ["(a)(17)", 0, 18], "old": ["(a)", 17, 18], "section": "172.320"},
+{"id": "01a19ae6-4702-7ea7-852c-9abe43733183", "new": ["(a)(18)", 0, 19], "old": ["(a)", 18, 19], "section": "172.320"},
+{"id": "01a19ae6-4703-70f4-928c-52932a92d951", "new": ["(a)(19)", 0, 20], "old": ["(a)", 19, 20], "section": "172.320"},
+{"id": "01a19ae6-4703-733d-a548-9fc0b812769a", "new": ["(a)(20)", 0, 21], "old": ["(a)", 20, 21], "section": "172.320"},
+{"id": "01a19ae6-4703-758e-b156-03279fedd61c", "new": ["(a)(21)", 0, 22], "old": ["(a)", 21, 22], "section": "172.320"},
+{"id": "01a19ae6-4703-77f0-84fc-67ccbd01e4cb", "new": ["(a)(22)", 0, 23], "old": ["(a)", 22, 23], "section": "172.320"},
+{"id": "01a19ae6-4703-7d96-b56b-791910a465e1", "new": ["(b)(1)(i)", 0, 26], "old": ["(b)(1)", 1, 26], "section": "172.320"},
+{"id": "01a19ae6-4704-7071-a2ff-8369e0f53ce3", "new": ["(b)(1)(ii)", 0, 27], "old": ["(b)(1)", 2, 27], "section": "172.320"},
+{"id": "01a19ae6-4704-7370-8b30-63d068c394d9", "new": ["(b)(1)(iii)", 0, 28], "old": ["(b)(1)", 3, 28], "section": "172.320"},
+{"id": "01a19ae6-4704-75da-95e0-9cdd10471040", "new": ["(b)(1)(iv)", 0, 29], "old": ["(b)(1)", 4, 29], "section": "172.320"},
+{"id": "01a19ae6-4704-7841-a5d0-c95af1064d65", "new": ["(b)(1)(v)", 0, 30], "old": ["(b)(1)", 5, 30], "section": "172.320"},
+{"id": "01a19ae6-4704-7aa2-810d-2cd5defe39b2", "new": ["(b)(1)(vi)", 0, 31], "old": ["(b)(1)", 6, 31], "section": "172.320"},
+{"id": "01a19ae6-4704-7d11-bfd1-619c32de107c", "new": ["(b)(1)(vii)", 0, 32], "old": ["(b)(1)", 7, 32], "section": "172.320"},
+{"id": "01a19ae6-4704-7f70-958c-2f48644d3fc3", "new": ["(b)(1)(viii)", 0, 33], "old": ["(b)(1)", 8, 33], "section": "172.320"},
+{"id": "01a19ae6-4705-7261-bf4c-2752a14e3ff4", "new": ["(b)(1)(ix)", 0, 34], "old": ["(b)(1)", 9, 34], "section": "172.320"},
+{"id": "01a19ae6-4705-74b9-8392-7ae85bcf0b91", "new": ["(b)(1)(x)", 0, 35], "old": ["(b)(1)", 10, 35], "section": "172.320"},
+{"id": "01a19ae6-4705-771a-8746-ba009541fc81", "new": ["(b)(1)(xi)", 0, 36], "old": ["(b)(1)", 11, 36], "section": "172.320"},
+{"id": "01a19ae6-4705-798b-a630-4736d9c42d43", "new": ["(b)(1)(xii)", 0, 37], "old": ["(b)(1)", 12, 37], "section": "172.320"},
+{"id": "01a19ae6-4705-7bf2-ab30-b870ce367900", "new": ["(b)(1)(xiii)", 0, 38], "old": ["(b)(1)", 13, 38], "section": "172.320"},
+{"id": "01a19ae6-4705-7e98-abf3-3788af2d0fc1", "new": ["(b)(1)(xiv)", 0, 39], "old": ["(b)(1)", 14, 39], "section": "172.320"},
+{"id": "01a19ae6-4706-718b-bf1f-a5a41afc2d43", "new": ["(b)(1)(xv)", 0, 40], "old": ["(b)(1)", 15, 40], "section": "172.320"},
+{"id": "01a19ae6-4706-73df-b448-45598136f7df", "new": ["(b)(1)(xvi)", 0, 41], "old": ["(b)(1)", 16, 41], "section": "172.320"},
+{"id": "01a19ae6-4706-761d-81ff-f548d39db7d9", "new": ["(b)(1)(xvii)", 0, 42], "old": ["(b)(1)", 17, 42], "section": "172.320"},
+{"id": "01a19ae6-4706-786f-9ba8-03eed910b76b", "new": ["(b)(1)(xviii)", 0, 43], "old": ["(b)(1)", 18, 43], "section": "172.320"},
+{"id": "01a19ae6-4706-7aae-a050-ef588c39a50e", "new": ["(b)(1)(xix)", 0, 44], "old": ["(b)(1)", 19, 44], "section": "172.320"},
+{"id": "01a19ae6-471b-7f1f-9a0b-5971dd4feb76", "new": ["(b)(1)(xx)", 0, 45], "old": ["(b)(1)", 20, 45], "section": "172.320"},
+{"id": "01a19ae6-471c-7215-9d14-03786f65e590", "new": ["(b)(2)(i)", 0, 47], "old": ["(b)(2)", 1, 47], "section": "172.320"},
+{"id": "01a19ae6-471c-7509-95ee-d08673399071", "new": ["(b)(2)(ii)", 0, 48], "old": ["(b)(2)", 2, 48], "section": "172.320"},
+{"id": "01a19ae6-471c-7792-baa0-6a0078cbfe6d", "new": ["(b)(2)(iii)", 0, 49], "old": ["(b)(2)", 3, 49], "section": "172.320"},
+{"id": "01a19ae6-471c-79e9-8f15-42745e5c99f2", "new": ["(b)(2)(iv)", 0, 50], "old": ["(b)(2)", 4, 50], "section": "172.320"},
+{"id": "01a19ae6-48a8-72d5-a3e0-2c26aa38bd10", "new": ["(b)(3)(xviii)", 1, 74], "old": ["(b)(3)(xvii)", 3, 74], "section": "175.300"},
+{"id": "01a19ae6-48aa-74ed-81c3-2f20dcc40c22", "new": ["(b)(3)(xxiii)", 1, 88], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)", 3, 88], "section": "175.300"},
+{"id": "01a19ae6-48ab-7015-b2d9-00c6fafb4252", "new": ["(b)(3)(xxvii)", 1, 95], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)", 2, 95], "section": "175.300"},
+{"id": "01a19ae6-48ac-7668-8adb-9751ae028f36", "new": ["(b)(3)(xxxii)", 1, 108], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(b)(xxix)(xxx)(xxxi)", 2, 108], "section": "175.300"},
+{"id": "01a19ae6-48ac-7c9a-90d3-a1b73cbd060e", "new": ["(b)(3)(xxxiii)", 1, 110], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(b)(xxix)(xxx)(xxxi)", 4, 110], "section": "175.300"},
+{"id": "01a19ae6-48ad-76d8-ae25-df5c8e147a7b", "new": ["(b)(3)(xxxiii)", 2, 111], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(b)(xxix)(xxx)(xxxi)", 5, 111], "section": "175.300"},
+{"id": "01a19ae6-48ae-71cf-b080-481ec6f845b2", "new": ["(b)(3)(xxxiii)", 3, 112], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(b)(xxix)(xxx)(xxxi)", 6, 112], "section": "175.300"},
+{"id": "01a19ae6-48ae-7575-83d4-9a0031a81b09", "new": ["(d)", 1, 123], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(d)", 1, 123], "section": "175.300"},
+{"id": "01a19ae6-48ae-79a7-a44b-32da8b6e1261", "new": ["(d)", 2, 124], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(d)", 2, 124], "section": "175.300"},
+{"id": "01a19ae6-48af-7bad-9ef8-5e0ea9a44eff", "new": ["(f)(1)", 1, 157], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(f)(1)", 1, 157], "section": "175.300"},
+{"id": "01a19ae6-48b0-7025-85b2-a0d8068d5aa7", "new": ["(f)(2)", 1, 159], "old": ["(b)(3)(xvii)(xix)(xx)(xxi)(xxii)(b)(xxiv)(xxv)(xxvi)(f)(2)", 1, 159], "section": "175.300"}
+]
+}

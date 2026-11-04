@@ -93,7 +93,7 @@ CONDITIONAL_QUALIFIERS = tuple(QUALIFIER_EQUIVALENTS)
 
 _CROSS_REF_RE = re.compile(
     r"\bparts?\s+\d{1,4}\b"
-    r"|§+\s*\d{1,4}\.\d{1,4}[a-z]?(?:\([a-z0-9]{1,4}\))*"
+    r"|§+\s*\d{1,4}\.\d{1,4}[a-z]?(?:\((?:[a-z0-9]{1,4}|[ivxl]{5,8})\))*"
     r"|\bsection\s+\d{2,4}\([a-z]\)"
     r"|\bClauses?\s+\d+(?:\.\d+)+(?:(?:,\s*(?:and\s+)?|\s+and\s+)\d+(?:\.\d+)+)*",
     re.I,
@@ -106,8 +106,8 @@ _APPLICABILITY_RES = (
 _CONSEQUENCE_RE = re.compile(r"\b(adulterated|misbranded|subject to regulatory action|civil money penalt|renders? (?:a|the) device)\b", re.I)
 _EXCEPTION_RE = re.compile(r"\b(?:does|do|shall) not apply\b|\bexempt(?:ed|ion|ions)?\b|^\s*(?:\([a-z0-9]+\)\s*)?Exceptions?\b", re.I)
 _DEFINITION_RE = re.compile(r"^\s*(?:\([a-z0-9]+\)\s*)?[A-Z][^.]{0,80}?\bmeans\b", re.S)
-_HEADING_RE = re.compile(r"^\s*\(([a-z0-9]{1,4})\)\s+([A-Z][A-Za-z ,'—-]{1,70}?)\.\s")
-_TOKEN_RE = re.compile(r"\(([A-Za-z0-9]{1,4})\)")
+_HEADING_RE = re.compile(r"^\s*\(([a-z0-9]{1,4}|[ivxl]{5,8})\)\s+([A-Z][A-Za-z ,'—-]{1,70}?)\.\s")
+_TOKEN_RE = re.compile(r"\(([A-Za-z0-9]{1,4}|[ivxl]{5,8})\)")
 
 
 def _tokens(path: str) -> tuple[str, ...]:

@@ -343,3 +343,97 @@ def test_setup_cli_status_is_read_only_and_apply_needs_the_database_name(env, mo
     assert cli.main(["apply", "--database-url", TEST_URL, "--confirm", dbname, "--skip-semantic"]) == 0
     assert env.fp() == env.ms[-1].fingerprint_after
     assert "state up_to_date" in capsys.readouterr().out
+
+
+# -- schema requirements (0011, 4 Nov 2026: paragraph labels longer than 4 characters) ----------------------------------
+
+def test_requirements_are_named_steps_of_the_runner_and_an_unknown_one_is_refused(tmp_path):
+    assert set(R.REQUIREMENT_STEPS) == set(P.REQUIREMENTS)
+    _, ms = synthetic(tmp_path)
+    assert all(m.requires == () for m in ms)                              # files without "requires" load as before
+    doc = json.loads(ms[0].path.read_text())
+    doc["requires"] = ["drop_everything"]
+    ms[0].path.write_text(json.dumps(doc))
+    with pytest.raises(P.MigrationFileError, match="requires"):
+        P.load_file(ms[0].path)
+
+
+def _long_label_dirs(env) -> tuple[list[P.Migration], list[P.Migration]]:
+    """Migrations 1-3 plus a fourth moving row (c) of 1.1 to "(c)(xviii)" - without and with "requires"."""
+    from psycopg import sql
+    R.apply(env.conn, env.ms, **env.kw)
+    rows = [dict(r) for r in env.conn.execute(sql.SQL(
+        "SELECT id::text AS id, section_number, paragraph_path, path_ordinal, ordinal, content_sha256, "
+        "md5(convert_to(body_text, 'UTF8')) AS body_md5, is_reserved, removed_on FROM {}").format(
+            sql.Identifier(env.target, "cfr_records"))).fetchall()]
+    [c] = [r for r in rows if (r["section_number"], r["paragraph_path"]) == ("1.1", "(c)")]
+    old = [c["paragraph_path"], c["path_ordinal"], c["ordinal"]]
+    c["paragraph_path"] = "(c)(xviii)"
+    out = []
+    for name, extra in (("plain", {}), ("req", {"requires": ["paragraph_labels_8"]})):
+        d = env.tmp / name
+        d.mkdir()
+        for m in env.ms:
+            (d / m.path.name).write_bytes(m.path.read_bytes())
+        header = {"version": 4, "name": "long_label", "reference_applied": "2026-11-04", "description": "long label",
+                  "provenance": {}, "fingerprint_before": dict(zip(("rows", "sha256"), env.ms[-1].fingerprint_after)),
+                  "fingerprint_after": dict(zip(("rows", "sha256"), R.fingerprint_rows(rows))), **extra}
+        P.write_file(d / "0004_long_label.json", header, [],
+                     [{"id": c["id"], "section": "1.1", "old": old, "new": ["(c)(xviii)", old[1], old[2]]}])
+        out.append(P.load_migrations(d))
+    return out[0], out[1]
+
+
+def _path_check(env) -> str:
+    return env.conn.execute("SELECT pg_get_constraintdef(c.oid) AS d FROM pg_constraint c JOIN pg_namespace n ON "
+                            "n.oid = c.connamespace WHERE n.nspname = %s AND c.conname = %s",
+                            (env.target, "cfr_records_paragraph_path_check")).fetchone()["d"]
+
+
+@pytest.mark.integration
+@db
+def test_a_long_label_needs_the_wider_check_which_the_runner_adds_and_rollback_keeps(env):
+    import psycopg
+    plain, req = _long_label_dirs(env)
+    fp = env.fp()
+    with pytest.raises(psycopg.errors.CheckViolation):                    # the 4-character check refuses (xviii)
+        R.apply(env.conn, plain, **env.kw)
+    assert env.fp() == fp and len(env.ledger_rows()) == 3 and "{1,4}" in _path_check(env)
+    done = R.apply(env.conn, req, **env.kw)
+    assert done[0]["schema"] == {"paragraph_labels_8": "widened from 4 to 8"}
+    assert env.fp() == req[-1].fingerprint_after and "{1,8}" in _path_check(env)
+    R.rollback(env.conn, req, to_version=3, **env.kw)
+    assert env.fp() == fp and "{1,8}" in _path_check(env)                 # rows back; the wider check stays
+    assert R.apply(env.conn, req, **env.kw)[0]["schema"] == {"paragraph_labels_8": "already allows 8"}
+
+
+@pytest.mark.integration
+@db
+def test_a_path_check_the_step_does_not_know_is_refused_and_nothing_changes(env):
+    from psycopg import sql
+    _, req = _long_label_dirs(env)
+    env.conn.execute(sql.SQL("ALTER TABLE {} DROP CONSTRAINT cfr_records_paragraph_path_check, ADD CONSTRAINT "
+                             "cfr_records_paragraph_path_check CHECK (paragraph_path <> 'x')").format(
+                                 sql.Identifier(env.target, "cfr_records")))
+    fp = env.fp()
+    with pytest.raises(R.MigrationError, match="not the definition this step widens"):
+        R.apply(env.conn, req, **env.kw)
+    assert env.fp() == fp and len(env.ledger_rows()) == 3 and "<> 'x'" in _path_check(env)
+
+
+@pytest.mark.integration
+@db
+def test_a_copy_whose_inserted_row_a_heading_migration_changed_is_adopted_only_with_those_headings(env):
+    from psycopg import sql
+    R.apply(env.conn, env.ms, **env.kw)
+    rid = env.ms[0].insert[0]["id"]                                       # inserted by migration 1, heading ["Part"]
+    new = ["Part", "Subpart G - Supply-Chain Program"]
+    env.conn.execute(sql.SQL("UPDATE {} SET parent_headings = %s WHERE id = %s").format(
+        sql.Identifier(env.target, "cfr_records")), (new, rid))            # what a heading migration did on the copy
+    other = {"schema": env.ledger + "_b", "target": env.target}
+    assert R.status(env.conn, env.ms, **other).state == "adoptable"
+    with pytest.raises(R.MigrationError, match="differ from the file"):
+        R.adopt(env.conn, env.ms, **other)
+    with pytest.raises(R.MigrationError, match="differ from the file"):
+        R.adopt(env.conn, env.ms, heading_values={rid: [["Part", "Something else"]]}, **other)
+    assert [d["version"] for d in R.adopt(env.conn, env.ms, heading_values={rid: [new]}, **other)] == [1, 2, 3]

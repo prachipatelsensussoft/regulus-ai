@@ -6,6 +6,7 @@
     adopt                  a database copied from one the migrations were already applied to (same rows, no ledger):
                            record them without changing a row
     rollback --to N        undo the migrations newer than N, newest first
+                           (--headings: undo heading migrations newer than N instead, data/migrations/headings)
     semantic               rebuild the semantic corpus and index from the database (asks first)
 
 The database is REGULUS_DATABASE_URL (environment or .env), or --database-url; its password is never printed. Every
@@ -27,6 +28,8 @@ from regulus.config import PROJECT_ROOT
 from regulus.datamigrate import (LEDGER_SCHEMA, MigrationError, MigrationFileError, adopt, apply, load_migrations,
                                  rollback, status)
 from regulus.datamigrate.payload import INSERT_COLUMNS
+from regulus.datamigrate.headings import (apply_headings, heading_status, headings_set, load_heading_migrations,
+                                          rollback_headings)
 from regulus.datamigrate.runner import TARGET_SCHEMA, connect
 
 STAMP = "regulus_setup_stamp.json"   # in the semantic corpus's generated/ folder: the table fingerprint it was built from
@@ -186,6 +189,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--database-url", help="default: REGULUS_DATABASE_URL from the environment or .env")
     ap.add_argument("--confirm", metavar="DBNAME", help="confirm a write non-interactively by naming the database")
     ap.add_argument("--skip-semantic", action="store_true", help="apply: do not offer the semantic index rebuild")
+    ap.add_argument("--headings", action="store_true", help="rollback: undo heading migrations (subpart titles, parent headings)")
     a = ap.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -199,6 +203,12 @@ def main(argv: list[str] | None = None) -> int:
         _say(f"  {exc}")
         return 1
     _say(f"  {len(migrations)} files in {Path('data/migrations/cfr')}, checksums read")
+    try:
+        heading_migrations = load_heading_migrations()
+    except MigrationFileError as exc:
+        _say(f"  {exc}")
+        return 1
+    _say(f"  {len(heading_migrations)} heading migrations in {Path('data/migrations/headings')}")
 
     _say("[2] Connection")
     try:
@@ -220,12 +230,18 @@ def main(argv: list[str] | None = None) -> int:
         describe(st, migrations)
         dbname = conn.info.dbname
 
+        hst = heading_status(conn, heading_migrations)
+        _say(f"  headings: versions {list(hst.recorded) or 'none'} recorded; {len(hst.pending)} pending, "
+             f"{len(hst.present)} already present" + ("" if hst.ok else "; PROBLEM: " + "; ".join(hst.problems)))
+
         if a.command == "status":
             for m in st.pending:
                 _say(f"    pending {m.summary()}")
+            for m in hst.pending:
+                _say(f"    pending {m.summary()}")
             _say("[4] Semantic index")
             _say(f"  {semantic_state(st.fingerprint[1])[1]}")
-            return 0 if st.state in ("up_to_date", "pending", "adoptable") else 1
+            return 0 if st.state in ("up_to_date", "pending", "adoptable") and hst.ok else 1
 
         if a.command == "semantic":
             _say("[4] Semantic index")
@@ -240,8 +256,21 @@ def main(argv: list[str] | None = None) -> int:
             if not _confirm(dbname, a.confirm, "record them"):
                 return 1
             conn.read_only = False
-            for r in adopt(conn, migrations):
+            for r in adopt(conn, migrations, heading_values=headings_set(heading_migrations)):
                 _say(f"  adopted {r['version']:04d}_{r['name']}")
+            return 0
+
+        if a.command == "rollback" and a.headings:
+            undo = [m for m in heading_migrations if a.to < m.version <= len(hst.recorded)]
+            if not undo:
+                _say(f"  Nothing to roll back: heading migrations 1-{len(hst.recorded)} are recorded.")
+                return 0
+            _say(f"[4] Rollback headings to version {a.to}: " + ", ".join(m.label for m in reversed(undo)))
+            if not _confirm(dbname, a.confirm, f"undo {len(undo)} heading migrations"):
+                return 1
+            conn.read_only = False
+            for r in rollback_headings(conn, heading_migrations, to_version=a.to):
+                _say(f"  rolled back {r['version']:04d}_{r['name']}")
             return 0
 
         if a.command == "rollback":
@@ -279,10 +308,22 @@ def main(argv: list[str] | None = None) -> int:
             _say("[5] Apply")
             conn.read_only = False
             for r in apply(conn, migrations, upto=a.to):
-                _say(f"  applied {r['version']:04d}_{r['name']}: {r['inserted']} inserted, {r['updated']} updated, verified")
+                schema_steps = "".join(f"; {k}: {v}" for k, v in r.get("schema", {}).items())
+                _say(f"  applied {r['version']:04d}_{r['name']}: {r['inserted']} inserted, {r['updated']} updated, "
+                     f"verified{schema_steps}")
         else:
             _say("[4] Nothing to apply")
         conn.read_only = False
+        if not hst.ok:
+            _say("  Heading migrations refused: " + "; ".join(hst.problems))
+            return 1
+        if hst.pending or hst.present:
+            _say("[5b] Heading migrations: " + ", ".join(m.summary() for m in hst.pending + hst.present))
+            if not todo and not _confirm(dbname, a.confirm, f"apply {len(hst.pending) + len(hst.present)} heading migrations"):
+                return 1
+            for r in apply_headings(conn, heading_migrations):
+                _say(f"  {r['mode']} {r['version']:04d}_{r['name']}: {r['subpart_titles']} subpart titles, "
+                     f"{r['parent_headings']} rows' headings, verified")
         if not a.skip_semantic:
             _say("[6] Semantic index")
             if _semantic_step(conn, url, a.confirm):
@@ -291,7 +332,10 @@ def main(argv: list[str] | None = None) -> int:
         conn.read_only = True
         final = status(conn, migrations)
         _say(f"  ledger: versions 1-{len(final.applied)}; state {final.state}; fingerprint {final.fingerprint[1][:16]}")
-        return 0 if final.state == "up_to_date" or (a.to is not None and final.state == "pending") else 1
+        hfinal = heading_status(conn, heading_migrations)
+        _say(f"  headings: versions {list(hfinal.recorded) or 'none'} recorded; {len(hfinal.pending) + len(hfinal.present)} not recorded")
+        headings_done = hfinal.ok and not hfinal.pending and not hfinal.present
+        return 0 if headings_done and (final.state == "up_to_date" or (a.to is not None and final.state == "pending")) else 1
     except MigrationError as exc:
         _say(f"  REFUSED: {exc}")
         return 1

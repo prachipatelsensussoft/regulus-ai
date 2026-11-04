@@ -43,7 +43,7 @@ def _defines(text: str, term: str) -> bool:
     t = r"\s+".join(re.escape(w) for w in term.lower().split())
     body = (text or "").lower()
     return bool(re.search(rf"\bthe\s+terms?\s+(?:[\w,'-]+\s+){{0,6}}?\W?{t}\W?(?:\s+[\w,'-]+){{0,8}}?\s+(?:means?|refers? to|is defined)\b", body)
-                or re.search(rf"^\W*(?:\([a-z0-9]{{1,4}}\)\s*)*\W?{t}\W?\s+(?:means|is defined as|refers to)\b", body))
+                or re.search(rf"^\W*(?:\((?:[a-z0-9]{{1,4}}|[ivxl]{{5,8}})\)\s*)*\W?{t}\W?\s+(?:means|is defined as|refers to)\b", body))
 
 
 def compose(package, question: str) -> str | None:

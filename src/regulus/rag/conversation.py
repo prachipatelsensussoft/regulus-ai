@@ -49,7 +49,7 @@ _DEMONSTRATIVE = re.compile(r"\b(?:this|that|these|those|the\s+same)\s+(?:colou?
                             r"filing|form|statement|warning|caution|substance|material|use|limit|tolerance)s?\b", re.I)
 _TAG = re.compile(r"(?:,\s*|\s)(?:right|correct|true|yes|no|isn't\s+it|don't\s+we|doesn't\s+it|is\s+that\s+so)\s*\?\s*$", re.I)
 # a provision pointed at without its section: written out as the anchored section
-_PARAGRAPH_POINTER = re.compile(r"\b(?:paragraph|subsection|clause)\s*((?:\([a-z0-9]{1,4}\))+)", re.I)
+_PARAGRAPH_POINTER = re.compile(r"\b(?:paragraph|subsection|clause)\s*((?:\((?:[a-z0-9]{1,4}|[ivxl]{5,8})\))+)", re.I)
 _THIS_PROVISION = re.compile(r"\b(?:this|that|the\s+same)\s+(?:section|provision|regulation|rule)\b", re.I)
 _WORD = re.compile(r"[a-z][a-z0-9&'-]+")
 # not a subject: question words, function words, and words every question about the regulations shares

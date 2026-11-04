@@ -27,6 +27,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from psycopg import sql  # noqa: E402
 
+from regulus.datamigrate.headings import load_heading_migrations  # noqa: E402
 from regulus.datamigrate.payload import INSERT_COLUMNS, MIGRATIONS_DIR, load_migrations, write_file  # noqa: E402
 from regulus.datamigrate.runner import FINGERPRINT_SQL, body_md5, fingerprint_rows  # noqa: E402
 from regulus.ingestion.dropped_text import content_hash  # noqa: E402
@@ -164,7 +165,7 @@ def triple(r: dict) -> list:
     return [r["paragraph_path"], r["path_ordinal"], r["ordinal"]]
 
 
-# -- the seven repairs -------------------------------------------------------------------------------------------------
+# -- the repairs -------------------------------------------------------------------------------------------------
 
 def repairs(runs: Path) -> list[dict]:
     art = ROOT / "artifacts"
@@ -175,6 +176,8 @@ def repairs(runs: Path) -> list[dict]:
     st = runs / "source_text_repair_20261030"
     s2 = runs / "source_text_repair_20261102"
     d2 = runs / "definition_path_repair_20261103"
+    p4 = runs / "paragraph_path_repair_20261104"
+    p5 = runs / "paragraph_labels_repair_20261104"
     out = [
         {"name": "restore_dropped_text_20261021", "reference_applied": "2026-10-21",
          "description": "Restore eCFR text the original ingestion dropped (EXTRACT block quotes, FP flush paragraphs) in "
@@ -231,6 +234,23 @@ def repairs(runs: Path) -> list[dict]:
                         "(a) 7-11 (regulus.ingestion.definition_paths, checked against the eCFR XML): 5 rows.",
          "files": [d2 / "repair.sql", d2 / "rollback.sql", d2 / "corrections.tsv"],
          "ops": lambda: sql_ops(d2 / "repair.sql", d2 / "rollback.sql")},
+        {"name": "paragraph_path_corrections_20261104", "reference_applied": "2026-11-04",
+         "description": "Chained paragraph paths (a label nested under the previous run, e.g. (a)(5)(9)(13)(17) for (a)(17)) "
+                        "corrected against the eCFR renderer's paragraph ids and text (ecfr_renderer_20261103/audit), "
+                        "for the sections whose corrected labels fit the 4-character paragraph_path CHECK: 11 rows in "
+                        "101.13, 1020.32, 310.201 and 558.258.",
+         "files": [p4 / "repair.sql", p4 / "rollback.sql", p4 / "corrections.tsv"],
+         "ops": lambda: sql_ops(p4 / "repair.sql", p4 / "rollback.sql")},
+        {"name": "paragraph_labels_8_20261104", "reference_applied": "2026-11-04",
+         "description": "The rest of the eCFR renderer audit's chained paragraph paths, whose corrected labels are longer "
+                        "than 4 characters ((xviii) .. (xxxvii)): 89 rows in 10.95, 1114.41, 117.5, 172.320, 175.300, "
+                        "178.3870, 50.23, 558.76 and 864.1870 - 78 as the audit planned, and 11 continuation rows of "
+                        "175.300 (the list, table or text after a labeled paragraph) that the plan left on the old chained "
+                        "path, moved with their paragraph. Requires paragraph_labels_8: the runner first widens "
+                        "cfr_records_paragraph_path_check from 1-4 to 1-8 characters per label.",
+         "requires": ["paragraph_labels_8"],
+         "files": [p5 / "make_repair.py", p5 / "repair.sql", p5 / "rollback.sql", p5 / "corrections.tsv"],
+         "ops": lambda: sql_ops(p5 / "repair.sql", p5 / "rollback.sql")},
     ]
     return out
 
@@ -282,6 +302,14 @@ def main() -> int:
     inserted_ids = set(states[-1]) - set(states[0])
     cols = ", ".join(INSERT_COLUMNS)
     full = {r["r"]["id"]: r["r"] for r in db.query(FULL_SQL.format(cols=cols), {"ids": sorted(inserted_ids)})}
+    # heading migrations (data/migrations/headings) ran on top of these repairs and changed parent_headings of rows some
+    # of them inserted (4 Nov: three 0007/0008 rows of 117/507 subpart G): undone here, as the repairs are, so an inserted
+    # row is compared and written as its repair inserted it
+    for hm in reversed(load_heading_migrations()):
+        for c in hm.parent_headings:
+            r = full.get(c["id"])
+            if r is not None and r["parent_headings"] == list(c["new"]):
+                r["parent_headings"] = list(c["old"])
     part_sha = {}
     for r in db.query("SELECT part_number, array_agg(DISTINCT source_payload_sha256) AS s FROM cfr_records GROUP BY 1"):
         if len(r["s"]) != 1:
@@ -309,7 +337,8 @@ def main() -> int:
                   "provenance": provenance_of(rep, {r["section_number"].split(".")[0] for r in inserts}
                                               | {u["section"].split(".")[0] for u in updates}, part_sha),
                   "fingerprint_before": dict(zip(("rows", "sha256"), fingerprint_rows(before.values()))),
-                  "fingerprint_after": dict(zip(("rows", "sha256"), fingerprint_rows(after.values())))}
+                  "fingerprint_after": dict(zip(("rows", "sha256"), fingerprint_rows(after.values()))),
+                  **({"requires": rep["requires"]} if rep.get("requires") else {})}
         built.append((header, inserts, updates))
         print(f"{k:04d}_{rep['name']}: insert {len(inserts)}, update {len(updates)}; "
               f"before {header['fingerprint_before']['rows']} {header['fingerprint_before']['sha256'][:16]} -> "

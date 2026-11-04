@@ -7,7 +7,9 @@ corrected. A database restored from the 15 Sep 2026 baseline backup has none of 
 This repository carries every repair as an ordered, checksummed migration. One command brings any developer database
 to the same rows, row for row, on Windows or macOS. It needs only Python and psycopg; `psql` is not used.
 
-The schema is not touched. The backend owns it through Prisma, in schema `public`. These migrations change rows only.
+The schema came with the restored database (schema `public`, created by the previous platform's Prisma migrations,
+whose code is not part of this project). These migrations change rows only, with one exception: migration 0011 widens
+one CHECK so paragraph labels may have up to 8 characters (`paragraph_labels_8`, below).
 
 ## The migrations
 
@@ -21,9 +23,30 @@ The schema is not touched. The backend owns it through Prisma, in schema `public
 | 6 | `0006_definition_paths_20261030.json` | 30 Oct | DEF1: restart the numbering at each definition (1,162 rows in 47 sections) |
 | 7 | `0007_restore_dropped_text_20261030.json` | 30 Oct | Insert 701 rows (remaining parts; large tables in captioned parts); renumber 2,879 ordinals |
 | 8 | `0008_restore_dropped_text_20261102.json` | 2 Nov | Insert 363 rows in 82 sections: form templates, blocks over 3,500 characters in captioned parts, footnotes, notes, formula lines; renumber 1,732 ordinals and move 190 path ordinals |
+| 9 | `0009_definition_paths_820_3_20261103.json` | 3 Nov | DEF2: 820.3's paragraph (b) definitions back under (b) 1-5 (5 rows) |
+| 10 | `0010_paragraph_path_corrections_20261104.json` | 4 Nov | Chained paragraph paths corrected against the eCFR (e.g. (a)(5)(9)(13)(17) -> (a)(17)): 11 rows in 101.13, 1020.32, 310.201, 558.258 |
+| 11 | `0011_paragraph_labels_8_20261104.json` | 4 Nov | The rest of those corrections, whose labels are longer than 4 characters ((xviii) .. (xxxvii), e.g. 117.5(g)(3)(xvii)(xix)(xx)(xxi)(xxii) -> (g)(3)(xxiii)): 89 rows in 10.95, 1114.41, 117.5, 172.320, 175.300, 178.3870, 50.23, 558.76, 864.1870. **Requires `paragraph_labels_8`** (below) |
 
-In total, migrations 1–8 insert 1,733 rows (65,341 → 67,074) and update 9,578. They delete nothing. Head fingerprint:
-67,074 rows / `cf6240fab35e8b46`.
+In total, migrations 1–11 insert 1,733 rows (65,341 → 67,074) and update 9,683. They delete nothing. Head fingerprint:
+67,074 rows / `edd5cf8b6ac344d1`.
+
+**Schema requirement `paragraph_labels_8` (0011).** The restored database limits each paragraph label to 4 characters
+(`cfr_records_paragraph_path_check`, from the previous platform's Prisma migration `0017_regulatory_corpus`), while the
+eCFR numbers paragraphs up to `(xxxvii)`. Migration 0011 declares `"requires": ["paragraph_labels_8"]`, and in the same
+transaction as its row changes the runner replaces that check with the 8-character version - only when the current
+definition is exactly the 4-character one (8 or wider counts as done; any other definition stops it with nothing
+changed). Rolling 0011 back restores the rows and keeps the wider check, which every row satisfies. The step is code in
+`regulus.datamigrate.runner` (never SQL from a file); `_prisma_migrations` is not written. Rehearsed on the reference
+database 4 Nov: rollback to 10, 4-character check restored, `apply` widened it and reached `edd5cf8b6ac344d1`.
+
+**Where these defects came from.** The database was restored from a dump of a previously built platform
+(`docs/database_architecture.md`); its ingestion code is not part of this project, and this project never re-ingests
+the eCFR. That ingestion could not store labels longer than 4 characters (it chained them under the previous label:
+`(g)(3)(xvii)(xix)(xx)(xxi)(xxii)` for `(g)(3)(xxiii)`), split subpart headings at the last dash and kept footnote
+numbers ("Chain Program", "Sequestrants 1"). These migrations are the fix: a fresh restore of the same dump gets every
+correction back from `python -m regulus.setup`. In 0011, the 3 Nov audit plan's 11 continuation rows of 175.300 (the
+list, table or text after a labeled paragraph) move with their paragraph, the ingestion's own rule; the 6 rows the audit
+could not verify (5 in 175.300, 1 in 117.5) are unchanged.
 
 Every file holds:
 - every inserted row, with all its columns;
@@ -32,6 +55,27 @@ Every file holds:
 - its provenance: the repair records it was built from, with their SHA-256, and the eCFR part payloads behind it.
 
 No other file or download is needed to apply them.
+
+## Heading migrations (`data/migrations/headings/`)
+
+Corrections to subpart titles (`cfr_subparts.title`) and to the subpart heading copied onto each regulation row
+(`cfr_records.parent_headings`). The row migrations above cannot carry them: their fingerprint covers where each row
+sits, not its headings. They have their own ledger (`regulus_data.heading_migrations`) and are applied by the same
+`python -m regulus.setup` (after the row migrations; `status` lists them). Each change is applied only where the current
+value is its recorded old value; a copy that already holds the new values is recorded as adopted; anything else stops
+with nothing changed. Undo: `python -m regulus.setup rollback --headings --to 0`.
+
+Three rows that row migrations 0007 and 0008 inserted (117/507 subpart G) carry a heading migration 0001 corrects.
+So that a copy of a database taken after the heading migrations can still be adopted, `adopt` accepts on an inserted
+row the headings a heading migration sets as well as the file's own; rolling back 0007/0008 needs the heading migration rolled
+back first (the runner says so and changes nothing).
+
+| # | File | Applied on the reference DB | Change |
+|---|---|---|---|
+| 1 | `0001_subpart_titles_20261104.json` | 4 Nov | 7 subpart titles back to the eCFR heading text ("Chain Program" -> "Supply-Chain Program" in 117 G and 507 E, 316 D, 660 F, footnote numbers removed in 182 G, 582 F/G) and the subpart heading on their 604 rows |
+
+Built by `scripts/build_heading_migrations.py` from the eCFR XML (the title is the text after the first em dash, with
+footnote markers removed).
 
 ## Before you start
 
