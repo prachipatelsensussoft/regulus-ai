@@ -145,3 +145,46 @@ def test_def2_definitions_listed_under_a_second_paragraph_stay_in_it():
               Row("r6", 6, "(a)", 4, "Safety and Performance shall have the meaning of safety and effectiveness.")]
     final = {rid: (new, po) for rid, _, _, new, po in plan_section("820.3", definition_leads(xml)["820.3"], stored).updates}
     assert final == {"r5": ("(b)", 1), "r6": ("(b)", 2)}
+
+
+def _stored(prefix, pairs):
+    seen, out = {}, []
+    for i, (path, text) in enumerate(pairs):
+        po = seen.get(path, 0)
+        seen[path] = po + 1
+        out.append(Row(f"{prefix}{i}", i, path, po, text))
+    return out
+
+
+def test_an_is_definition_counts_only_in_a_section_headed_definitions():
+    # 4 Nov: 314.3 writes most definitions "<I>Drug product</I> is ..."; only the "means" ones were found, and "FDA is ..."
+    # stayed under the previous definition's item (2). Italic "X is ..." paragraphs elsewhere (201.327) define nothing.
+    xml = b"""<ECFR><DIV8 N="314.3" TYPE="SECTION"><HEAD>Definitions.</HEAD>
+    <P><I>Drug product</I> is a finished dosage form.</P><P><I>Efficacy supplement</I> is a supplement proposing to:</P>
+    <P>(1) Add an indication;</P><P>(2) Revise the dose.</P><P><I>FDA</I> is the Food and Drug Administration.</P></DIV8>
+    <DIV8 N="201.327" TYPE="SECTION"><HEAD>Over-the-counter sunscreen drug products.</HEAD>
+    <P><I>Water resistance</I> is determined as follows.</P><P><I>Test site</I> is the back.</P><P><I>Subsite</I> is a part.</P>
+    </DIV8></ECFR>"""
+    leads = definition_leads(xml)
+    assert list(leads) == ["314.3"] and len(leads["314.3"]) == 3
+    stored = _stored("r", [("", "Drug product is a finished dosage form."), ("", "Efficacy supplement is a supplement proposing to:"),
+                           ("(1)", "(1) Add an indication;"), ("(2)", "(2) Revise the dose."),
+                           ("(2)", "FDA is the Food and Drug Administration.")])
+    assert plan_section("314.3", leads["314.3"], stored).updates == [("r4", "(2)", 1, "", 2)]
+
+
+def test_a_lead_the_ingestion_split_into_two_rows_is_still_found():
+    # 4 Nov: 1140.3 stored "<I>Cigarette.</I> (1) Means a product that:" as "Cigarette." and "(1) Means ...": the section
+    # was "misaligned" and every later definition stayed under "(2)(ii)(2)(2)"
+    xml = b"""<ECFR><DIV8 N="1140.3" TYPE="SECTION"><HEAD>Definitions.</HEAD>
+    <P><I>Accessory</I> means any product that:</P><P>(1) Is not intended to affect it; or</P><P>(2) Is intended to affect it.</P>
+    <P><I>Cigarette.</I> (1) Means a product that:</P><P>(i) Is a tobacco product.</P>
+    <P><I>Cigarette tobacco</I> means loose tobacco.</P></DIV8></ECFR>"""
+    stored = _stored("c", [("", "Accessory means any product that:"), ("(1)", "(1) Is not intended to affect it; or"),
+                           ("(2)", "(2) Is intended to affect it."), ("(2)", "Cigarette."),
+                           ("(2)(1)", "(1) Means a product that:"), ("(2)(1)(i)", "(i) Is a tobacco product."),
+                           ("(2)(1)(i)", "Cigarette tobacco means loose tobacco.")])
+    plan = plan_section("1140.3", definition_leads(xml)["1140.3"], stored)
+    assert plan.status == "planned"
+    assert plan.updates == [("c3", "(2)", 1, "", 1), ("c4", "(2)(1)", 0, "(1)", 1), ("c5", "(2)(1)(i)", 0, "(1)(i)", 0),
+                            ("c6", "(2)(1)(i)", 1, "", 2)]

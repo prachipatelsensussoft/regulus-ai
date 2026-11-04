@@ -40,6 +40,10 @@ _DEFINES = re.compile(r"\b(?:means?|includes?|has\s+the\s+(?:same\s+)?meaning|re
                       r"as\s+(?:stated|defined|used))\b", re.I)
 _DEFINITIONS_HEADING = re.compile(r"\bdefinitions?\b|\bmeaning\s+of\s+terms\b|\bterms\b.*\bmean\b", re.I)
 MIN_LEADS_WITHOUT_HEADING = 3
+# in a section whose heading names definitions, "<I>Drug product</I> is a finished dosage form ..." defines its term
+# too (4 Nov 2026: 314.3 and 514.3 write most definitions so; only the "means" ones were found, and the others stayed
+# under the previous definition's items - "Drug product" at 314.3(b)(4), "Efficacy supplement"'s items at (b)(4)(1))
+_IS_DEFINITION = re.compile(r"^\s*,?\s*(?:is|are)\b", re.I)
 
 
 def definition_leads(xml_bytes: bytes) -> dict[str, list[str]]:
@@ -51,15 +55,18 @@ def definition_leads(xml_bytes: bytes) -> dict[str, list[str]]:
     for div in root.iter():
         if not (div.tag.startswith("DIV") and div.get("TYPE") == "SECTION"):
             continue
+        head = div.find("HEAD")
+        named = head is not None and _DEFINITIONS_HEADING.search(inline_text(head) or "")
         leads = []
         for p in div:
             if p.tag != "P" or (p.text or "").strip() or not len(p) or p[0].tag != "I":
                 continue
             text = inline_text(p)
-            if text and not _LEAD_DESIGNATORS.match(text) and _DEFINES.search(text[:160]):
+            term = inline_text(p[0])
+            rest = text[len(term):] if term and text.startswith(term) else ""
+            if text and not _LEAD_DESIGNATORS.match(text) and (
+                    _DEFINES.search(text[:160]) or (named and _IS_DEFINITION.match(rest))):
                 leads.append(text)
-        head = div.find("HEAD")
-        named = head is not None and _DEFINITIONS_HEADING.search(inline_text(head) or "")
         if leads and (named or len(leads) >= MIN_LEADS_WITHOUT_HEADING):
             out[div.get("N") or ""] = leads
     return out
@@ -131,9 +138,16 @@ def plan_section(section: str, leads: Sequence[str], rows: Sequence[Row]) -> Sec
     """The corrected path of every stored row of a definitions section (rows in ordinal order)."""
     plan = SectionPlan(section, "no_change")
     keys = [normalize(t)[:MATCH_CHARS] for t in leads]
+
+    def is_lead(text: str, key: str) -> bool:
+        # or a short row the lead begins with: the ingestion stored "<I>Cigarette.</I> (1) Means a product that:" as
+        # "Cigarette." and "(1) Means a product that:" (1140.3, 4 Nov 2026), so the lead's 60 characters never matched
+        t = normalize(text)
+        return t[:MATCH_CHARS] == key or (4 <= len(t) < len(key) and key.startswith(t))
+
     found, k = [], 0
     for i, r in enumerate(rows):
-        if k < len(keys) and normalize(r.body_text)[:MATCH_CHARS] == keys[k]:
+        if k < len(keys) and is_lead(r.body_text, keys[k]):
             found.append(i)
             k += 1
     if k != len(keys):
