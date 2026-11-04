@@ -303,6 +303,19 @@ def heading_phrase_in(heading: str, question: str) -> bool:
     return any(q[i:i + len(lead)] == lead for i in range(len(q) - len(lead) + 1))
 
 
+def subpart_requirements_named(title: str, question: str) -> bool:
+    """SB1: the question asks for a subpart's requirements by its title - "What holding and distribution requirements
+    apply under Part 211?" (Subpart H, Holding and Distribution), "... health and hygiene requirements ..." (Part 112
+    Subpart D). The title's lead phrase (two topic words or more, as heading_phrase_in) is immediately followed by
+    "requirement(s)"; the title merely occurring ("... for electronic signatures") is not enough."""
+    stem = lambda w: w[:6]
+    lead = [stem(w) for w in re.findall(r"[a-z]+", re.split(r"[,;]", (title or "").lower())[0])]
+    if len([w for w in lead if len(w) >= 5]) < 2:
+        return False
+    q = [stem(w) for w in re.findall(r"[a-z]+", (question or "").lower())]
+    n = len(lead)
+    return any(q[i:i + n] == lead and i + n < len(q) and q[i + n] == "requir" for i in range(len(q) - n))
+
 def _topic_stems(text: str) -> set[str]:
     """Topic words of a question or heading, as six-letter stems ("salvaged" / "salvaging" -> "salvag")."""
     return {w[:6] for w in re.findall(r"[a-z]{5,}", (text or "").lower()) if w not in _HC1_GENERIC}
@@ -2030,6 +2043,34 @@ class SectionPromoter:
             return []
         return [r["s"] for r in rows if r["s"] != section]
 
+    def named_small_subparts(self, section: str, question: str) -> list[str]:
+        """SB1 (4 Nov): the sections, in order, of each subpart of the promoted section's part that the question asks the
+        requirements of by title (subpart_requirements_named), when that subpart is small (SP3's limits: at most
+        SP3_MAX_SECTIONS sections and SP3_MAX_CHARS characters). D-018 "What holding and distribution requirements apply
+        under Part 211?" promoted 211.150 alone; Subpart H is 211.142 + 211.150 (key: both). Y-003 asks for "health and
+        hygiene requirements" under the produce rule: Subpart D, 112.31-112.33. 300Q (combo4, 3 Nov): adds sections to
+        those two questions only (S-025 already has its whole subpart; larger subparts - Agricultural Water, 23,576
+        characters - do not qualify)."""
+        part = section.split(".")[0]
+        try:
+            rows = self.db.query(
+                "SELECT s.id, s.title, r.section_number sec, sum(length(r.body_text)) c, min(r.ordinal) o FROM cfr_subparts s "
+                "JOIN cfr_records r ON r.subpart_id = s.id AND r.removed_on IS NULL AND NOT r.is_reserved "
+                "WHERE s.part_number = %(p)s GROUP BY 1, 2, 3 ORDER BY 1, 5", {"p": part})
+        except Exception:  # noqa: BLE001 - an aid only
+            return []
+        by_subpart: dict = {}
+        for r in rows:
+            by_subpart.setdefault((r["id"], r["title"]), []).append(r)
+        out: list[str] = []
+        for (_, title), members in by_subpart.items():
+            if "reserved" in (title or "").lower() or not subpart_requirements_named(title, question):
+                continue
+            if len(members) > SP3_MAX_SECTIONS or sum(int(m["c"] or 0) for m in members) > SP3_MAX_CHARS:
+                continue
+            out += [m["sec"] for m in members if m["sec"] != section and m["sec"] not in out]
+        return out
+
     def heading_matches(self, section: str, question: str, limit: int = HC1_MAX) -> list[str]:
         """HM1 (27 Oct): sections of the promoted section's part whose heading's lead phrase the question contains word
         for word (two topic words or more) - title-field matching. "What are the requirements for use of approved
@@ -2252,7 +2293,17 @@ class SectionPromoter:
                         vetoed = own
                 if vetoed is not None:
                     notes = (f"rerank veto: {picked_c['section']} -> {vetoed['section']}",)
+                    was = picked_c
+                    own_act = other is not None and other["section"] == vetoed["section"] and bool(vetoed.get("statute"))
                     picked_c, other = vetoed, (None if other is not None and other["section"] == vetoed["section"] else other)
+                    if own_act and not was.get("statute") and precision_fix("VS1"):
+                        # VS1 (4 Nov): the veto chose the Act section the picker also named, so the regulation the
+                        # picker named first is promoted with it, not dropped. L-010 "How must major food allergens be
+                        # declared?" - picker 101.4 + FD&C Act 403, veto 101.4 -> 403: the answer had 403(w) only and
+                        # never 101.4 (key: both); T-006 the same (911 + 1114.35). A veto to an Act section the picker did
+                        # not name (T-012: 1114.31 -> 904, picker 915) keeps today's behaviour.
+                        other = was
+                        notes = notes + (f"veto kept regulation: {was['section']}",)
                     if precision_fix("VB1") and other is not None and bool(other.get("statute")) == bool(picked_c.get("statute")):
                         # VB1: the second pick stands only from the other corpus. A veto from 720.1 to FD&C Act 606 kept the
                         # picker's Act 612 as the "regulation" and promoted "21 CFR 612" (FDCA606-Q2 declined, 27 Oct)
@@ -2358,6 +2409,8 @@ class SectionPromoter:
 
             if not _ASKS_CONTENTS.search(question or ""):   # a list question is answered by its own section's list (LS1)
                 comps += [c for c in self.small_subpart(picked[0]) if c not in comps and c not in picked]
+        if precision_fix("SB1") and picked:
+            comps += [c for c in self.named_small_subparts(picked[0], question) if c not in comps and c not in picked]
         if precision_fix("HM1") and picked:
             comps += [c for c in self.heading_matches(picked[0], question) if c not in comps and c not in picked]
         comps += [c for c in self.definition_companions(question) if c not in comps and c not in picked]

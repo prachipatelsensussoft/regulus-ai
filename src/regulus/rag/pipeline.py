@@ -408,6 +408,24 @@ _NOTE_BY_CODE = {
 }
 
 
+def _answer_fixes(text: str, package, question: str | None) -> tuple[str, list[str]]:
+    """DI1 and MP1 (regulus.rag.answer_fixes): presentation fixes before validation -> (text, what was fixed)."""
+    fixed: list[str] = []
+    if precision_fix("DI1"):
+        from regulus.rag.answer_fixes import drop_denial_opener
+
+        text, dropped = drop_denial_opener(text, question)
+        if dropped:
+            fixed.append("DI1: " + dropped[:120])
+    if precision_fix("MP1") and package is not None:
+        from regulus.rag.answer_fixes import resolve_letter_markers
+
+        text, n = resolve_letter_markers(text, package.sources)
+        if n:
+            fixed.append(f"MP1: {n} letter marker(s)")
+    return text, fixed
+
+
 def _quote_sources(package: GenerationPackage | None) -> list[str] | None:
     """The supplied source texts duplicate removal must not cut a verbatim quotation of (fix G1), or None."""
     return [s.text for s in package.sources] if package is not None and precision_fix("G1") else None
@@ -991,6 +1009,7 @@ class RagPipeline:
             text, _ = fix_conjunctions(text, package.sources)
         if precision_fix("CN1"):
             text, _ = resolve_label_citations(text, package)
+        text, _ = _answer_fixes(text, package, question)
         text, _ = repoint_citations(text, [(s.index, s.text) for s in package.sources])
         if precision_fix("A4"):
             text, _ = repoint_named_citations(text, package)
@@ -1049,6 +1068,7 @@ class RagPipeline:
             text, _ = fix_conjunctions(text, package.sources)
         if precision_fix("CN1"):
             text, _ = resolve_label_citations(text, package)
+        text, _ = _answer_fixes(text, package, question)
         text, _ = repoint_citations(text, [(s.index, s.text) for s in package.sources])
         report2 = validate_answer(text, package, gen2)
         rescored = self.claim_support(text, package)
@@ -1092,6 +1112,7 @@ class RagPipeline:
             text, _ = fix_conjunctions(text, package.sources)
         if precision_fix("CN1"):
             text, _ = resolve_label_citations(text, package)
+        text, _ = _answer_fixes(text, package, question)
         text, _ = repoint_citations(text, [(s.index, s.text) for s in package.sources])
         if precision_fix("A4"):
             text, _ = repoint_named_citations(text, package)
@@ -2002,6 +2023,11 @@ class RagPipeline:
                 from regulus.rag.list_answers import compose_section
 
                 text, composed_type = compose_section(package, question), FB_COMPOSED_LIST
+            if not text and not block and precision_fix("SU1"):
+                # SU1: what a Part 820 section adds to ISO 13485, answered with its own "In addition to Clause X" text
+                from regulus.rag.qmsr import compose_supplement
+
+                text, composed_type = compose_supplement(package, question), FB_COMPOSED_LIST
             if not text and not block:
                 composed_type = FB_COMPOSED_LISTING
                 text = compose_listing(package, question)
@@ -2156,6 +2182,9 @@ class RagPipeline:
                     answer_text, labels = resolve_label_citations(answer_text, package)
                     if labels:
                         generation_info["label_citations_normalised"] = labels
+                answer_text, fixed = _answer_fixes(answer_text, package, question)
+                if fixed:
+                    generation_info["answer_fixes"] = fixed
                 answer_text, repointed = repoint_citations(answer_text, [(s.index, s.text) for s in package.sources])
                 if precision_fix("A4"):
                     answer_text, named_repointed = repoint_named_citations(answer_text, package)

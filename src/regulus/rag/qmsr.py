@@ -224,3 +224,49 @@ def compose_certification(package, question: str) -> str | None:
         if s is not None and whole_sentences(s.text or ""):
             lines.append(f"{s.citation} (eCFR, binding, verbatim): {_verbatim(whole_sentences(s.text or ''), s.index)}")
     return "\n".join(lines)
+
+
+# SU1 (4 Nov 2026, off until measured): "What does 21 CFR 820.45 require that the incorporated standard does not?" - a
+# Part 820 section that opens "In addition to the requirements of Clause 7.5.1 of ISO 13485 ..." IS the answer: its own
+# text is what it adds. The model, given exactly 820.45, wrote "820.45 requires that the incorporated standard (ISO 13485)
+# includes the elements ..." and "does not require that the incorporated standard exclude any element" (M-025, scored
+# muddled). The same question about 820.35 is answered by LS1 with the section's text verbatim and scores PASS (M-020).
+# Only a question naming ONE Part 820 section and asking what it adds to / requires beyond the standard; only when that
+# section's supplied lead paragraph itself says "In addition to ... Clause(s) X ... ISO 13485".
+_SUPPLEMENT_ASKED = re.compile(r"\b(?:add|adds|added|require|requires|impose|imposes|supplement|supplements|beyond|in addition)\b", re.I)
+_STANDARD_NAMED = re.compile(r"\b(?:incorporated standard|ISO\s*13485|the standard)\b", re.I)
+_PART820_SECTION = re.compile(r"(?<![\d.])(820\.\d{1,3})(?![\d.])")
+_IN_ADDITION = re.compile(r"^\s*In addition to (?:the requirements of )?Clauses? (\d{1,2}(?:\.\d{1,2}){0,3}"
+                          r"(?:(?:,\s*|,?\s+and\s+)\d{1,2}(?:\.\d{1,2}){0,3})*)\s+(?:of|in)\s+ISO 13485", re.I)
+SUPPLEMENT_LEAD = "Under 21 CFR {sec}, which adds to ISO 13485 {clauses}, what it requires in addition to the standard, verbatim:"
+
+
+def asks_supplement(question: str) -> str | None:
+    """The one Part 820 section a question asks the FDA additions of, or None."""
+    named = set(_PART820_SECTION.findall(question or ""))
+    if len(named) != 1 or not _STANDARD_NAMED.search(question or "") or not _SUPPLEMENT_ASKED.search(question or ""):
+        return None
+    return named.pop()
+
+
+def compose_supplement(package, question: str) -> str | None:
+    """The SU1 answer (see above), or None."""
+    from regulus.rag.generation import _verbatim, whole_sentences
+
+    sec = asks_supplement(question)
+    if package is None or sec is None:
+        return None
+    own = [s for s in package.sources if not s.is_docket and re.fullmatch(rf"21 CFR {re.escape(sec)}(?:\([^)\s]+\))*",
+                                                                           (s.citation or "").strip())]
+    lead = next((s for s in own if (s.citation or "").strip() == f"21 CFR {sec}"), None)
+    m = _IN_ADDITION.match(lead.text or "") if lead is not None else None
+    if m is None:
+        return None
+    clauses = re.split(r",\s*|,?\s+and\s+", m.group(1))
+    named = ("Clause " + clauses[0]) if len(clauses) == 1 else ("Clauses " + ", ".join(clauses[:-1]) + " and " + clauses[-1])
+    lines = [SUPPLEMENT_LEAD.format(sec=sec, clauses=named)]
+    for s in sorted(own, key=lambda s: s.index):
+        body = whole_sentences(s.text or "")
+        if body:
+            lines.append(f"{s.citation} (eCFR, binding, verbatim): {_verbatim(body, s.index)}")
+    return "\n".join(lines) if len(lines) > 1 else None

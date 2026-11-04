@@ -422,6 +422,16 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       "qmsr-effective"), only with a question asking for the change or its compliance date (M-030)
   PK3 (3 Nov, ON by default since the combined replay) the picker's later same-part picks replace the reranker's lowest additions one for one
       (key share 50% vs 11%), within MS1's allowance; never an addition of their own
+  DI1 (4 Nov, off until measured) a first sentence denying the very verb the question asks ("How does Part 820 extend ...?"
+      -> "Part 820 does not extend ...") followed by "Instead,"/"Rather," is dropped (regulus.rag.answer_fixes): M-018, M-006
+  MP1 (4 Nov, off until measured) a paragraph letter used as a marker ("[b]") becomes the [n] of the one supplied paragraph (b)
+      of the section the sentence names, or of the only supplied section with a (b) (regulus.rag.answer_fixes): M-026
+  VS1 (4 Nov, off until measured) a rerank veto to the Act section the picker also named keeps the picker's regulation with it
+      (L-010: 101.4 + FD&C Act 403(w); T-006: 911 + 1114.35)
+  SB1 (4 Nov, off until measured) a question asking for a subpart's requirements by its title ("holding and distribution
+      requirements") brings that subpart when it is small (SP3's limits), in any part (D-018 211.142, Y-003 112.31-112.33)
+  SU1 (4 Nov, off until measured) "what does 21 CFR 820.X add to / require beyond the incorporated standard": the section's own
+      "In addition to ... Clause X of ISO 13485" text, verbatim, led by the clause it adds to (regulus.rag.qmsr.compose_supplement): M-025
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable
