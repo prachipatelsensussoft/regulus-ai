@@ -56,6 +56,7 @@ SECOND_ACT = os.environ.get("REGULUS_PICKER_SECOND_ACT", "1") == "1"
 # with bge-m3, 0.30 / 0.15 fitted on the dev set; REGULUS_RERANKER=off turns it off; without the model files it is off)
 RERANKER = (os.environ.get("REGULUS_RERANKER", "bge-m3").strip() or None) if os.environ.get("REGULUS_RERANKER", "bge-m3").strip().lower() not in ("off", "none", "0") else None
 RERANK_PARAGRAPHS = 3
+DL1_MAX = 4   # DL1: dense-index sections appended to a general or programme-routed question's lexical candidates
 RERANK_VETO_BELOW = float(os.environ.get("REGULUS_RERANK_VETO_BELOW", "0.3"))
 RERANK_VETO_MARGIN = float(os.environ.get("REGULUS_RERANK_VETO_MARGIN", "0.15"))
 V2_TIE = 0.05   # V2: a near tie between the reranker's top and the picker's other choice
@@ -1215,6 +1216,15 @@ class SectionPromoter:
             branch = "general"
             ranked = self.index.rank(lex, limit=self.limit)
         listed = [r.section for r in ranked]   # TR1: the branch's own list, before HQ1 and the entity constraints
+        if precision_fix("DL1") and branch in ("general", "programme"):
+            # DL1 (4 Nov): a general or programme-routed question had BM25 candidates only - a section sharing no word
+            # stem with the question could never be offered. The Title 21 paragraph index (already loaded for RO1) adds
+            # up to DL1_MAX sections whose best paragraph is most similar to the asked words, inside the routed
+            # programme; appended after the lexical order, never fused into it (fusing lost two rank-1 keys of 17, 23
+            # Oct), replacing the lexical tail so the picker reads as many candidates as before
+            extra = self._paragraph_dense_sections(asked, ranked, programme.parts if programme is not None else None)
+            if extra:
+                ranked = ranked[:max(self.limit - len(extra), 0)] + extra
         if precision_fix("HQ1"):
             # HQ1 (step D): sections whose index-time questions match the question, appended after the list like the dense
             # leg (never fused into its order), inside the named part(s) or the cosmetics parts when the question is one
@@ -1279,6 +1289,31 @@ class SectionPromoter:
         have = {r.section for r in ranked}
         return [RankedSection(s, ix.parts[where[s]], ix.headings[where[s]], ix.subparts[where[s]], 0.0, first.get(s, 0))
                 for s in inside if s not in have][:limit]
+
+    def _paragraph_dense_sections(self, question: str, ranked: list, parts, limit: int = None) -> list:
+        """DL1: up to `limit` sections - inside `parts` when given - whose best paragraph in the Title 21 paragraph index
+        is among the most similar to the question and that the lexical list lacks, most similar first. Each is offered
+        with the paragraph that matched (its ordinal), not the section's first row."""
+        from regulus.retrieval.paragraph_dense import paragraph_dense
+        from regulus.retrieval.section_index import RankedSection
+
+        limit = DL1_MAX if limit is None else limit
+        pd = paragraph_dense(self.db)
+        if pd is None or limit <= 0:
+            return []
+        ix, where = self.index, self._where()
+        have = {r.section for r in ranked}
+        out, scored = [], []
+        for sec, sim, para in pd.rank_sections(question, corpus="cfr"):
+            if sec in have or sec not in where or (parts is not None and ix.parts[where[sec]] not in parts):
+                continue
+            k = where[sec]
+            out.append(RankedSection(sec, ix.parts[k], ix.headings[k], ix.subparts[k], 0.0, para.ordinal))
+            scored.append([sec, sim, para.path])
+            if len(out) >= limit:
+                break
+        _trace.lazy("candidates", "DL1", lambda: {"added": scored})
+        return out
 
     def _question_matches(self, question: str, ranked: list, parts) -> list:
         """HQ1: up to HQ1_LIMIT sections the hypothetical-question index ranks at least HQ1_MIN_SCORE that `ranked` lacks."""

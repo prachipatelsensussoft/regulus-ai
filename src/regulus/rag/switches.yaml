@@ -1293,6 +1293,19 @@ switches:
       an evidence-limit note; before TF1 the first section's paragraphs could take every place under the ceiling
       (CF1 guards only one paragraph per companion); tests/test_core_evidence_tf1.py; not yet measured
     interactions: [QD1, OF1, CF1, LP1]
+  DL1:
+    purpose: a general or programme-routed question gets up to DL1_MAX (4) candidate sections from the Title 21 paragraph index (bge-small, already loaded) - those whose best paragraph is most similar to the asked words, inside the routed programme - appended after the BM25 list (replacing its tail, so the picker reads as many candidates), each shown with the paragraph that matched
+    stage: retrieval
+    status: experimental
+    in_default: false
+    introduced: {date: "2026-11-04", commit: "this commit (DL1)"}
+    evidence: >-
+      code review 4 Nov - only cosmetics and named-part questions had a dense leg; general and routed questions were
+      BM25 only, so a section sharing no word stem with the question was never offered (HQ1 inert, QX1 rejected);
+      full300e wrong section retrieved 19, governing section missing 43; appended, not fused (23 Oct: fusing lost 2
+      of 17 rank-1 keys); TR1 records each addition's similarity for calibration (tests/test_dense_candidates_dl1.py);
+      not yet measured
+    interactions: [PART_DENSE, RO1, HQ1, DR1, DR2, TR1]
 
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
