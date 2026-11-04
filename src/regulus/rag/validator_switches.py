@@ -427,6 +427,8 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       step; the answer is byte-identical on or off
   CC1 (4 Nov, report-only, off) one verdict per citation of the delivered answer (regulus.rag.citation_verdicts): valid,
       exists but does not support, wrong section or programme, cannot verify; nothing is corrected
+  AV1 (4 Nov, report-only, off) one verdict for the delivered answer (regulus.rag.answer_verdict): complete, correct but
+      incomplete, unsupported, incorrect, insufficient evidence; a proxy calibrated against the blind scorer
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

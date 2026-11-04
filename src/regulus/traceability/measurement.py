@@ -235,7 +235,7 @@ def build_record(*, question_id: str, ordinal: int, question: str, out: Any, run
     }
     if origin is not None:                       # absent from acceptance-run records, which keep their shape
         record["origin"] = _copy(origin)
-    for key in ("trace", "citation_verdicts"):   # TR1, CC1 (report-only): present only when the switch is on
+    for key in ("trace", "citation_verdicts", "answer_verdict"):   # TR1, CC1, AV1 (report-only): present only when the switch is on
         if m.get(key) is not None:
             record[key] = m[key]
     record["validation"].update({k: m.get(k) for k in ("fallback_type", "fallback_reason", "answerability",
