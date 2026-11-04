@@ -96,12 +96,12 @@ def main(argv: list[str] | None = None) -> int:
         path = OUT / f"{name}.json"
         text = json.dumps(data, indent=1, ensure_ascii=False) + "\n"
         if a.check:
-            same = path.is_file() and path.read_text(encoding="utf-8") == text
+            same = path.is_file() and path.read_bytes() == text.encode("utf-8")   # LF on every platform
             bad += not same
             print(f"{name}: {'matches' if same else 'DIFFERS FROM'} {path.relative_to(ROOT).as_posix()}")
         else:
             OUT.mkdir(parents=True, exist_ok=True)
-            path.write_text(text, encoding="utf-8")
+            path.write_bytes(text.encode("utf-8"))   # LF line endings on Windows too: the bytes are the frozen record
             s = data["summary"]
             print(f"{name}: {s['questions']} questions, PASS+PP {s['pass_pp']}, {s['verdicts']}, ids sha256 {data['ids_sha256'][:16]}")
     return 1 if bad else 0
