@@ -225,6 +225,8 @@ def main() -> int:
                     "validation": md.get("validation"), "generation": md.get("generation"),
                     "raw": md.get("raw_model_output"), "seconds": round(time.perf_counter() - t0, 1),
                     "model": gen.describe(), "followup": md.get("conversation"),
+                    # TR1 / CC1 / AV1 (report-only): recorded only when the switch is on, so other runs keep their shape
+                    **{k: md[k] for k in ("trace", "citation_verdicts", "answer_verdict") if md.get(k) is not None},
                     **({"role": "parent" if qid not in parent_of else "followup", "chain": chain} if a.chains else {}),
                     **({"reply_cache": {k: v - hits0[k] for k, v in gen.counts().items()}} if a.cache else {}),
                 }, ensure_ascii=False, default=str) + "\n")
