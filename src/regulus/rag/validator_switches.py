@@ -422,15 +422,15 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       "qmsr-effective"), only with a question asking for the change or its compliance date (M-030)
   PK3 (3 Nov, ON by default since the combined replay) the picker's later same-part picks replace the reranker's lowest additions one for one
       (key share 50% vs 11%), within MS1's allowance; never an addition of their own
-  DI1 (4 Nov, off until measured) a first sentence denying the very verb the question asks ("How does Part 820 extend ...?"
+  DI1 (4 Nov, ON by default since pf44_20261104) a first sentence denying the very verb the question asks ("How does Part 820 extend ...?"
       -> "Part 820 does not extend ...") followed by "Instead,"/"Rather," is dropped (regulus.rag.answer_fixes): M-018, M-006
   MP1 (4 Nov, off until measured) a paragraph letter used as a marker ("[b]") becomes the [n] of the one supplied paragraph (b)
       of the section the sentence names, or of the only supplied section with a (b) (regulus.rag.answer_fixes): M-026
-  VS1 (4 Nov, off until measured) a rerank veto to the Act section the picker also named keeps the picker's regulation with it
-      (L-010: 101.4 + FD&C Act 403(w); T-006: 911 + 1114.35)
-  SB1 (4 Nov, off until measured) a question asking for a subpart's requirements by its title ("holding and distribution
+  VS1 (4 Nov, REJECTED: L-010 and T-006 PF->FAIL in pf44/pf44b - the regulation's paragraphs crowd the Act text out) a rerank
+      veto to the Act section the picker also named keeps the picker's regulation with it
+  SB1 (4 Nov, ON by default since pf44_20261104) a question asking for a subpart's requirements by its title ("holding and distribution
       requirements") brings that subpart when it is small (SP3's limits), in any part (D-018 211.142, Y-003 112.31-112.33)
-  SU1 (4 Nov, off until measured) "what does 21 CFR 820.X add to / require beyond the incorporated standard": the section's own
+  SU1 (4 Nov, ON by default since pf44_20261104) "what does 21 CFR 820.X add to / require beyond the incorporated standard": the section's own
       "In addition to ... Clause X of ISO 13485" text, verbatim, led by the clause it adds to (regulus.rag.qmsr.compose_supplement): M-025
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
@@ -469,7 +469,10 @@ DEFAULT_3NOV_RELEASE = DEFAULT_2NOV_RELEASE + ",CN1,SC1,CP1,XC1,OF1,DX1,CF1,AO1"
 # combo4_20261103 vs full300e - 24 answers changed, each byte-identical to its single-switch arm (no interaction); blind
 # paired 10 up / 2 down, both downs (U-002, R-001: withheld drafts, verbatim fallback) not confirmed by a second scorer;
 # reproduced in every pass: U-003 PF->PP, M-030 PF->PP, Y-009 FAIL->PASS, P-010 PF->PASS. Kept off: MK1, EX2, SR1.
-DEFAULT = DEFAULT_3NOV_RELEASE + ",XG1,QS1,PK3,DR2"
+DEFAULT_3NOV = DEFAULT_3NOV_RELEASE + ",XG1,QS1,PK3,DR2"
+# 4 Nov 2026 (owner approval after pf44_20261104: blind paired, sonnet + opus agree on all 8 changed answers; 0 lost):
+# DI1 (M-018 PF->PASS), SB1 (D-018 PF->PASS, Y-003 PF->PP), SU1 (M-025 PF->PASS); 292 of 300 replayed byte-identical
+DEFAULT = DEFAULT_3NOV + ",DI1,SB1,SU1"
 VALIDATOR_PRECISION = frozenset(x.strip().upper() for x in os.environ.get("REGULUS_VALIDATOR_PRECISION", DEFAULT).split(",")
                                  if x.strip() and x.strip().lower() not in ("off", "none"))
 

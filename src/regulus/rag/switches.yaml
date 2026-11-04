@@ -1203,11 +1203,11 @@ switches:
   DI1:
     purpose: a first sentence denying the verb the question asks ("How does X extend ...?" -> "X does not extend ..."), when the next sentence begins "Instead,"/"Rather,", is dropped before validation - the answer's own next sentence is the extension (regulus.rag.answer_fixes.drop_denial_opener)
     stage: post_answer
-    status: experimental
-    in_default: false
-    introduced: {date: "2026-11-04", commit: "this commit (DI1)"}
+    status: default
+    in_default: true
+    introduced: {date: "2026-11-04", commit: "2007209"}
     evidence: >-
-      300Q combo4 (3 Nov) - fires on M-018 and M-006 only (both PF, scored "opens by wrongly denying"); not yet measured
+      pf44_20261104 (4 Nov) blind paired, sonnet + opus agree, 0 lost - see LEDGER 4 Nov; 300Q combo4 (3 Nov) - fires on M-018 and M-006 only (both PF, scored "opens by wrongly denying"); not yet measured
     interactions: [CN1]
 
   MP1:
@@ -1215,7 +1215,7 @@ switches:
     stage: post_answer
     status: experimental
     in_default: false
-    introduced: {date: "2026-11-04", commit: "this commit (MP1)"}
+    introduced: {date: "2026-11-04", commit: "2007209"}
     evidence: >-
       300Q combo4 (3 Nov) - fires on M-026 only ("... documented in accordance with Clause 4.2.5 of ISO 13485 [b]", 820.45(b) supplied); not yet measured
     interactions: [CN1]
@@ -1223,31 +1223,31 @@ switches:
   VS1:
     purpose: when the rerank veto replaces the picker's regulation with the FD&C Act section the picker also named, the regulation is promoted with the Act section instead of being dropped
     stage: selection
-    status: experimental
+    status: rejected
     in_default: false
-    introduced: {date: "2026-11-04", commit: "this commit (VS1)"}
+    introduced: {date: "2026-11-04", commit: "2007209"}
     evidence: >-
-      300Q combo4 (3 Nov) - CFR-to-Act vetoes 5; the Act section was the picker's own in L-010 (101.4 + 403) and T-006 (1114.35 + 911), T-011 (1107.46 + 906); not T-012 (veto to 904, picker 915: PASS untouched); not yet measured
+      300Q combo4 (3 Nov) - CFR-to-Act vetoes 5; the Act section was the picker's own in L-010 (101.4 + 403) and T-006 (1114.35 + 911), T-011 (1107.46 + 906); not T-012 (veto to 904, picker 915: PASS untouched). v1 (regulation added beside the vetoed Act pick) measured pf44_20261104: L-010 lost 403(w) to 101.4's 26 paragraphs ; v2 (veto undone, regulation first + co-statute budget, uncommitted) pf44b_20261104: L-010 PF->FAIL, T-006 PF->FAIL (Act text never reached the evidence; T-006 withheld) - REJECTED, code restored to v1 (off)
     interactions: [VB1, V2]
 
   SB1:
     purpose: a question asking for a subpart's requirements by its title (title phrase immediately followed by "requirement(s)") brings the sections of that subpart of the promoted section's part when it is small (SP3_MAX_SECTIONS, SP3_MAX_CHARS) - SP3 for every part, gated on the question
     stage: selection
-    status: experimental
-    in_default: false
-    introduced: {date: "2026-11-04", commit: "this commit (SB1)"}
+    status: default
+    in_default: true
+    introduced: {date: "2026-11-04", commit: "2007209"}
     evidence: >-
-      300Q combo4 (3 Nov) simulation - adds sections to D-018 (211.142, key) and Y-003 (112.31-112.33, key) only; without the "requirements" gate it also fired on E-006/E-008/E-009 (PASS) and NC-010; not yet measured
+      pf44_20261104 (4 Nov) blind paired, sonnet + opus agree, 0 lost - see LEDGER 4 Nov; 300Q combo4 (3 Nov) simulation - adds sections to D-018 (211.142, key) and Y-003 (112.31-112.33, key) only; without the "requirements" gate it also fired on E-006/E-008/E-009 (PASS) and NC-010; not yet measured
     interactions: [SP3, HM1]
 
   SU1:
     purpose: a question asking what one named Part 820 section adds to (requires beyond) the incorporated standard is answered with that section's supplied paragraphs verbatim, led by the ISO 13485 clause its own "In addition to ... Clause X" sentence names; only when that sentence is supplied
     stage: composer
-    status: experimental
-    in_default: false
-    introduced: {date: "2026-11-04", commit: "this commit (SU1)"}
+    status: default
+    in_default: true
+    introduced: {date: "2026-11-04", commit: "2007209"}
     evidence: >-
-      300Q combo4 (3 Nov) - target M-025 (PF, model answer muddled although given exactly 820.45); the same form for 820.35 already scores PASS through LS1 (M-020), which runs first; not yet measured
+      pf44_20261104 (4 Nov) blind paired, sonnet + opus agree, 0 lost - see LEDGER 4 Nov; 300Q combo4 (3 Nov) - target M-025 (PF, model answer muddled although given exactly 820.45); the same form for 820.35 already scores PASS through LS1 (M-020), which runs first; not yet measured
     interactions: [LS1, LS2, WS1]
 
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
