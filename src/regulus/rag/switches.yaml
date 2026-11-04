@@ -1230,7 +1230,8 @@ switches:
       300Q combo4 (3 Nov) - CFR-to-Act vetoes 5; the Act section was the picker's own in L-010 (101.4 + 403) and T-006 (1114.35 + 911), T-011 (1107.46 + 906); not T-012 (veto to 904, picker 915: PASS untouched). v1 (regulation added beside the vetoed Act pick) measured pf44_20261104: L-010 lost 403(w) to 101.4's 26 paragraphs ; v2 (veto undone, regulation first + co-statute budget, uncommitted) pf44b_20261104: L-010 PF->FAIL, T-006 PF->FAIL (Act text never reached the evidence; T-006 withheld) - REJECTED, code restored to v1 (off)
     interactions: [VB1, V2]
 
-  SB1:
+  SP4:
+    renamed_from: SB1   # 4 Nov 2026: dev-bhautik's branch uses SB1 for its statute budget switch
     purpose: a question asking for a subpart's requirements by its title (title phrase immediately followed by "requirement(s)") brings the sections of that subpart of the promoted section's part when it is small (SP3_MAX_SECTIONS, SP3_MAX_CHARS) - SP3 for every part, gated on the question
     stage: selection
     status: default

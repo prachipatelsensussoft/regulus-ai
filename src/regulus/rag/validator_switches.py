@@ -428,7 +428,7 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       of the section the sentence names, or of the only supplied section with a (b) (regulus.rag.answer_fixes): M-026
   VS1 (4 Nov, REJECTED: L-010 and T-006 PF->FAIL in pf44/pf44b - the regulation's paragraphs crowd the Act text out) a rerank
       veto to the Act section the picker also named keeps the picker's regulation with it
-  SB1 (4 Nov, ON by default since pf44_20261104) a question asking for a subpart's requirements by its title ("holding and distribution
+  SP4 (4 Nov, ON by default since pf44_20261104; renamed 4 Nov, old name in switches.yaml renamed_from) a question asking for a subpart's requirements by its title ("holding and distribution
       requirements") brings that subpart when it is small (SP3's limits), in any part (D-018 211.142, Y-003 112.31-112.33)
   SU1 (4 Nov, ON by default since pf44_20261104) "what does 21 CFR 820.X add to / require beyond the incorporated standard": the section's own
       "In addition to ... Clause X of ISO 13485" text, verbatim, led by the clause it adds to (regulus.rag.qmsr.compose_supplement): M-025
@@ -471,8 +471,8 @@ DEFAULT_3NOV_RELEASE = DEFAULT_2NOV_RELEASE + ",CN1,SC1,CP1,XC1,OF1,DX1,CF1,AO1"
 # reproduced in every pass: U-003 PF->PP, M-030 PF->PP, Y-009 FAIL->PASS, P-010 PF->PASS. Kept off: MK1, EX2, SR1.
 DEFAULT_3NOV = DEFAULT_3NOV_RELEASE + ",XG1,QS1,PK3,DR2"
 # 4 Nov 2026 (owner approval after pf44_20261104: blind paired, sonnet + opus agree on all 8 changed answers; 0 lost):
-# DI1 (M-018 PF->PASS), SB1 (D-018 PF->PASS, Y-003 PF->PP), SU1 (M-025 PF->PASS); 292 of 300 replayed byte-identical
-DEFAULT = DEFAULT_3NOV + ",DI1,SB1,SU1"
+# DI1 (M-018 PF->PASS), SP4 (then SB1: D-018 PF->PASS, Y-003 PF->PP), SU1 (M-025 PF->PASS); 292 of 300 replayed byte-identical
+DEFAULT = DEFAULT_3NOV + ",DI1,SP4,SU1"
 VALIDATOR_PRECISION = frozenset(x.strip().upper() for x in os.environ.get("REGULUS_VALIDATOR_PRECISION", DEFAULT).split(",")
                                  if x.strip() and x.strip().lower() not in ("off", "none"))
 

@@ -304,7 +304,7 @@ def heading_phrase_in(heading: str, question: str) -> bool:
 
 
 def subpart_requirements_named(title: str, question: str) -> bool:
-    """SB1: the question asks for a subpart's requirements by its title - "What holding and distribution requirements
+    """SP4 (named SB1 until 4 Nov): the question asks for a subpart's requirements by its title - "What holding and distribution requirements
     apply under Part 211?" (Subpart H, Holding and Distribution), "... health and hygiene requirements ..." (Part 112
     Subpart D). The title's lead phrase (two topic words or more, as heading_phrase_in) is immediately followed by
     "requirement(s)"; the title merely occurring ("... for electronic signatures") is not enough."""
@@ -2044,7 +2044,7 @@ class SectionPromoter:
         return [r["s"] for r in rows if r["s"] != section]
 
     def named_small_subparts(self, section: str, question: str) -> list[str]:
-        """SB1 (4 Nov): the sections, in order, of each subpart of the promoted section's part that the question asks the
+        """SP4 (4 Nov; named SB1 until renamed the same day): the sections, in order, of each subpart of the promoted section's part that the question asks the
         requirements of by title (subpart_requirements_named), when that subpart is small (SP3's limits: at most
         SP3_MAX_SECTIONS sections and SP3_MAX_CHARS characters). D-018 "What holding and distribution requirements apply
         under Part 211?" promoted 211.150 alone; Subpart H is 211.142 + 211.150 (key: both). Y-003 asks for "health and
@@ -2409,7 +2409,7 @@ class SectionPromoter:
 
             if not _ASKS_CONTENTS.search(question or ""):   # a list question is answered by its own section's list (LS1)
                 comps += [c for c in self.small_subpart(picked[0]) if c not in comps and c not in picked]
-        if precision_fix("SB1") and picked:
+        if precision_fix("SP4") and picked:
             comps += [c for c in self.named_small_subparts(picked[0], question) if c not in comps and c not in picked]
         if precision_fix("HM1") and picked:
             comps += [c for c in self.heading_matches(picked[0], question) if c not in comps and c not in picked]

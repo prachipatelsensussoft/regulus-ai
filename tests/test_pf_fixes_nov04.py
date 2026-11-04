@@ -1,5 +1,5 @@
 """4 Nov 2026 fixes for 300Q PARTIALLY FAIL answers (all off until measured): DI1 and MP1 (regulus.rag.answer_fixes),
-SB1 and VS1 (regulus.rag.section_promotion). No database, no model."""
+SP4 (named SB1 until 4 Nov) and VS1 (regulus.rag.section_promotion). No database, no model."""
 from dataclasses import dataclass
 
 import regulus.rag.validator_switches as VS
@@ -76,7 +76,7 @@ def test_mp1_leaves_ambiguous_unsupplied_and_ordinary_brackets():
     assert resolve_letter_markers("Use [1] and a[b] array.", SOURCES) == ("Use [1] and a[b] array.", 0)
 
 
-# ------------------------------------------------------------ SB1
+# ------------------------------------------------------------ SP4 (was SB1)
 
 
 def test_sb1_needs_the_subpart_title_followed_by_requirements():
