@@ -1251,6 +1251,26 @@ switches:
       pf44_20261104 (4 Nov) blind paired, sonnet + opus agree, 0 lost - see LEDGER 4 Nov; 300Q combo4 (3 Nov) - target M-025 (PF, model answer muddled although given exactly 820.45); the same form for 820.35 already scores PASS through LS1 (M-020), which runs first. Part level, su1part2_20261105 (5 Nov) - offline fire count over 1,962 questions (300Q, cosmetics bank, follow-ups) M-029 only; replay of the 42 M-* questions, 0 model calls, only M-029 changed; blind paired sonnet + opus agree M-029 PF -> PASS
     interactions: [LS1, LS2, WS1, QC1, QM1, DV1]
 
+  GP1:
+    purpose: >-
+      "which FDA guidance requires / mandates / obligates X" rests on a false premise (21 CFR 10.115(d)(1) - guidance
+      creates no requirement): the question is re-asked as "which regulation requires X", answered as any other, and the
+      answer is led by the premise note quoting 10.115(d)(1) from the database; on that re-asked question only, a device
+      question naming a quality-system subject in words ("qualify its suppliers") is routed to its former Part 820 section
+      for QM1 (820.10 + the ISO 13485 clause; regulus.rag.qmsr.former_by_subject). Never a question asking which guidance
+      covers or recommends something
+    stage: planning
+    status: default
+    in_default: true
+    introduced: {date: "2026-11-05", commit: "uncommitted"}
+    evidence: >-
+      fire count over 1,962 questions: PB-005 only; 10 phrasings fire and 10 look-alikes do not, 15 subject cases
+      (tests/test_guidance_premise.py); live probe 5 Nov: the re-asked drug and food questions reach 211.166 and 117.126,
+      the device one picked 117.430 (food) without the subject routing. gp1_20261105 (5 Nov): replay of the 9 PB-*
+      questions, 0 model calls, only PB-005 changed (composed_qmsr); blind paired sonnet + opus agree PB-005 FAIL -> PASS;
+      full suite 3510 passed (2 known 0.6B-config failures) -> DEFAULT
+    interactions: [QM1, QM2, S1, ISO1]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:

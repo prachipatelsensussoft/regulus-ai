@@ -327,3 +327,68 @@ def compose_part_supplements(package, question: str) -> str | None:
     for s in adds_10 + leads:
         lines.append(f"{s.citation} (eCFR, binding, verbatim): {_verbatim(whole_sentences(s.text or ''), s.index)}")
     return "\n".join(lines)
+
+
+# GP1 subject routing (5 Nov 2026): a device question that names a quality-system SUBJECT in plain words ("qualify its
+# suppliers", "complaint files", "train personnel") but no section - the former section whose own title or paragraph
+# heading carries that subject ("820.50(a) Evaluation of suppliers, contractors, and consultants"), from the reference
+# file. Used only on GP1's re-asked "which regulation requires ..." question, so QM1 answers it with 820.10 and the ISO
+# 13485 clause (PB-005: suppliers -> 820.50(a) -> Clause 7.4 Purchasing). Premarket subjects (510(k), PMA, registration,
+# listing, UDI) belong to other parts and are never routed here.
+_SUBJECT_WORD = re.compile(r"[A-Za-z]+")
+_SUBJECT_GENERIC = frozenset(
+    "general control controls procedure procedures requirement requirements require requires required device devices "
+    "manufacturer manufacturers maker makers product products quality system systems establish maintain must shall which "
+    "what under regulation regulations according mandatory part change changes activity activities other this that their "
+    "its have has with from into medical finished written program for and the are any all make makes making keep".split())
+_SUBJECT_ACRONYMS = {"capa": "corrective preventive action"}
+_PREMARKET = re.compile(r"\b(?:510\s*\(k\)|PMA|premarket|pre-market|registration|register|listing|UDI|unique device|"
+                        r"de novo|investigational|IDE)\b", re.I)
+_DEVICE_CONTEXT = re.compile(r"\b(?:medical\s+)?devices?\b|\bpart\s*820\b|\bQMSR\b", re.I)
+
+
+def _stem(word: str) -> str:
+    """A light suffix strip so a verb and its noun meet: validate / validation -> valid, calibrate / calibration ->
+    calibr, train / training -> train, supplier / suppliers -> suppli."""
+    w = word.lower()
+    if w.endswith("ss"):
+        return w                     # "process", "class": not a plural
+    for suf in ("ations", "ation", "ates", "ated", "ate", "ions", "ion", "ings", "ing", "ers", "er", "ies", "sses", "es",
+                "ed", "s", "e"):
+        if suf == "sses" and w.endswith(suf):
+            return w[:-2]            # "processes" -> "process"
+        if w.endswith(suf) and len(w) - len(suf) >= 4:
+            return w[: -len(suf)]
+    return w
+
+
+def _subject_stems(text: str) -> set[str]:
+    words = []
+    for w in _SUBJECT_WORD.findall(text or ""):
+        words += _SUBJECT_ACRONYMS.get(w.lower(), w).split()
+    return {_stem(w) for w in words if len(w) > 2 and w.lower() not in _SUBJECT_GENERIC}
+
+
+def former_by_subject(question: str, live_sections: set[str]) -> list[tuple[str, str]]:
+    """(section, paragraph path) of the former section(s) a device question's plain-language subject matches best; [] when
+    it is not a device question, names a premarket subject, or no specific word matches."""
+    if not _DEVICE_CONTEXT.search(question or "") or _PREMARKET.search(question or ""):
+        return []
+    ref = reference()
+    asked = _subject_stems(question)
+    best, hits = 0, []
+    for sec, entry in ref["former_sections"].items():
+        if sec in live_sections:
+            continue
+        heads = ref.get("former_paragraph_headings", {}).get(sec, {})
+        whole = _subject_stems(entry.get("heading", "")) | {s for h in heads.values() for s in _subject_stems(h)}
+        score = len(asked & whole)
+        if score == 0 or score < best:
+            continue
+        # the paragraph whose own heading carries the most of the subject, when one does
+        para = max(heads, key=lambda p: len(asked & _subject_stems(heads[p])), default="")
+        path = para if para and asked & _subject_stems(heads[para]) and not asked & _subject_stems(entry.get("heading", "")) else ""
+        if score > best:
+            best, hits = score, []
+        hits.append((sec, path))
+    return hits if len(hits) <= 2 else []    # a subject matching many sections equally is not one subject

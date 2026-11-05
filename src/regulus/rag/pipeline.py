@@ -1594,8 +1594,10 @@ class RagPipeline:
             return None
         return bool(rows)
 
-    def qmsr_request(self, question: str, plan: QueryPlan) -> tuple[list, list]:
-        """QM1: (former part 820 sections the question names, ISO 13485 clauses it names that do not exist)."""
+    def qmsr_request(self, question: str, plan: QueryPlan, by_subject: bool = False) -> tuple[list, list]:
+        """QM1: (former part 820 sections the question names, ISO 13485 clauses it names that do not exist). by_subject
+        (GP1's re-asked question only): a device question naming a quality-system subject in words ("qualify its
+        suppliers") and no section gets the former section whose title or paragraph heading carries it."""
         if not precision_fix("QM1"):
             return [], []
         from regulus.rag import qmsr
@@ -1606,6 +1608,8 @@ class RagPipeline:
         former = qmsr.former_refs(plan, live)
         if precision_fix("QM2"):
             former += [f for f in qmsr.former_by_name(question, live) if f not in former]
+        if by_subject and not former and not plan.requirements:
+            former = qmsr.former_by_subject(question, live)
         unknown = qmsr.unknown_clauses(question)
         about_820 = former or any(r.reference.part == "820" for r in plan.requirements) or re.search(
             r"\bpart\s+820\b|\bQMSR\b|quality management system regulation", question, re.I)
@@ -1697,6 +1701,16 @@ class RagPipeline:
                     question = corrected
             except Exception:  # noqa: BLE001 - an aid: the question is answered as asked
                 spelling = None
+        gp1_premise = None
+        if precision_fix("GP1"):
+            # GP1: "which FDA guidance requires X" - guidance creates no requirement (21 CFR 10.115(d)(1)); the question
+            # is answered as "which regulation requires X" and the answer is led by the premise note
+            # (regulus.rag.guidance_premise); `asked` keeps the user's words
+            from regulus.rag.guidance_premise import premise_rewrite
+
+            rewritten = premise_rewrite(question)
+            if rewritten:
+                gp1_premise, question = question, rewritten
         plan = plan_query(question)  # Stage 1: the one and only parse of the question
         # a follow-up (`context`: regulus.rag.conversation.ConversationContext) is read against its conversation; without
         # a context nothing below changes
@@ -1707,7 +1721,7 @@ class RagPipeline:
         anchored = followup is not None and followup.anchored and not plan.requirements
         # QM1: a section of the former Quality System regulation (or an ISO 13485 clause that does not exist) - the
         # question is re-planned onto the live part 820 section that now carries the subject (regulus.rag.qmsr)
-        qmsr_former, qmsr_unknown = self.qmsr_request(question, plan)
+        qmsr_former, qmsr_unknown = self.qmsr_request(question, plan, by_subject=gp1_premise is not None)
         # QC1: a question whether Part 820 requires ISO 13485 certification is answered from 820.10 (regulus.rag.qmsr)
         qmsr_cert = False
         if precision_fix("QC1") and not (qmsr_former or qmsr_unknown):
@@ -2398,6 +2412,15 @@ class RagPipeline:
                 # PARTIALLY_ANSWERABLE limitation, which must end the answer)
                 answer_text = body + "\n\n" + line + closing
                 generation_info["iso_clauses_named"] = line.count("Clause ")
+        if gp1_premise is not None and answer_text:
+            # GP1: the premise is corrected first, quoting 21 CFR 10.115(d)(1) as the database holds it - also before a
+            # withheld or declined answer, since the correction stands on its own
+            from regulus.rag.guidance_premise import premise_note
+
+            note = premise_note(getattr(self.retriever, "db", None))
+            if note:
+                answer_text = note + "\n\n" + answer_text
+                generation_info["guidance_premise"] = gp1_premise
         t_post = time.perf_counter()
         if package is not None and model_called:
             addressed = validation_final.addressed if validation_final is not None else ()

@@ -78,5 +78,19 @@
   "8.4": "Analysis of data", "8.5": "Improvement", "8.5.1": "General", "8.5.2": "Corrective action", "8.5.3": "Preventive action"
  },
  "parent_titles": {"4": "Quality management system", "5": "Management responsibility", "6": "Resource management",
-                   "7": "Product realization", "8": "Measurement, analysis and improvement"}
+                   "7": "Product realization", "8": "Measurement, analysis and improvement"},
+ "former_paragraph_headings_source": "paragraph headings of the former sections, from artifacts/benchmark_verification/independent_review_20261019T103917Z/sources/ecfr_2026-01-31/part-820.txt (sha256 207c482fc816df39); added 5 Nov 2026 for GP1's subject routing (regulus.rag.qmsr.former_by_subject)",
+ "former_paragraph_headings": {
+  "820.20": {"(a)": "Quality policy", "(b)": "Organization", "(c)": "Management review", "(d)": "Quality planning", "(e)": "Quality system procedures"},
+  "820.25": {"(a)": "General", "(b)": "Training"},
+  "820.30": {"(a)": "General", "(b)": "Design and development planning", "(c)": "Design input", "(d)": "Design output", "(e)": "Design review", "(f)": "Design verification", "(g)": "Design validation", "(h)": "Design transfer", "(i)": "Design changes", "(j)": "Design history file"},
+  "820.40": {"(a)": "Document approval and distribution", "(b)": "Document changes"},
+  "820.50": {"(a)": "Evaluation of suppliers, contractors, and consultants", "(b)": "Purchasing data"},
+  "820.70": {"(a)": "General", "(b)": "Production and process changes", "(c)": "Environmental control", "(d)": "Personnel", "(e)": "Contamination control", "(f)": "Buildings", "(g)": "Equipment", "(h)": "Manufacturing material", "(i)": "Automated processes"},
+  "820.72": {"(a)": "Control of inspection, measuring, and test equipment", "(b)": "Calibration"},
+  "820.80": {"(a)": "General", "(b)": "Receiving acceptance activities", "(c)": "In-process acceptance activities", "(d)": "Final acceptance activities", "(e)": "Acceptance records"},
+  "820.90": {"(a)": "Control of nonconforming product", "(b)": "Nonconformity review and disposition"},
+  "820.120": {"(a)": "Label integrity", "(b)": "Labeling inspection", "(c)": "Labeling storage", "(d)": "Labeling operations", "(e)": "Control number"},
+  "820.180": {"(a)": "Confidentiality", "(b)": "Record retention period", "(c)": "Exceptions"}
+ }
 }
