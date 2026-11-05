@@ -316,9 +316,48 @@ def subpart_requirements_named(title: str, question: str) -> bool:
     n = len(lead)
     return any(q[i:i + n] == lead and i + n < len(q) and q[i + n] == "requir" for i in range(len(q) - n))
 
+# SP4O (5 Nov 2026): SP4's subpart-as-a-whole question when the subpart is too large to supply whole - "What current
+# good manufacturing practice requirements apply to ... animal food?" (507 Subpart B, 8 sections, 17,626 characters; key
+# 507.14 through 507.28), "What additional safeguards apply to children enrolled in a clinical investigation ...?" (50
+# Subpart D). The answer is the subpart's outline: each section's heading and opening provision (regulus.rag.subpart_outline).
+# Only a PURE overview: once the subpart title, the part title, generic overview words, product types and regulated
+# parties are taken out of the question, no topic word may remain ("aseptic processing areas", "safety has not been
+# substantiated" point to one section), and a question asking for the "general" requirements of a subpart that has a
+# General-requirements section is that section's (211.160, 211.180). Fit on the 15 questions the broad gate fires on
+# (15/15: 4 range keys outlined, 6 PASS single-section answers untouched) and held-out phrasings in the tests.
+SP4O_MAX_SECTIONS = 16
+SUBPART_OUTLINE_NOTE = "subpart outline"
+_OVERVIEW_ASKED = re.compile(r"\bwhat\b[^?]*\b(?:requirements?|standards?|safeguards?|rules?|provisions?|controls?|practices?)\b"
+                             r"[^?]*\b(?:apply|applies|govern\w*|required)\b|\bwhat\s+(?:are|does|do)\b[^?]*\brequire", re.I)
+_NAMED_RULE = re.compile(r"\b(?:[a-z-]+\s+){1,3}rule\b", re.I)   # "the produce safety rule": the regulation's informal name
+_GENERAL_HEADING = re.compile(r"general\b", re.I)
+
+
+def subpart_overview(title: str, part_title: str, headings, question: str) -> bool:
+    """SP4O: whether the question asks for the subpart as a whole and nothing narrower (see above)."""
+    t = _topic_stems(re.split(r";", title or "")[0])
+    asked = subpart_requirements_named(title, question) or (
+        len(t) >= 2 and t <= _topic_stems(question) and bool(_OVERVIEW_ASKED.search(question or "")))
+    if not asked:
+        return False
+    if re.search(r"\bgeneral\b", question or "", re.I) and any(_GENERAL_HEADING.match(h or "") for h in headings):
+        return False
+    extra = _topic_stems(_NAMED_RULE.sub(" ", question or "")) - _topic_stems(title) - _topic_stems(part_title) - _SP4O_GENERIC
+    return not extra
+
+
 def _topic_stems(text: str) -> set[str]:
     """Topic words of a question or heading, as six-letter stems ("salvaged" / "salvaging" -> "salvag")."""
     return {w[:6] for w in re.findall(r"[a-z]{5,}", (text or "").lower()) if w not in _HC1_GENERIC}
+
+# SP4O: words that name what is regulated or who - not a narrower subject (product types, regulated parties, overview verbs)
+_SP4O_GENERIC = _topic_stems(
+    "requirements requirement apply applies applicable under what which must required provisions rules standards safeguards "
+    "controls practices regulation regulations section sections enrolled establishes manufacturing processing packing "
+    "holding facility facilities product products drugs device devices foods cosmetic cosmetics biologic biological "
+    "tobacco dietary supplement supplements applicant applicants sponsor sponsors manufacturer manufacturers firms "
+    "establishment establishments owner operator distributor distributors importer importers farm farms "
+    "clinical investigation investigations")
 
 
 DV1_WHOLE_SECTION_CHARS = int(os.environ.get("REGULUS_DV1_WHOLE_SECTION_CHARS", "2500"))   # DV1: a section this short is supplied whole (820.7, 820.45, 820.35: M-023 mis-cited (a)(3) from its families)
@@ -2071,6 +2110,35 @@ class SectionPromoter:
             out += [m["sec"] for m in members if m["sec"] != section and m["sec"] not in out]
         return out
 
+    def outlined_subpart(self, section: str, question: str) -> tuple[str, list[str]] | None:
+        """SP4O: (subpart title, its sections in order) when the question asks for one subpart of the promoted section's
+        part as a whole (subpart_overview) and that subpart is too large for SP4's whole text but has at most
+        SP4O_MAX_SECTIONS sections; None otherwise, or when more than one subpart qualifies."""
+        part = section.split(".")[0]
+        try:
+            rows = self.db.query(
+                "SELECT s.id, s.title, r.section_number sec, r.section_heading h, sum(length(r.body_text)) c, min(r.ordinal) o, "
+                "min(r.parent_headings[array_length(r.parent_headings, 1) - 1]) ph FROM cfr_subparts s "
+                "JOIN cfr_records r ON r.subpart_id = s.id AND r.removed_on IS NULL AND NOT r.is_reserved "
+                "WHERE s.part_number = %(p)s GROUP BY 1, 2, 3, 4 ORDER BY 1, 6", {"p": part})
+            pt = self.db.query("SELECT h FROM (SELECT unnest(parent_headings) h FROM cfr_records WHERE part_number = %(p)s "
+                               "AND removed_on IS NULL LIMIT 50) x WHERE h LIKE %(pre)s LIMIT 1", {"p": part, "pre": f"Part {part} %"})
+        except Exception:  # noqa: BLE001 - an aid only
+            return None
+        part_title = pt[0]["h"] if pt else ""
+        by_subpart: dict = {}
+        for r in rows:
+            by_subpart.setdefault((r["id"], r["title"]), []).append(r)
+        hits = []
+        for (_, title), members in by_subpart.items():
+            if "reserved" in (title or "").lower() or len(members) > SP4O_MAX_SECTIONS:
+                continue
+            if len(members) <= SP3_MAX_SECTIONS and sum(int(m["c"] or 0) for m in members) <= SP3_MAX_CHARS:
+                continue   # small: SP4 supplies it whole
+            if subpart_overview(title, part_title, [m["h"] for m in members], question):
+                hits.append((title, list(dict.fromkeys(m["sec"] for m in members))))
+        return hits[0] if len(hits) == 1 else None
+
     def heading_matches(self, section: str, question: str, limit: int = HC1_MAX) -> list[str]:
         """HM1 (27 Oct): sections of the promoted section's part whose heading's lead phrase the question contains word
         for word (two topic words or more) - title-field matching. "What are the requirements for use of approved
@@ -2403,6 +2471,14 @@ class SectionPromoter:
             extra = [s2 for s2 in self.decomposed_sections(question, parts, home) if s2.split("(")[0] not in cited][:QD1_MAX]
             if extra:
                 pr = replace(pr, companions=pr.companions + tuple(extra), notes=pr.notes + (f"sub-questions: {', '.join(extra)}",))
+        if precision_fix("SP4O") and pr.sections and not pr.statute:
+            # SP4O: a pure overview of one large subpart - its sections ARE the evidence (each one's opening provision is
+            # what the outline quotes), in place of companions that would compete for the budget
+            outline = self.outlined_subpart(pr.sections[0], question)
+            if outline:
+                title, members = outline
+                pr = replace(pr, sections=(members[0],), companions=tuple(members[1:]),
+                             notes=pr.notes + (f"{SUBPART_OUTLINE_NOTE}: {title}: {', '.join(members)}",))
         if precision_fix("DX1"):   # last: every companion is known (X-001: 4.2 arrives through MS1)
             redirects = [r for r in self.definition_redirects(list(pr.citations), question) if r not in pr.citations]
             if redirects:

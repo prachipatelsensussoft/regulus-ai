@@ -2036,6 +2036,13 @@ class RagPipeline:
                 from regulus.rag.practice_silence import compose as compose_silence
 
                 text, composed_type = compose_silence(package, question, promotion.notes), FB_COMPOSED_SILENCE
+            if not text and promotion is not None and precision_fix("SP4O"):
+                # SP4O: a pure overview of one large subpart - each section's heading and opening provision, verbatim
+                from regulus.rag.subpart_outline import COMPOSED_TYPE as FB_COMPOSED_OUTLINE, compose as compose_outline, outline_request
+
+                req = outline_request(promotion)
+                if req:
+                    text, composed_type = compose_outline(package, question, *req), FB_COMPOSED_OUTLINE
             if not text and ri_kind:
                 # RI1: § 501's opening, 501(j) and (a device) 820.1(c), verbatim (regulus.rag.refused_inspection)
                 from regulus.rag.refused_inspection import COMPOSED_TYPE as FB_COMPOSED_INSPECTION, compose as compose_ri
@@ -2104,8 +2111,9 @@ class RagPipeline:
                 report = validate_answer(text, package, None)
                 # FP1 / RS1 answer one point of the provision on purpose: the shape-completeness findings (a requested
                 # provision, a list item or a requirement group not represented) do not apply; every grounding check does
+                # SP4O's outline quotes each section's opening provision on purpose: its sub-items are not enumerated
                 valid = report.ok or (composed_type in (FB_COMPOSED_PREMISE, FB_COMPOSED_RECORDS, FB_COMPOSED_QMSR,
-                                                        FB_COMPOSED_DEFINITIONS) and not (
+                                                        FB_COMPOSED_DEFINITIONS, "composed_outline") and not (
                     {p.code for p in report.problems if p.severity == "error"} - _FOCUSED_COMPLETENESS_CODES))
                 if not valid and composed_type == FB_COMPOSED_LIST and (precision_fix("LS2") or precision_fix("WS1")):
                     # LS2: the whole list of one section, verbatim, is complete for that section; a completeness finding

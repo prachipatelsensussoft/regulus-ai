@@ -1289,6 +1289,26 @@ switches:
       + opus agree M-006 PARTIALLY FAIL -> PASS; full suite 3536 passed (2 known 0.6B-config failures) -> DEFAULT
     interactions: [DV1, ST1, QC1, QM1, SU1]
 
+  SP4O:
+    purpose: >-
+      SP4 for a subpart too large to supply whole (at most 16 sections): a PURE overview question about one subpart
+      ("What current good manufacturing practice requirements apply to ... animal food?", "What additional safeguards
+      apply to children in a clinical investigation?") is answered with the subpart's outline - each section's heading
+      and opening provision, verbatim (regulus.rag.subpart_outline); the subpart's sections become the evidence. Not when
+      a topic word remains beyond the subpart and part titles, product types and regulated parties, nor for "general"
+      requirements of a subpart that has a General-requirements section
+    stage: selection
+    status: default
+    in_default: true
+    introduced: {date: "2026-11-05", commit: "uncommitted"}
+    evidence: >-
+      300Q fire count on the recorded picks: K-003, Y-002, A-001, X-004 (all range keys, all non-PASS); the 6 PASS
+      single-section questions the broad gate also reached (S-006, D-005, D-019, D-024, C-003, Y-008) untouched.
+      sp4o4_20261105 (5 Nov): replay of the 4 targets + 14 controls, 0 model calls, controls byte-identical; first
+      version (openers only) scored thin, so each section's passages are quoted up to 700 characters; blind paired
+      sonnet + opus agree K-003 PF -> PASS and A-001 PP -> PASS, Y-002 and X-004 PF unchanged (completeness up) -> DEFAULT
+    interactions: [SP4, SP3, MS1, PK3, DX1]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:

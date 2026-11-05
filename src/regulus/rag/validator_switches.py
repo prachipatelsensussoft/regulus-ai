@@ -440,6 +440,8 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
   RI1 (5 Nov, ON by default since ri1_20261105) a drug or device establishment that refuses, delays, denies or limits an FDA
       inspection: FD&C Act § 501's opening and 501(j) verbatim, and for a device 21 CFR 820.1(c)
       (regulus.rag.refused_inspection): M-006
+  SP4O (5 Nov, ON by default since sp4o4_20261105) SP4 for a large subpart: a pure overview question about one subpart gets its outline,
+      each section's heading and opening provision verbatim (regulus.rag.subpart_outline): K-003, Y-002, A-001, X-004
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable
@@ -482,7 +484,8 @@ DEFAULT_3NOV = DEFAULT_3NOV_RELEASE + ",XG1,QS1,PK3,DR2"
 # DI1 (M-018 PF->PASS), SP4 (then SB1: D-018 PF->PASS, Y-003 PF->PP), SU1 (M-025 PF->PASS); 292 of 300 replayed byte-identical
 # 5 Nov 2026: GP1 (PB-005 FAIL -> PASS, two blind scorers; fires on no other of the 1,962 benchmark questions)
 # 5 Nov 2026: RI1 (M-006 PARTIALLY FAIL -> PASS, two blind scorers; fires on no other of the 1,962 questions)
-DEFAULT = DEFAULT_3NOV + ",DI1,SP4,SU1,GP1,RI1"
+# 5 Nov 2026: SP4O (K-003 PARTIALLY FAIL -> PASS, A-001 PARTIALLY PASS -> PASS, two blind scorers; 14 controls unchanged)
+DEFAULT = DEFAULT_3NOV + ",DI1,SP4,SU1,GP1,RI1,SP4O"
 VALIDATOR_PRECISION = frozenset(x.strip().upper() for x in os.environ.get("REGULUS_VALIDATOR_PRECISION", DEFAULT).split(",")
                                  if x.strip() and x.strip().lower() not in ("off", "none"))
 
