@@ -162,6 +162,16 @@ def _flat_text(text: str) -> str:
     return re.sub(r"\s+([.,;:])", r"\1", re.sub(r"\s+", " ", MARK_RE.sub(" ", text or ""))).strip().lower()
 
 
+def _cited_text_names(label: str, cited_texts: list[str]) -> bool:
+    """CM3: whether a cited source's own text names the section of `label` ("21 CFR 117.254" -> "§ 117.254" in 117.260(a)).
+    The section number must stand alone (not "117.2540", not "1117.254")."""
+    m = re.search(r"(\d{1,4}\.\d{1,4}[a-z]?)", label or "")
+    if not m:
+        return False
+    pat = re.compile(rf"(?<![\d.]){re.escape(m.group(1))}(?![\d])")
+    return any(pat.search(t or "") for t in cited_texts)
+
+
 def _without_cited_quotes(sentence: str, cited_texts: list[str]) -> str:
     """The sentence without the quotations that are its cited sources' own words (fix C82): a provision those words name
     ("... conforms to the requirements of § 82.5 ..." quoted from 82.50) is the source speaking, not a provision the
@@ -819,6 +829,11 @@ def validate_answer(answer: str, package: GenerationPackage, generation: Generat
             if discovery and not related:
                 problems.append(ValidationProblem(DISCOVERY_CITED_FOR_REQUIREMENT, "error", f"a DISCOVERY source is cited as support for {package.requirement_labels[rid]}", requirement_id=rid, citation=discovery[0], sentence=sentence))
             elif not related:
+                if precision_fix("CM3") and _cited_text_names(package.requirement_labels[rid], [by_index[i].text for i in valid_marks]):
+                    # CM3 (5 Nov): CM1's rule for this check too - the cited paragraph names the provision itself ("If an
+                    # entity receives an order under § 117.254 ..." in 117.260(a)): the sentence restates the cited
+                    # paragraph's own cross-reference, it does not cite the wrong evidence for 117.254 (F-001)
+                    continue
                 problems.append(ValidationProblem(CITATION_MISMATCH, "error", f"the sources cited for {package.requirement_labels[rid]} are not its EXACT or STRUCTURAL evidence", requirement_id=rid, citation=valid_marks[0], sentence=sentence))
 
     # figures (amounts, numbers of two or more digits) must come from a supplied source

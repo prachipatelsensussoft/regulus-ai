@@ -446,6 +446,8 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       applicability, exemptions, who is subject) join the evidence (SectionPromoter.frame_companions): F-001, Y-001
   SY4H (5 Nov, REJECTED: 807.81 reached the picker, which did not pick it) an alias too common in body text ("premarket notification", 1,158 sections) is
       matched against its home part's headings and those sections join the candidates (510(k) -> 807.81): P-003
+  CM3 (5 Nov, REJECTED with EX2: excm_20261105 0 up / 2 down, R-004 and G-008) CM1 for citation_mismatch too: the cited paragraph's own text names the provision
+      (117.260(a) "an order under § 117.254"), so the sentence restates its cross-reference (F-001, with EX2)
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

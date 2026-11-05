@@ -1349,6 +1349,23 @@ switches:
       gain (with AE1): the key reaches the picker/prompt, the 4B picker/writer does not use it
     interactions: [SY4, HQ1, MS1]
 
+  CM3:
+    purpose: >-
+      CM1's rule for the citation_mismatch check as well: a sentence about a requested provision that cites a paragraph
+      whose own text names that provision ("If an entity receives an order under § 117.254 ..." in 117.260(a)) restates
+      the cited paragraph's cross-reference - it is not a mis-citation (regulus.rag.validation._cited_text_names)
+    stage: answer_checks
+    status: rejected
+    in_default: false
+    introduced: {date: "2026-11-05", commit: "uncommitted"}
+    evidence: >-
+      the "exempt" condition_not_in_cited_source finding (EX2's target) never stood alone in the 300 latest drafts (5 of
+      5 also carried another error; F-001's was this citation_mismatch on a quoted cross-reference); measured with EX2 on
+      the 42 drafts carrying either finding (excm_20261105, 5 Nov): 21 answers changed; blind sonnet + opus agree 0 up,
+      2 down (R-004 PASS -> PF/FAIL again - a requirement that does not exist; G-008 PASS -> PF - the verbatim quote
+      fallback had passed), 3 splits -> REJECTED with EX2: the alarms these relax mostly stop real errors
+    interactions: [CM1, EX2, C82]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:

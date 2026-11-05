@@ -17,7 +17,9 @@ import os
 import threading
 
 MODELS = {
-    "minicheck-roberta": {"repo": "lytang/MiniCheck-RoBERTa-Large", "revision": "74c8919647e6"},
+    # the FULL commit hash: the offline cache (local_files_only) keys snapshots by it, and a short hash resolves only
+    # online (5 Nov 2026: the short form "74c8919647e6" made every offline load fail)
+    "minicheck-roberta": {"repo": "lytang/MiniCheck-RoBERTa-Large", "revision": "74c8919647e61ed0f71bc177d94f10930f090068"},
 }
 CHUNK_WORDS = 350
 CHUNK_OVERLAP = 50
@@ -65,7 +67,9 @@ class EntailmentChecker:
         with torch.no_grad():
             for i in range(0, len(flat), batch):
                 part = flat[i:i + batch]
-                enc = self.tokenizer([d for d, _ in part], [c for _, c in part], truncation="only_first",
+                # longest_first (5 Nov 2026): "only_first" raised on a long claim beside a full chunk ("Sequence to truncate
+                # too short"); trimming the longer of the two never fails, and a chunk is the longer one in practice
+                enc = self.tokenizer([d for d, _ in part], [c for _, c in part], truncation="longest_first",
                                      max_length=512, padding=True, return_tensors="pt").to(self.device)
                 probs = torch.softmax(self.model(**enc).logits.float(), dim=-1)[:, 1].tolist()
                 for j, p in enumerate(probs):
