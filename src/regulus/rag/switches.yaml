@@ -1242,14 +1242,14 @@ switches:
     interactions: [SP3, HM1]
 
   SU1:
-    purpose: a question asking what one named Part 820 section adds to (requires beyond) the incorporated standard is answered with that section's supplied paragraphs verbatim, led by the ISO 13485 clause its own "In addition to ... Clause X" sentence names; only when that sentence is supplied
+    purpose: a question asking what one named Part 820 section adds to (requires beyond) the incorporated standard is answered with that section's supplied paragraphs verbatim, led by the ISO 13485 clause its own "In addition to ... Clause X" sentence names; only when that sentence is supplied. Part level (5 Nov) - "which provisions of Part 820 add to / supplement the standard", naming no one section, is re-planned onto 820.10, 820.35 and 820.45 and answered with 820.10(a) (the incorporation) and 820.10(b)-(e), 820.35, 820.45 verbatim (regulus.rag.qmsr.compose_part_supplements)
     stage: composer
     status: default
     in_default: true
     introduced: {date: "2026-11-04", commit: "2007209"}
     evidence: >-
-      pf44_20261104 (4 Nov) blind paired, sonnet + opus agree, 0 lost - see LEDGER 4 Nov; 300Q combo4 (3 Nov) - target M-025 (PF, model answer muddled although given exactly 820.45); the same form for 820.35 already scores PASS through LS1 (M-020), which runs first; not yet measured
-    interactions: [LS1, LS2, WS1]
+      pf44_20261104 (4 Nov) blind paired, sonnet + opus agree, 0 lost - see LEDGER 4 Nov; 300Q combo4 (3 Nov) - target M-025 (PF, model answer muddled although given exactly 820.45); the same form for 820.35 already scores PASS through LS1 (M-020), which runs first. Part level, su1part2_20261105 (5 Nov) - offline fire count over 1,962 questions (300Q, cosmetics bank, follow-ups) M-029 only; replay of the 42 M-* questions, 0 model calls, only M-029 changed; blind paired sonnet + opus agree M-029 PF -> PASS
+    interactions: [LS1, LS2, WS1, QC1, QM1, DV1]
 
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:

@@ -270,3 +270,51 @@ def compose_supplement(package, question: str) -> str | None:
         if body:
             lines.append(f"{s.citation} (eCFR, binding, verbatim): {_verbatim(body, s.index)}")
     return "\n".join(lines) if len(lines) > 1 else None
+
+
+# SU1, part level (5 Nov 2026): "Which provisions of Part 820 are FDA supplements to the incorporated standard rather than
+# incorporation by reference?" (300Q M-029, PF: the prompt held 820.7/820.35/820.3 and the model described "record-keeping
+# requirements" without naming 820.10(b)-(e) or 820.45). Part 820 takes ISO 13485 in through 820.10(a); what FDA adds is
+# 820.10's other paragraphs and the two sections that open "In addition to the requirements of Clause X of ISO 13485"
+# (820.35, 820.45). The question is re-planned onto those sections and answered with their own text, verbatim. Only a
+# question naming Part 820 / the QMSR / ISO 13485, asking which provisions add to (supplement, go beyond) the standard,
+# and naming no one Part 820 section (that is SU1's single-section form above). Offline fire count over 1,962 questions
+# (300Q, cosmetics bank, follow-ups): M-029 only.
+PART_SUPPLEMENT_SECTIONS = ("820.10", "820.35", "820.45")
+_PART_QMSR_NAMED = re.compile(r"\b(?:part\s*820|QMSR|quality management system regulation|ISO\s*13485|incorporated standard)\b", re.I)
+_PART_SUPPLEMENT_ASKED = re.compile(r"\b(?:supplement\w*|add(?:s|ed|ition\w*)?|beyond|on top of|rather than (?:through )?"
+                                    r"incorporat\w*|not (?:simply )?incorporated)\b", re.I)
+_ASKS_WHICH = re.compile(r"\b(?:which|what)\b[^?]*\b(?:provisions?|sections?|requirements?|parts?)\b", re.I)
+# Each lead names only the provision quoted right after it (a lead ending "verbatim:" is read with the next line as one
+# sentence), and no summary sentence cites 820.10(c) or (d) away from the class and life-sustaining conditions their own
+# text states (the validator's provision_citation_mismatch and applicability_dropped, 5 Nov in-process check of M-029).
+PART_SUPPLEMENTS_LEAD = "Part 820 incorporates ISO 13485 by reference through 21 CFR 820.10(a) [{a}], verbatim:"
+PART_SUPPLEMENTS_ADDS = "The provisions of Part 820 that add FDA requirements to the standard, each verbatim:"
+
+
+def asks_part_supplements(question: str) -> bool:
+    q = question or ""
+    return bool(_PART_QMSR_NAMED.search(q) and _PART_SUPPLEMENT_ASKED.search(q) and _ASKS_WHICH.search(q)
+                and not _PART820_SECTION.findall(q))
+
+
+def compose_part_supplements(package, question: str) -> str | None:
+    """The part-level SU1 answer, or None when 820.10(a) or both "In addition to" leads (820.35, 820.45) are not in the
+    evidence. Only provisions present in the evidence are named, each quoted verbatim."""
+    from regulus.rag.generation import _verbatim, whole_sentences
+
+    if package is None or not asks_part_supplements(question):
+        return None
+    by_cite = {(s.citation or "").strip(): s for s in package.sources if not s.is_docket}
+    a = by_cite.get("21 CFR 820.10(a)")
+    adds_10 = [by_cite[c] for c in ("21 CFR 820.10(b)", "21 CFR 820.10(c)", "21 CFR 820.10(d)", "21 CFR 820.10(e)")
+               if c in by_cite and whole_sentences(by_cite[c].text or "")]
+    leads = [by_cite[c] for c in ("21 CFR 820.35", "21 CFR 820.45") if c in by_cite and _IN_ADDITION.match(by_cite[c].text or "")]
+    if a is None or not whole_sentences(a.text or "") or not leads:
+        return None
+    lines = [PART_SUPPLEMENTS_LEAD.format(a=a.index),
+             f"{a.citation} (eCFR, binding, verbatim): {_verbatim(whole_sentences(a.text or ''), a.index)}",
+             PART_SUPPLEMENTS_ADDS]
+    for s in adds_10 + leads:
+        lines.append(f"{s.citation} (eCFR, binding, verbatim): {_verbatim(whole_sentences(s.text or ''), s.index)}")
+    return "\n".join(lines)

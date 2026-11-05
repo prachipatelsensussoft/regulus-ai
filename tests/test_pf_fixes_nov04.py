@@ -217,3 +217,51 @@ def test_su1_needs_one_named_section_the_standard_and_its_in_addition_sentence()
     assert asks_supplement("How do 820.35 and 820.45 add to ISO 13485?") is None                 # two sections
     # 820.10 does not open "In addition to ... Clause": no composed answer
     assert compose_supplement(_Pkg(QX1_SOURCES), "What does 21 CFR 820.10 require beyond ISO 13485?") is None
+
+
+# ------------------------------------------------------------ SU1, part level (5 Nov)
+PART_SOURCES = [
+    _QSrc(3, "21 CFR 820.10(a)", "(a) Document. Document a quality management system that complies with the applicable "
+          "requirements of ISO 13485 (incorporated by reference, see § 820.7) and other applicable requirements of this part; and"),
+    _QSrc(4, "21 CFR 820.10(b)", "(b) Applicable regulatory requirements. Comply, as appropriate, with the other applicable "
+          "regulatory requirements in this title, including, but not limited to the following, to fully comply with the listed "
+          "ISO 13485 Clause:"),
+    _QSrc(6, "21 CFR 820.10(e)", "(e) Enforcement. The failure to comply with any applicable requirement in this part renders a "
+          "device adulterated under section 501(h) of the Federal Food, Drug, and Cosmetic Act."),
+    _QSrc(7, "21 CFR 820.35", "In addition to the requirements of Clause 4.2.5 in ISO 13485 (incorporated by reference, see "
+          "§ 820.7), Control of Records, the manufacturer must include the following information in certain records:"),
+    QX1_SOURCES[0],
+]
+M029 = "Which provisions of Part 820 are FDA supplements to the incorporated standard rather than incorporation by reference?"
+
+
+def test_su1_part_level_fires_only_on_the_part_question():
+    from regulus.rag.qmsr import asks_part_supplements
+
+    assert asks_part_supplements(M029)
+    assert asks_part_supplements("Which requirements in the QMSR go beyond ISO 13485?")
+    assert not asks_part_supplements("What does 21 CFR 820.45 add to ISO 13485?")          # one section: SU1's own form
+    assert not asks_part_supplements("Which provisions of Part 820 cover complaint files?")  # no addition asked
+    assert not asks_part_supplements("Which provisions of Part 211 add to the batch record?")  # not part 820
+
+
+def test_su1_part_level_names_and_quotes_only_what_the_evidence_holds():
+    from regulus.rag.qmsr import compose_part_supplements
+
+    out = compose_part_supplements(_Pkg(PART_SOURCES), M029)
+    lines = out.split("\n")
+    # each lead names only the provision quoted right after it; no summary sentence cites a provision away from its text
+    assert lines[0] == "Part 820 incorporates ISO 13485 by reference through 21 CFR 820.10(a) [3], verbatim:"
+    assert lines[1].startswith("21 CFR 820.10(a) (eCFR, binding, verbatim): (a) Document.") and lines[1].endswith("[3].")
+    assert lines[2] == "The provisions of Part 820 that add FDA requirements to the standard, each verbatim:"
+    assert [ln.split(" (eCFR", 1)[0] for ln in lines[3:]] == ["21 CFR 820.10(b)", "21 CFR 820.10(e)", "21 CFR 820.35",
+                                                                "21 CFR 820.45"]
+    assert lines[5].endswith("[7].") and lines[6].endswith("[1].")
+
+
+def test_su1_part_level_declines_without_the_incorporation_or_an_in_addition_lead():
+    from regulus.rag.qmsr import compose_part_supplements
+
+    assert compose_part_supplements(_Pkg([s for s in PART_SOURCES if s.citation != "21 CFR 820.10(a)"]), M029) is None
+    assert compose_part_supplements(_Pkg([s for s in PART_SOURCES if "820.10" in s.citation]), M029) is None
+    assert compose_part_supplements(_Pkg(PART_SOURCES), "What does 21 CFR 820.45 add to ISO 13485?") is None

@@ -431,7 +431,9 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
   SP4 (4 Nov, ON by default since pf44_20261104; renamed 4 Nov, old name in switches.yaml renamed_from) a question asking for a subpart's requirements by its title ("holding and distribution
       requirements") brings that subpart when it is small (SP3's limits), in any part (D-018 211.142, Y-003 112.31-112.33)
   SU1 (4 Nov, ON by default since pf44_20261104) "what does 21 CFR 820.X add to / require beyond the incorporated standard": the section's own
-      "In addition to ... Clause X of ISO 13485" text, verbatim, led by the clause it adds to (regulus.rag.qmsr.compose_supplement): M-025
+      "In addition to ... Clause X of ISO 13485" text, verbatim, led by the clause it adds to (regulus.rag.qmsr.compose_supplement): M-025;
+      part level (5 Nov, su1part2_20261105) "which provisions of Part 820 add to / supplement the standard" re-planned onto 820.10,
+      820.35, 820.45 and answered with 820.10(a) and 820.10(b)-(e), 820.35, 820.45 verbatim (compose_part_supplements): M-029 PF->PASS
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

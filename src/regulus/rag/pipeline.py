@@ -1612,13 +1612,15 @@ class RagPipeline:
         return former, (unknown if about_820 else [])
 
     @staticmethod
-    def qmsr_plan(question: str, plan: QueryPlan, former: list) -> QueryPlan:
-        """The plan with the former sections replaced by the live sections that carry their subject."""
+    def qmsr_plan(question: str, plan: QueryPlan, former: list, sections: tuple[str, ...] = ()) -> QueryPlan:
+        """The plan with the former sections replaced by the live sections that carry their subject (and `sections`,
+        live Part 820 sections the question is re-planned onto: SU1's part-level form)."""
         from regulus.planning.plan import Requirement, _plan_kind
         from regulus.rag import qmsr
 
         gone = {s for s, _ in former}
-        widened = plan_query(question + " (21 CFR " + ", ".join(qmsr.successors(former)) + ")")
+        named = list(dict.fromkeys(list(qmsr.successors(former)) + list(sections)))
+        widened = plan_query(question + " (21 CFR " + ", ".join(named) + ")")
         # the former sections, and a whole "Part 820" (its first matching passages are not the answer), give way to
         # the live sections named above
         kept = [r for r in widened.requirements if r.reference.section not in gone
@@ -1713,8 +1715,19 @@ class RagPipeline:
 
             if _qmsr.asks_certification(question) and self.live_part_sections("820"):
                 qmsr_cert = self.part_mentions("820", r"certif") is False   # confirmed silent, not unknown
-        if qmsr_former or qmsr_unknown or qmsr_cert:
-            plan = self.qmsr_plan(question, plan, qmsr_former)
+        # SU1, part level: "which provisions of Part 820 add to / supplement the standard" is re-planned onto 820.10, 820.35
+        # and 820.45 and answered with their own text (regulus.rag.qmsr.compose_part_supplements)
+        qmsr_supp = False
+        if precision_fix("SU1") and not (qmsr_former or qmsr_unknown or qmsr_cert):
+            from regulus.rag import qmsr as _qmsr
+
+            if _qmsr.asks_part_supplements(question):
+                live = self.live_part_sections("820") or set()
+                qmsr_supp = all(s in live for s in _qmsr.PART_SUPPLEMENT_SECTIONS)
+        if qmsr_former or qmsr_unknown or qmsr_cert or qmsr_supp:
+            from regulus.rag.qmsr import PART_SUPPLEMENT_SECTIONS
+
+            plan = self.qmsr_plan(question, plan, qmsr_former, PART_SUPPLEMENT_SECTIONS if qmsr_supp else ())
         own_plan = plan   # the question's own plan: every scope decision is made on it, never on a promoted one
         promotion = None
         promotion_error = None
@@ -1995,6 +2008,10 @@ class RagPipeline:
                 from regulus.rag.qmsr import compose_certification
 
                 text, composed_type = compose_certification(package, question), FB_COMPOSED_QMSR
+            if not text and qmsr_supp:
+                from regulus.rag.qmsr import compose_part_supplements
+
+                text, composed_type = compose_part_supplements(package, question), FB_COMPOSED_QMSR
             if not text and provision_identified and (precision_fix("FP1") or precision_fix("RS1")):
                 text, composed_type = self.compose_from_identified(package, question, plan, promotion)
             if not text and precision_fix("D1"):
