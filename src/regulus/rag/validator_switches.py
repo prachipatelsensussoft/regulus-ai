@@ -442,6 +442,10 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       (regulus.rag.refused_inspection): M-006
   SP4O (5 Nov, ON by default since sp4o4_20261105) SP4 for a large subpart: a pure overview question about one subpart gets its outline,
       each section's heading and opening provision verbatim (regulus.rag.subpart_outline): K-003, Y-002, A-001, X-004
+  AE1 (5 Nov, REJECTED for now: frames reach the prompt, 0 PASS gained - the drafts fail the validator) who or what a regulation covers or exempts: the sections that frame it (scope,
+      applicability, exemptions, who is subject) join the evidence (SectionPromoter.frame_companions): F-001, Y-001
+  SY4H (5 Nov, REJECTED: 807.81 reached the picker, which did not pick it) an alias too common in body text ("premarket notification", 1,158 sections) is
+      matched against its home part's headings and those sections join the candidates (510(k) -> 807.81): P-003
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable

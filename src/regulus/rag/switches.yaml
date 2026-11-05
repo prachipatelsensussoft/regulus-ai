@@ -1309,6 +1309,46 @@ switches:
       sonnet + opus agree K-003 PF -> PASS and A-001 PP -> PASS, Y-002 and X-004 PF unchanged (completeness up) -> DEFAULT
     interactions: [SP4, SP3, MS1, PK3, DX1]
 
+  AE1:
+    purpose: >-
+      a question asking who or what a regulation covers, or what it exempts ("Who is subject to Part 117 and what are the
+      principal exemptions?", "Which farms and produce are covered ... and what exemptions apply?") gets the sections that
+      frame it as companions - Scope, Purpose, Applicability, Exemptions, "Who is subject/excluded", "To what X does this
+      apply", "Which X are subject/eligible" - from the promoted section's subpart and the part's general or
+      frame-titled subparts; exemption headings first when asked; at most 3; carve-outs ("Applicability of subparts C, D
+      and G ...") excluded
+    stage: selection
+    status: rejected
+    in_default: false
+    introduced: {date: "2026-11-05", commit: "uncommitted"}
+    evidence: >-
+      41 of 1,962 benchmark questions are of the type; on the 300Q recorded picks it adds sections to F-001 (117.5, 117.1),
+      T-004 (1107.1, 1107.10), V-001 (1.501, 1.503), Y-001 (112.5) and to no other question (the rest already hold their
+      frame or have none). ae1_20261105 (5 Nov, live): the frames reach all 4 prompts, but blind sonnet + opus: no PASS
+      gained - F-001 and Y-001 drafts still withheld (validator: "exempt" is in 117.5's heading, not its text;
+      Y-001 range marker + citation mismatch), T-004 and V-001 stay PARTIALLY FAIL (more complete) -> left off; an
+      answer-stage fix first
+    interactions: [DV2, SP4O, MS1, PK3]
+
+  SY4H:
+    purpose: >-
+      SY4 for an alias whose expansion is too common in body text to search on (more than 50 sections): it is matched
+      against the section headings of the alias's home part instead, and those sections join the end of the candidate
+      list (at most 4, never fused into its order) - "510(k)" -> Part 807 headings with "premarket notification" (807.81
+      "When a premarket notification submission is required", written in 1,158 sections' text); regulus.retrieval.acronyms
+      ALIAS_HOMES / heading_aliases
+    stage: retrieval
+    status: rejected
+    in_default: false
+    introduced: {date: "2026-11-05", commit: "uncommitted"}
+    evidence: >-
+      5 of the 300 questions name 510(k) or PMA, all non-PASS; P-003's candidate list gains 807.81 (its key), 807.85,
+      807.97; a paraphrase ("Is a 510(k) required for a modified device?") gains 807.85, 807.97, 807.100. v1 appended them past the picker's 20 (replay: 0 changed); v2 takes the lowest
+      places (807.81 at 18): sy4h2_20261105 (5 Nov, live) - the picker saw 807.81 and picked nothing for P-003 (draft
+      "does not specify", still FAIL), P-004 identical -> no gain, left off. Second retrieval fix in a row without
+      gain (with AE1): the key reaches the picker/prompt, the 4B picker/writer does not use it
+    interactions: [SY4, HQ1, MS1]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:

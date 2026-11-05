@@ -71,3 +71,27 @@ def expansions(question: str) -> list[str]:
         if pattern.search(question or "") and _specific_alias(words) and words not in q and words not in out:
             out.append(words)
     return out
+
+
+# SY4H (5 Nov 2026): an alias whose expansion is too common in body text to search on (MAX_SECTIONS) may still be specific
+# in the HEADINGS of its programme's own part - "premarket notification" is written in 1,158 sections (every device
+# classification says "exempt from premarket notification procedures"), but in Part 807 only the headings of Subpart E
+# carry it (807.81 "When a premarket notification submission is required", 807.87, 807.90, 807.100 ...). P-003 ("When
+# must a 510(k) be submitted for a change ...?") never had 807.81 as a candidate. Field-weighted: the expansion is matched
+# against the home part's section headings only.
+# Only where the home headings use the expansion rather than the acronym: Part 814's headings say "PMA" itself (814.37,
+# 814.39 ...), which the question's own word already matches; its one "premarket approval" heading is 814.9 (confidentiality)
+ALIAS_HOMES: dict[str, tuple[str, ...]] = {
+    "premarket notification": ("807",),
+}
+
+
+def heading_aliases(question: str) -> list[tuple[str, tuple[str, ...]]]:
+    """(expansion, home parts) of each alias the question writes whose expansion SY4 leaves out as too common in body
+    text, and that the question does not already spell out."""
+    q = (question or "").lower()
+    out = []
+    for pattern, words in ALIASES:
+        if words in ALIAS_HOMES and pattern.search(question or "") and not _specific_alias(words) and words not in q:
+            out.append((words, ALIAS_HOMES[words]))
+    return out

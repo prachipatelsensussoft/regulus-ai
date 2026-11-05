@@ -333,6 +333,33 @@ _NAMED_RULE = re.compile(r"\b(?:[a-z-]+\s+){1,3}rule\b", re.I)   # "the produce 
 _GENERAL_HEADING = re.compile(r"general\b", re.I)
 
 
+# AE1 (5 Nov 2026): a question asking who or what a regulation covers, or what it exempts, is answered from the sections
+# that frame it - "Who is subject to 21 CFR Part 117 and what are the principal exemptions?" (F-001, key 117.5; the picker
+# chose 117.260), "Which farms and produce are covered by the produce safety rule, and what exemptions apply?" (Y-001:
+# 112.5 missing). DV2 does this for a small part's Scope section only (inside DV1); AE1 for any part, after the pick.
+AE1_MAX = 3
+_APPLIES_ASKED = re.compile(
+    r"\bwho\s+(?:is|are)\s+(?:subject|covered|excluded)\b|\bwho\s+must\s+comply\b|\bto\s+whom\s+(?:does|do)\b"
+    r"|\bwho\s+does\b[^?]*\bapply\b|\b(?:which|what)\s+\w+(?:\s+and\s+\w+)?\s+(?:is|are)\s+(?:covered|subject|exempt)\b"
+    r"|\b(?:principal|main|which|what)\s+exemptions?\b|\bexemptions?\s+(?:from|to|apply|applies|are)\b"
+    r"|\bexempt(?:ed)?\s+from\b|\bapplicability\s+of\b", re.I)
+_EXEMPT_ASKED = re.compile(r"\bexempt", re.I)
+_EXEMPT_HEADING = re.compile(r"\bexempt|\bexclu", re.I)
+# a section that frames the regulation: its scope, applicability, exemptions, who is subject or excluded, what is covered
+# ("Applicability of subparts C, D, and G ..." is a carve-out, not the frame; across Title 21 the part-level exemption
+# headings are "Exemptions." (7) or "Exemptions and variances / alternatives / deferrals" - "Exemption from X",
+# "Exemptions for X" are one topic's)
+_FRAME_SECTION = re.compile(
+    r"^\s*(?:scope\b|purpose\b|applicability(?!\s+of\s+(?:subparts?|this\s+subpart))\b|exemptions?(?:\s+and\s+\w+)?\.?\s*$|"
+    r"who\s+is\s+(?:subject|excluded)\b|who\s+must\s+(?:comply|develop)\b|to\s+(?:whom|what\s+\w+)\s+(?:does|do)\b|"
+    r"what\s+\w+\s+(?:is|are)\s+(?:not\s+)?covered\b|which\s+\w+\s+(?:are|is)\s+(?:subject|eligible|exempt)\b)", re.I)
+
+
+def applies_asked(question: str) -> bool:
+    """AE1: whether the question asks who or what a regulation covers, or what it exempts."""
+    return bool(_APPLIES_ASKED.search(question or ""))
+
+
 def subpart_overview(title: str, part_title: str, headings, question: str) -> bool:
     """SP4O: whether the question asks for the subpart as a whole and nothing narrower (see above)."""
     t = _topic_stems(re.split(r";", title or "")[0])
@@ -1244,6 +1271,14 @@ class SectionPromoter:
             ranked = [r for r in self.index.rank(lex, limit=400) if r.part in programme.parts][:self.limit]
         else:
             ranked = self.index.rank(lex, limit=self.limit)
+        if precision_fix("SY4H"):
+            # SY4H: an alias too common in body text to search on, matched against its home part's headings instead
+            # (510(k) -> 807 headings with "premarket notification"). They take the places of the lowest-ranked of the
+            # CFR_CANDIDATES_WITH_STATUTE the picker reads (5 Nov: appended at 23-25 they were cut before the picker)
+            hits = self._alias_heading_hits(asked, ranked)
+            if hits:
+                keep = max(CFR_CANDIDATES_WITH_STATUTE - len(hits), 0)
+                ranked = ranked[:keep] + hits + ranked[keep:]
         if precision_fix("HQ1"):
             # HQ1 (step D): sections whose index-time questions match the question, appended after the list like the dense
             # leg (never fused into its order), inside the named part(s) or the cosmetics parts when the question is one
@@ -1302,6 +1337,28 @@ class SectionPromoter:
         have = {r.section for r in ranked}
         return [RankedSection(s, ix.parts[where[s]], ix.headings[where[s]], ix.subparts[where[s]], 0.0, first.get(s, 0))
                 for s in inside if s not in have][:limit]
+
+    def _alias_heading_hits(self, question: str, ranked: list, limit: int = 4) -> list:
+        """SY4H: up to `limit` sections of an alias's home part(s) whose heading carries the alias's expansion, that
+        `ranked` lacks, in section order (regulus.retrieval.acronyms.heading_aliases)."""
+        from regulus.retrieval.acronyms import heading_aliases
+        from regulus.retrieval.section_index import RankedSection
+
+        aliases = heading_aliases(question)
+        if not aliases:
+            return []
+        ix, where, first = self.index, self._where(), self.__dict__.get("_first_ordinal") or {}
+        have = {r.section for r in ranked}
+        out = []
+        for words, parts in aliases:
+            hits = [s for s, k in where.items() if ix.parts[k] in parts and s not in have
+                    and words in (ix.headings[k] or "").lower()]
+            hits.sort(key=lambda s: [int(x) if x.isdigit() else 0 for x in s.split(".")])
+            for s in hits:
+                k = where[s]
+                out.append(RankedSection(s, ix.parts[k], ix.headings[k], ix.subparts[k], 0.0, first.get(s, 0)))
+                have.add(s)
+        return out[:limit]
 
     def _question_matches(self, question: str, ranked: list, parts) -> list:
         """HQ1: up to HQ1_LIMIT sections the hypothetical-question index ranks at least HQ1_MIN_SCORE that `ranked` lacks."""
@@ -2110,6 +2167,40 @@ class SectionPromoter:
             out += [m["sec"] for m in members if m["sec"] != section and m["sec"] not in out]
         return out
 
+    def frame_companions(self, section: str, question: str) -> list[str]:
+        """AE1: the sections that frame who and what a regulation covers and exempts (applies_asked), from the promoted
+        section's own subpart, or - when that subpart has none - from the part's sections outside any subpart or in
+        its first subpart (General Provisions): exemption headings first when the question asks about exemptions,
+        at most AE1_MAX."""
+        if not applies_asked(question):
+            return []
+        part = section.split(".")[0]
+        try:
+            rows = self.db.query(
+                "SELECT DISTINCT r.section_number s, r.section_heading h, r.subpart_id sp, t.title t, "
+                "(SELECT subpart_id FROM cfr_records WHERE section_number = %(s)s AND removed_on IS NULL LIMIT 1) own, "
+                "(SELECT min(x.subpart_id::text) FROM cfr_records x JOIN cfr_subparts y ON y.id = x.subpart_id "
+                " WHERE x.part_number = %(p)s AND y.title ILIKE 'General%%') gen "
+                "FROM cfr_records r LEFT JOIN cfr_subparts t ON t.id = r.subpart_id "
+                "WHERE r.part_number = %(p)s AND r.removed_on IS NULL AND NOT r.is_reserved",
+                {"p": part, "s": section})
+        except Exception:  # noqa: BLE001 - an aid only
+            return []
+        frames = [r for r in rows if _FRAME_SECTION.match(r["h"] or "")]
+        own = [r for r in frames if rows and r["sp"] is not None and r["sp"] == rows[0]["own"]]
+        # part-level frames: outside any subpart, in General Provisions, or in a subpart that is itself a frame
+        # ("Subpart A - Exemptions" of Part 1107, apart from its "General" subpart)
+        general = [r for r in frames if r["sp"] is None or (rows[0]["gen"] and str(r["sp"]) == rows[0]["gen"])
+                   or _FRAME_SECTION.match(r["t"] or "")]
+        # the subpart's own frame and the part's general one together ("an Exemption from SE request" asked from 1107.16:
+        # 1107.10 Scope is the subpart's, 1107.1 Exemptions the part's); exemptions first when asked, then the own subpart
+        own_ids = {r["s"] for r in own}
+        pool = list({r["s"]: r for r in own + general}.values())
+        exempt_first = bool(_EXEMPT_ASKED.search(question or ""))
+        pool.sort(key=lambda r: (not (exempt_first and _EXEMPT_HEADING.search(r["h"] or "")), r["s"] not in own_ids,
+                                 [int(x) if x.isdigit() else 0 for x in r["s"].split(".")]))
+        return [r["s"] for r in pool if r["s"] != section][:AE1_MAX]
+
     def outlined_subpart(self, section: str, question: str) -> tuple[str, list[str]] | None:
         """SP4O: (subpart title, its sections in order) when the question asks for one subpart of the promoted section's
         part as a whole (subpart_overview) and that subpart is too large for SP4's whole text but has at most
@@ -2471,6 +2562,12 @@ class SectionPromoter:
             extra = [s2 for s2 in self.decomposed_sections(question, parts, home) if s2.split("(")[0] not in cited][:QD1_MAX]
             if extra:
                 pr = replace(pr, companions=pr.companions + tuple(extra), notes=pr.notes + (f"sub-questions: {', '.join(extra)}",))
+        if precision_fix("AE1") and pr.sections:
+            # AE1: who and what the regulation covers and exempts - the sections that frame it join the evidence
+            have = set(pr.citations)
+            frames = [c for c in self.frame_companions(pr.sections[0], question) if c not in have]
+            if frames:
+                pr = replace(pr, companions=pr.companions + tuple(frames), notes=pr.notes + (f"frame: {', '.join(frames)}",))
         if precision_fix("SP4O") and pr.sections and not pr.statute:
             # SP4O: a pure overview of one large subpart - its sections ARE the evidence (each one's opening provision is
             # what the outline quotes), in place of companions that would compete for the budget
