@@ -279,12 +279,21 @@ def compose_supplement(package, question: str) -> str | None:
 # (820.35, 820.45). The question is re-planned onto those sections and answered with their own text, verbatim. Only a
 # question naming Part 820 / the QMSR / ISO 13485, asking which provisions add to (supplement, go beyond) the standard,
 # and naming no one Part 820 section (that is SU1's single-section form above). Offline fire count over 1,962 questions
-# (300Q, cosmetics bank, follow-ups): M-029 only.
+# (300Q, cosmetics bank, follow-ups): M-029 only. The rule is for the question type: 12 user phrasings ("What does FDA add
+# to ISO 13485 under the QMSR?", "How does Part 820 go beyond ISO 13485?" ...) fire and 14 look-alikes (one section, one
+# subject, certification, what changed, ...) do not - tests/test_pf_fixes_nov04.py; 4 phrasings run end to end composed.
 PART_SUPPLEMENT_SECTIONS = ("820.10", "820.35", "820.45")
 _PART_QMSR_NAMED = re.compile(r"\b(?:part\s*820|QMSR|quality management system regulation|ISO\s*13485|incorporated standard)\b", re.I)
-_PART_SUPPLEMENT_ASKED = re.compile(r"\b(?:supplement\w*|add(?:s|ed|ition\w*)?|beyond|on top of|rather than (?:through )?"
-                                    r"incorporat\w*|not (?:simply )?incorporated)\b", re.I)
-_ASKS_WHICH = re.compile(r"\b(?:which|what)\b[^?]*\b(?:provisions?|sections?|requirements?|parts?)\b", re.I)
+# the comparison is with the standard itself (not "what additional records does Part 820 require")
+_PART_STANDARD_NAMED = re.compile(r"\b(?:ISO\s*13485|(?:incorporated|the) standard)\b", re.I)
+_PART_SUPPLEMENT_ASKED = re.compile(r"\b(?:supplement\w*|add(?:s|ed|ition\w*)?|extra|beyond|on top of|besides|FDA[- ]specific|"
+                                    r"rather than (?:through |being )?(?:incorporat\w*|from)|not (?:simply )?incorporated)\b", re.I)
+_ASKS_WHICH = re.compile(r"\b(?:which|what|how)\b", re.I)
+# a question about one subject ("what records beyond ISO 13485 ...", "labeling requirements on top of ISO 13485") is
+# answered from that subject's provision, not with the part-level list (paraphrase check 5 Nov)
+_PART_SUBJECT = re.compile(r"\b(?:records?|complaints?|label(?:l)?ing|packag\w*|design|UDI|unique device|traceab\w*|servic\w*|"
+                           r"purchas\w*|suppliers?|CAPA|corrective|preventive|audits?|training|management review|document"
+                           r"(?:s|ation)? control|nonconform\w*|installation|acceptance|statistical|risk|software|validation)\b", re.I)
 # Each lead names only the provision quoted right after it (a lead ending "verbatim:" is read with the next line as one
 # sentence), and no summary sentence cites 820.10(c) or (d) away from the class and life-sustaining conditions their own
 # text states (the validator's provision_citation_mismatch and applicability_dropped, 5 Nov in-process check of M-029).
@@ -294,8 +303,8 @@ PART_SUPPLEMENTS_ADDS = "The provisions of Part 820 that add FDA requirements to
 
 def asks_part_supplements(question: str) -> bool:
     q = question or ""
-    return bool(_PART_QMSR_NAMED.search(q) and _PART_SUPPLEMENT_ASKED.search(q) and _ASKS_WHICH.search(q)
-                and not _PART820_SECTION.findall(q))
+    return bool(_PART_QMSR_NAMED.search(q) and _PART_STANDARD_NAMED.search(q) and _PART_SUPPLEMENT_ASKED.search(q)
+                and _ASKS_WHICH.search(q) and not _PART820_SECTION.findall(q) and not _PART_SUBJECT.search(q))
 
 
 def compose_part_supplements(package, question: str) -> str | None:

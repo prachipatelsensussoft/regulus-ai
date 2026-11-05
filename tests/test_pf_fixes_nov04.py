@@ -2,6 +2,8 @@
 SP4 (named SB1 until 4 Nov) and VS1 (regulus.rag.section_promotion). No database, no model."""
 from dataclasses import dataclass
 
+import pytest
+
 import regulus.rag.validator_switches as VS
 from regulus.rag import section_promotion as SP
 from regulus.rag.answer_fixes import drop_denial_opener, resolve_letter_markers
@@ -235,14 +237,51 @@ PART_SOURCES = [
 M029 = "Which provisions of Part 820 are FDA supplements to the incorporated standard rather than incorporation by reference?"
 
 
-def test_su1_part_level_fires_only_on_the_part_question():
+# the question TYPE, not M-029's wording: phrasings a user may write, and look-alikes answered elsewhere
+PART_SUPPLEMENT_PHRASINGS = [
+    M029,
+    "Which requirements in the QMSR go beyond ISO 13485?",
+    "What does FDA add to ISO 13485 under the QMSR?",
+    "What are FDA's additional requirements beyond ISO 13485 in Part 820?",
+    "Which parts of the QMSR are FDA-specific rather than incorporated from ISO 13485?",
+    "What requirements does Part 820 impose in addition to ISO 13485?",
+    "Under the Quality Management System Regulation, what does FDA require on top of ISO 13485?",
+    "Which sections of 21 CFR Part 820 supplement ISO 13485:2016?",
+    "Besides incorporating ISO 13485, what extra requirements does the QMSR contain?",
+    "How does Part 820 go beyond the requirements of ISO 13485?",
+    "Apart from ISO 13485, what additional FDA requirements are in the QMSR?",
+    "What does the QMSR require in addition to the standard?",
+]
+PART_SUPPLEMENT_LOOKALIKES = [
+    "What does 21 CFR 820.45 add to ISO 13485?",                                   # one section: SU1's own form
+    "Does Part 820 require ISO 13485 certification?",                              # QC1
+    "What are the CAPA requirements under Part 820?",                              # QM1
+    "Which provisions of Part 820 cover complaint files?",
+    "What changed when FDA amended Part 820 to the QMSR, and what is the compliance date?",   # QS1
+    "Is ISO 13485 incorporated by reference into Part 820?",
+    "Which ISO 13485 clause covers purchasing?",
+    "What records must be kept under 21 CFR 820.35?",
+    "Which provisions of Part 211 add to the batch record?",                       # not part 820
+    "What does the QMSR say about labeling inspection?",
+    "What additional records does Part 820 require beyond ISO 13485 for complaints?",  # one subject: its own provision
+    "What labeling requirements does Part 820 add on top of ISO 13485?",
+    "What additional records does Part 820 require?",                              # no comparison with the standard
+    "How does Part 820 define a manufacturer?",
+]
+
+
+@pytest.mark.parametrize("question", PART_SUPPLEMENT_PHRASINGS)
+def test_su1_part_level_catches_the_question_type(question):
     from regulus.rag.qmsr import asks_part_supplements
 
-    assert asks_part_supplements(M029)
-    assert asks_part_supplements("Which requirements in the QMSR go beyond ISO 13485?")
-    assert not asks_part_supplements("What does 21 CFR 820.45 add to ISO 13485?")          # one section: SU1's own form
-    assert not asks_part_supplements("Which provisions of Part 820 cover complaint files?")  # no addition asked
-    assert not asks_part_supplements("Which provisions of Part 211 add to the batch record?")  # not part 820
+    assert asks_part_supplements(question)
+
+
+@pytest.mark.parametrize("question", PART_SUPPLEMENT_LOOKALIKES)
+def test_su1_part_level_leaves_look_alikes_to_their_own_answers(question):
+    from regulus.rag.qmsr import asks_part_supplements
+
+    assert not asks_part_supplements(question)
 
 
 def test_su1_part_level_names_and_quotes_only_what_the_evidence_holds():
