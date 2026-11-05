@@ -2167,12 +2167,12 @@ class SectionPromoter:
             out += [m["sec"] for m in members if m["sec"] != section and m["sec"] not in out]
         return out
 
-    def frame_companions(self, section: str, question: str) -> list[str]:
+    def frame_companions(self, section: str, question: str, asked: bool | None = None) -> list[str]:
         """AE1: the sections that frame who and what a regulation covers and exempts (applies_asked), from the promoted
         section's own subpart, or - when that subpart has none - from the part's sections outside any subpart or in
         its first subpart (General Provisions): exemption headings first when the question asks about exemptions,
         at most AE1_MAX."""
-        if not applies_asked(question):
+        if not (applies_asked(question) if asked is None else asked):
             return []
         part = section.split(".")[0]
         try:
@@ -2568,6 +2568,27 @@ class SectionPromoter:
             frames = [c for c in self.frame_companions(pr.sections[0], question) if c not in have]
             if frames:
                 pr = replace(pr, companions=pr.companions + tuple(frames), notes=pr.notes + (f"frame: {', '.join(frames)}",))
+        if precision_fix("EQ1") and pr.sections:
+            # EQ1: a question asking for the exemptions - the frame sections join the evidence and the answer quotes them
+            # (regulus.rag.exemption_answers)
+            from regulus.rag.exemption_answers import NOTE as EQ1_NOTE, asks_exemptions
+
+            if asks_exemptions(question):
+                from regulus.rag.exemption_answers import _EXEMPTING
+
+                have = {c.split("(")[0] for c in pr.citations}
+                frames = [c for c in self.frame_companions(pr.sections[0], question, asked=True) if c not in have]
+                heads = {r["s"]: r["h"] for r in self.db.query(
+                    "SELECT DISTINCT section_number s, section_heading h FROM cfr_records WHERE removed_on IS NULL AND "
+                    "section_number = ANY(%(s)s)", {"s": list(have | set(frames))})}
+                # the frame sections ARE the evidence (the answer quotes only them), in place of picks that would compete
+                # for the budget (F-001: 117.260/117.254, a withdrawal procedure, kept 117.1(a) out) - as SP4O
+                kept = [c for c in pr.citations if _FRAME_SECTION.match(heads.get(c.split("(")[0]) or "")] + frames
+                # only when a section that states an exemption is among them: otherwise the composer declines and the
+                # evidence is left as it was (R-006: Part 806's only frame is 806.1 Scope)
+                if kept and any(_EXEMPTING.search(heads.get(c.split("(")[0]) or "") for c in kept):
+                    pr = replace(pr, sections=(kept[0],), companions=tuple(kept[1:]),
+                                 notes=pr.notes + (f"{EQ1_NOTE}: {', '.join(kept)}",))
         if precision_fix("SP4O") and pr.sections and not pr.statute:
             # SP4O: a pure overview of one large subpart - its sections ARE the evidence (each one's opening provision is
             # what the outline quotes), in place of companions that would compete for the budget

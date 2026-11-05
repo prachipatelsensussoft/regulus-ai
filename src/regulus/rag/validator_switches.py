@@ -442,12 +442,17 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       (regulus.rag.refused_inspection): M-006
   SP4O (5 Nov, ON by default since sp4o4_20261105) SP4 for a large subpart: a pure overview question about one subpart gets its outline,
       each section's heading and opening provision verbatim (regulus.rag.subpart_outline): K-003, Y-002, A-001, X-004
+  EQ1 (5 Nov, ON by default since eq1d_20261105) a question asking for a regulation's exemptions (not one named provision, a
+      defined term, or how to obtain / withdraw one): the frame sections replace the other picks as the evidence and are
+      quoted paragraph by paragraph, verbatim (regulus.rag.exemption_answers): F-001, Y-001 (R-006 declined: no exemption section)
   AE1 (5 Nov, REJECTED for now: frames reach the prompt, 0 PASS gained - the drafts fail the validator) who or what a regulation covers or exempts: the sections that frame it (scope,
       applicability, exemptions, who is subject) join the evidence (SectionPromoter.frame_companions): F-001, Y-001
   SY4H (5 Nov, REJECTED: 807.81 reached the picker, which did not pick it) an alias too common in body text ("premarket notification", 1,158 sections) is
       matched against its home part's headings and those sections join the candidates (510(k) -> 807.81): P-003
   CM3 (5 Nov, REJECTED with EX2: excm_20261105 0 up / 2 down, R-004 and G-008) CM1 for citation_mismatch too: the cited paragraph's own text names the provision
       (117.260(a) "an order under § 117.254"), so the sentence restates its cross-reference (F-001, with EX2)
+  EQ1 (5 Nov, off until measured) a question asking for a regulation's exemptions is answered by quoting its frame
+      sections verbatim - never the model's paraphrase (regulus.rag.exemption_answers): F-001, Y-001
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable
@@ -491,7 +496,8 @@ DEFAULT_3NOV = DEFAULT_3NOV_RELEASE + ",XG1,QS1,PK3,DR2"
 # 5 Nov 2026: GP1 (PB-005 FAIL -> PASS, two blind scorers; fires on no other of the 1,962 benchmark questions)
 # 5 Nov 2026: RI1 (M-006 PARTIALLY FAIL -> PASS, two blind scorers; fires on no other of the 1,962 questions)
 # 5 Nov 2026: SP4O (K-003 PARTIALLY FAIL -> PASS, A-001 PARTIALLY PASS -> PASS, two blind scorers; 14 controls unchanged)
-DEFAULT = DEFAULT_3NOV + ",DI1,SP4,SU1,GP1,RI1,SP4O"
+# 5 Nov 2026: EQ1 (F-001 FAIL -> PASS, Y-001 FAIL -> PASS, two blind scorers; 8 controls byte-identical)
+DEFAULT = DEFAULT_3NOV + ",DI1,SP4,SU1,GP1,RI1,SP4O,EQ1"
 VALIDATOR_PRECISION = frozenset(x.strip().upper() for x in os.environ.get("REGULUS_VALIDATOR_PRECISION", DEFAULT).split(",")
                                  if x.strip() and x.strip().lower() not in ("off", "none"))
 

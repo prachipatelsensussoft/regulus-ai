@@ -2043,6 +2043,12 @@ class RagPipeline:
                 req = outline_request(promotion)
                 if req:
                     text, composed_type = compose_outline(package, question, *req), FB_COMPOSED_OUTLINE
+            if not text and promotion is not None and precision_fix("EQ1") and any(
+                    n.startswith("exemption question") for n in (promotion.notes or ())):
+                # EQ1: the exemptions quoted from the frame sections, verbatim (regulus.rag.exemption_answers)
+                from regulus.rag.exemption_answers import COMPOSED_TYPE as FB_COMPOSED_EXEMPTIONS, compose as compose_exemptions
+
+                text, composed_type = compose_exemptions(package, question), FB_COMPOSED_EXEMPTIONS
             if not text and ri_kind:
                 # RI1: § 501's opening, 501(j) and (a device) 820.1(c), verbatim (regulus.rag.refused_inspection)
                 from regulus.rag.refused_inspection import COMPOSED_TYPE as FB_COMPOSED_INSPECTION, compose as compose_ri
@@ -2113,7 +2119,7 @@ class RagPipeline:
                 # provision, a list item or a requirement group not represented) do not apply; every grounding check does
                 # SP4O's outline quotes each section's opening provision on purpose: its sub-items are not enumerated
                 valid = report.ok or (composed_type in (FB_COMPOSED_PREMISE, FB_COMPOSED_RECORDS, FB_COMPOSED_QMSR,
-                                                        FB_COMPOSED_DEFINITIONS, "composed_outline") and not (
+                                                        FB_COMPOSED_DEFINITIONS, "composed_outline", "composed_exemptions") and not (
                     {p.code for p in report.problems if p.severity == "error"} - _FOCUSED_COMPLETENESS_CODES))
                 if not valid and composed_type == FB_COMPOSED_LIST and (precision_fix("LS2") or precision_fix("WS1")):
                     # LS2: the whole list of one section, verbatim, is complete for that section; a completeness finding

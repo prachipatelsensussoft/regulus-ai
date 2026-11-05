@@ -1366,6 +1366,28 @@ switches:
       fallback had passed), 3 splits -> REJECTED with EX2: the alarms these relax mostly stop real errors
     interactions: [CM1, EX2, C82]
 
+  EQ1:
+    purpose: >-
+      a question asking for a regulation's exemptions - or who and what it covers and exempts - is answered by quoting
+      the frame sections (Applicability, Exemptions, "Which farms are subject / eligible", "What produce is not covered")
+      paragraph by paragraph, verbatim and cited (regulus.rag.exemption_answers). The frame sections (those already
+      picked plus SectionPromoter.frame_companions) replace the other picks as the evidence, as SP4O; only when one of
+      them states an exemption, otherwise nothing changes. Not for one named provision ("excluded from 610(a)"), a defined
+      term, or how to obtain / request / withdraw an exemption
+    stage: composer
+    status: default
+    in_default: true
+    introduced: {date: "2026-11-05", commit: "uncommitted"}
+    evidence: >-
+      the "exempt" validator alarm is mostly genuine (5 Nov calibration: 21 / 9 / 19 of 49) and relaxing it lost PASS
+      (EX2, CM3); the model's exemption paraphrases are the fault, so none is written. 10 phrasings fire, 15 look-alikes
+      do not; 1,689 benchmark questions: F-001, Y-001, R-006 only. eq1d_20261105: replay of 3 targets + 7 exemption-word
+      controls, 0 model calls, controls byte-identical, R-006 unchanged (806.1 Scope states no exemption); blind paired
+      sonnet + opus agree F-001 FAIL -> PASS, Y-001 FAIL -> PASS (first version: a 3,000-character cap cut 117.5 at
+      (g)(1) -> F-001 PF; removed, frames made the evidence, quoted paragraph cross-references cited). Full suite 3637
+      passed (2 known)
+    interactions: [AE1, QM1, SP4O]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:
