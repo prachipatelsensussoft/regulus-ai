@@ -1623,7 +1623,9 @@ class RagPipeline:
         from regulus.rag import qmsr
 
         gone = {s for s, _ in former}
-        named = list(dict.fromkeys(list(qmsr.successors(former)) + list(sections)))
+        # successors() falls back to 820.10 when there is no former section (QC1 relies on it); explicit `sections`
+        # without a former section (RI1's 820.1(c)) are the plan on their own
+        named = list(dict.fromkeys((list(qmsr.successors(former)) if (former or not sections) else []) + list(sections)))
         widened = plan_query(question + " (21 CFR " + ", ".join(named) + ")")
         # the former sections, and a whole "Part 820" (its first matching passages are not the answer), give way to
         # the live sections named above
@@ -1742,11 +1744,24 @@ class RagPipeline:
             from regulus.rag.qmsr import PART_SUPPLEMENT_SECTIONS
 
             plan = self.qmsr_plan(question, plan, qmsr_former, PART_SUPPLEMENT_SECTIONS if qmsr_supp else ())
+        # RI1: an establishment that refuses, delays, denies or limits an FDA inspection - a device question is re-planned
+        # onto 21 CFR 820.1(c), and FD&C Act § 501's opening and 501(j) join the evidence after promotion
+        # (regulus.rag.refused_inspection); a drug question is answered from the Act text alone
+        ri_kind = None
+        if precision_fix("RI1") and not (qmsr_former or qmsr_unknown or qmsr_cert or qmsr_supp):
+            from regulus.rag.refused_inspection import DEVICE_SECTION, asks_refused_inspection
+
+            ri_kind = asks_refused_inspection(question)
+            if ri_kind == "device":
+                if DEVICE_SECTION.split("(", 1)[0] in (self.live_part_sections("820") or set()):
+                    plan = self.qmsr_plan(question, plan, [], (DEVICE_SECTION,))
+                else:
+                    ri_kind = None
         own_plan = plan   # the question's own plan: every scope decision is made on it, never on a promoted one
         promotion = None
         promotion_error = None
         named_companions_added: list[str] = []
-        dv1 = self.small_part_paragraphs(question, plan) if (precision_fix("DV1") and not anchored) else None
+        dv1 = self.small_part_paragraphs(question, plan) if (precision_fix("DV1") and not anchored and ri_kind is None) else None
         if dv1 is not None:
             # DV1: a question naming only a small part (or ISO 13485 / the QMSR) is answered from that part's most
             # relevant paragraphs, promoted as if it had cited them
@@ -1756,6 +1771,8 @@ class RagPipeline:
             promoter, allowed, parts, promotion_error = self.promotion_request(question, plan)
         if anchored and promoter is None and allowed == "any":
             promoter = self.section_promoter()   # the conversation names the domain a short follow-up leaves out
+        if ri_kind is not None:
+            promoter = None   # RI1: the evidence is decided by the question type (820.1(c) above, § 501 below), not picked
         if promoter is not None:
             # the section(s) that answer a question naming none - or naming only a 21 CFR part of the cosmetics
             # programme ("Under Part 82, ...") - are resolved, and the plan is rebuilt as if the question cited them
@@ -1812,6 +1829,18 @@ class RagPipeline:
             # ST1 (regulus.rag.validator_switches): the FD&C Act text the requested regulation itself cites, as companion
             # evidence after the regulation's own (default off until its live A/B)
             promotion = self.with_statute_references(question, plan, promotion)
+        if ri_kind is not None:
+            # RI1: § 501's opening and 501(j) - a companion after a device's 820.1(c), the whole evidence for a drug
+            ri_promoter = self.section_promoter()
+            extra = (ri_promoter.inspection_statute("statute_reference" if ri_kind == "device" else "named_statute")
+                     if ri_promoter is not None else None)
+            if extra is None:
+                ri_kind = None
+            elif promotion is None:
+                promotion = extra
+            else:
+                promotion = replace(promotion, statute=extra.statute, statute_rows=extra.statute_rows,
+                                    statute_blocks=extra.statute_blocks, statute_left_out=())
         timings["promotion_ms"] = round((time.perf_counter() - t0) * 1000, 2)
         plan = self.complete_plan(plan)  # ... and the one and only corpus lookup it needs
         original_plan = plan if promotion is None else self.complete_plan(own_plan)
@@ -2007,6 +2036,11 @@ class RagPipeline:
                 from regulus.rag.practice_silence import compose as compose_silence
 
                 text, composed_type = compose_silence(package, question, promotion.notes), FB_COMPOSED_SILENCE
+            if not text and ri_kind:
+                # RI1: § 501's opening, 501(j) and (a device) 820.1(c), verbatim (regulus.rag.refused_inspection)
+                from regulus.rag.refused_inspection import COMPOSED_TYPE as FB_COMPOSED_INSPECTION, compose as compose_ri
+
+                text, composed_type = compose_ri(package, question, ri_kind), FB_COMPOSED_INSPECTION
             if not text and (qmsr_former or qmsr_unknown):
                 from regulus.rag.qmsr import compose as compose_qmsr
 

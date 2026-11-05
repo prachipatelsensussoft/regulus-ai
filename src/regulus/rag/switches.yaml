@@ -1271,6 +1271,24 @@ switches:
       full suite 3510 passed (2 known 0.6B-config failures) -> DEFAULT
     interactions: [QM1, QM2, S1, ISO1]
 
+  RI1:
+    purpose: >-
+      a drug or device establishment that refuses, delays, denies or limits an FDA inspection is answered from FD&C Act
+      § 501's opening ("A drug or device shall be deemed to be adulterated-") and 501(j), verbatim, and for a device 21
+      CFR 820.1(c) (refusal of admission under 801(a) when it appears adulterated); a device question is re-planned onto
+      820.1(c) and § 501 joins as a statute companion, a drug question is answered from the Act text alone; food,
+      supplement, cosmetic and tobacco establishments and questions naming no product are never answered here
+    stage: planning
+    status: default
+    in_default: true
+    introduced: {date: "2026-11-05", commit: "uncommitted"}
+    evidence: >-
+      fire count over 1,962 questions: M-006 only; 10 phrasings fire with their product and 10 look-alikes do not
+      (tests/test_refused_inspection.py); 6 phrasings end to end in-process composed and valid. ri1_20261105 (5 Nov): replay of the 42 M-* questions, 0 model calls, only M-006
+      changed (the other 41 byte-identical, so the qmsr_plan change is inert for QC1/QM1/SU1); blind paired sonnet
+      + opus agree M-006 PARTIALLY FAIL -> PASS; full suite 3536 passed (2 known 0.6B-config failures) -> DEFAULT
+    interactions: [DV1, ST1, QC1, QM1, SU1]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:

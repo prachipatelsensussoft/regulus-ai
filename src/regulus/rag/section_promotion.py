@@ -2177,6 +2177,21 @@ class SectionPromoter:
                         return out
         return out
 
+    def inspection_statute(self, method: str) -> Promotion | None:
+        """RI1 (regulus.rag.refused_inspection): FD&C Act § 501's opening ("A drug or device shall be deemed to be
+        adulterated-") and 501(j) as two evidence blocks - beside a device's 21 CFR 820.1(c) (method "statute_reference",
+        a companion) or alone for a drug (method "named_statute"). About 700 characters; None without both in the store."""
+        st = self.statute
+        if st is None or "501" not in st.by_sec:
+            return None
+        rows = st.by_sec["501"]
+        lead = [i for i in rows if not (st.rows[i]["paragraph_path"] or "")][:1]
+        j = [i for i in rows if (st.rows[i]["paragraph_path"] or "").startswith("(j)")]
+        if not lead or not j:
+            return None
+        return Promotion(sections=(), companions=(), method=method, statute=("501",), statute_rows=tuple(lead + j),
+                         statute_blocks=(tuple(lead), tuple(j)))
+
     def statute_companions(self, question: str, sections: list[str]) -> Promotion | None:
         """ST1: the cited FD&C Act text as a companion of the regulation (method "statute_reference"), or None."""
         refs = self.statute_references(sections)

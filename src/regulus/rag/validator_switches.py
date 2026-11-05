@@ -437,6 +437,9 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
   GP1 (5 Nov, ON by default since gp1_20261105) "which FDA guidance requires X" re-asked as "which regulation requires X", led by the
       premise note quoting 21 CFR 10.115(d)(1); a device quality-system subject in words routed to its former section for
       QM1 (regulus.rag.guidance_premise, regulus.rag.qmsr.former_by_subject): PB-005
+  RI1 (5 Nov, ON by default since ri1_20261105) a drug or device establishment that refuses, delays, denies or limits an FDA
+      inspection: FD&C Act § 501's opening and 501(j) verbatim, and for a device 21 CFR 820.1(c)
+      (regulus.rag.refused_inspection): M-006
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable
@@ -478,7 +481,8 @@ DEFAULT_3NOV = DEFAULT_3NOV_RELEASE + ",XG1,QS1,PK3,DR2"
 # 4 Nov 2026 (owner approval after pf44_20261104: blind paired, sonnet + opus agree on all 8 changed answers; 0 lost):
 # DI1 (M-018 PF->PASS), SP4 (then SB1: D-018 PF->PASS, Y-003 PF->PP), SU1 (M-025 PF->PASS); 292 of 300 replayed byte-identical
 # 5 Nov 2026: GP1 (PB-005 FAIL -> PASS, two blind scorers; fires on no other of the 1,962 benchmark questions)
-DEFAULT = DEFAULT_3NOV + ",DI1,SP4,SU1,GP1"
+# 5 Nov 2026: RI1 (M-006 PARTIALLY FAIL -> PASS, two blind scorers; fires on no other of the 1,962 questions)
+DEFAULT = DEFAULT_3NOV + ",DI1,SP4,SU1,GP1,RI1"
 VALIDATOR_PRECISION = frozenset(x.strip().upper() for x in os.environ.get("REGULUS_VALIDATOR_PRECISION", DEFAULT).split(",")
                                  if x.strip() and x.strip().lower() not in ("off", "none"))
 
