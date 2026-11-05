@@ -1388,6 +1388,24 @@ switches:
       passed (2 known)
     interactions: [AE1, QM1, SP4O]
 
+  QW1:
+    purpose: >-
+      "What changed when FDA amended Part 820 to the QMSR (and what is the compliance date)?" is answered as SU1's part
+      level - 820.10(a) (ISO 13485 incorporated by reference) and FDA's additions 820.10(b)-(e), 820.35, 820.45, each
+      verbatim - with the QS1 status note giving the 2 Feb 2026 date and the removed subparts (regulus.rag.qmsr
+      .asks_qmsr_changes). Not for one Part 820 section or one subject (complaints, records, design ...)
+    stage: composer
+    status: default
+    in_default: true
+    introduced: {date: "2026-11-05", commit: "uncommitted"}
+    evidence: >-
+      the Federal Register preamble feature was not built (only M-030 of 300 cites the FR, and its facts are CFR text
+      plus the QS1 note); 10 phrasings fire, 12 look-alikes do not; fire count 1,689: M-030 only. qw1_20261105: replay
+      of the 42 M-* questions, 0 model calls, 39 byte-identical (M-006, M-029 identical to their scored RI1 / SU1
+      answers); blind paired sonnet + opus agree M-030 PARTIALLY FAIL -> PASS (the old body said the date "is not
+      specified" above the note giving it). Full suite 3660 passed (2 known)
+    interactions: [SU1, QS1]
+
 # Switches that are not part of REGULUS_VALIDATOR_PRECISION (their own environment variables)
 other_switches:
   MC1:

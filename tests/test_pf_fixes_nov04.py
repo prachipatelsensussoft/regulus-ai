@@ -257,7 +257,7 @@ PART_SUPPLEMENT_LOOKALIKES = [
     "Does Part 820 require ISO 13485 certification?",                              # QC1
     "What are the CAPA requirements under Part 820?",                              # QM1
     "Which provisions of Part 820 cover complaint files?",
-    "What changed when FDA amended Part 820 to the QMSR, and what is the compliance date?",   # QS1
+    "What changed when FDA amended Part 820 to the QMSR, and what is the compliance date?",   # QW1's own detector
     "Is ISO 13485 incorporated by reference into Part 820?",
     "Which ISO 13485 clause covers purchasing?",
     "What records must be kept under 21 CFR 820.35?",
@@ -304,3 +304,56 @@ def test_su1_part_level_declines_without_the_incorporation_or_an_in_addition_lea
     assert compose_part_supplements(_Pkg([s for s in PART_SOURCES if s.citation != "21 CFR 820.10(a)"]), M029) is None
     assert compose_part_supplements(_Pkg([s for s in PART_SOURCES if "820.10" in s.citation]), M029) is None
     assert compose_part_supplements(_Pkg(PART_SOURCES), "What does 21 CFR 820.45 add to ISO 13485?") is None
+
+
+# QW1 (5 Nov 2026): "what changed when Part 820 was amended to the QMSR" answered as SU1's part level (M-030)
+M030 = "What changed when FDA amended Part 820 to the Quality Management System Regulation, and what is the compliance date?"
+QMSR_CHANGE_PHRASINGS = [
+    M030,
+    "What changed in Part 820 with the QMSR?",
+    "What are the main changes from the Quality System Regulation to the QMSR?",
+    "How did the QMSR final rule change Part 820?",
+    "What is different under the QMSR compared with the old QS regulation?",
+    "What changes did FDA make when it harmonized Part 820 with ISO 13485?",
+    "What are the key differences between the QSR and the QMSR?",
+    "What did the QMSR amendment change for device manufacturers?",
+    "How has Part 820 changed under the Quality Management System Regulation?",
+    "Which changes did the 2024 final rule make to 21 CFR Part 820?",
+]
+QMSR_CHANGE_LOOKALIKES = [
+    "What changed in 820.30 under the QMSR?",                                      # one section
+    "How did the QMSR change complaint handling requirements?",                    # one subject
+    "What records changed under the QMSR?",
+    "Does Part 820 require ISO 13485 certification?",                              # QC1
+    "What is the compliance date for the QMSR?",                                   # the date alone: QS1's note
+    "What changed in Part 211 in 2023?",                                           # not Part 820
+    "Which provisions of Part 820 go beyond ISO 13485?",                           # SU1's own detector
+    "What changes must a manufacturer document under Part 820 when a design changes?",
+    "How does the QMSR define a manufacturer?",
+    "What changes to labeling are required under the Part 820 amendments?",
+    "How must design changes be controlled under the QMSR?",
+    "What changed in the 21 CFR Part 11 electronic records rule?",
+]
+
+
+@pytest.mark.parametrize("question", QMSR_CHANGE_PHRASINGS)
+def test_qw1_catches_the_question_type(question):
+    from regulus.rag.qmsr import asks_qmsr_changes
+
+    assert asks_qmsr_changes(question)
+
+
+@pytest.mark.parametrize("question", QMSR_CHANGE_LOOKALIKES)
+def test_qw1_leaves_look_alikes_to_their_own_answers(question):
+    from regulus.rag.qmsr import asks_qmsr_changes
+
+    assert not asks_qmsr_changes(question)
+
+
+def test_qw1_is_answered_with_the_part_level_supplements():
+    from regulus.rag.qmsr import compose_part_supplements
+
+    lines = compose_part_supplements(_Pkg(PART_SOURCES), M030).split("\n")
+    assert lines[0] == "Part 820 incorporates ISO 13485 by reference through 21 CFR 820.10(a) [3], verbatim:"
+    assert [ln.split(" (eCFR", 1)[0] for ln in lines[3:]] == ["21 CFR 820.10(b)", "21 CFR 820.10(e)", "21 CFR 820.35",
+                                                                "21 CFR 820.45"]

@@ -451,8 +451,8 @@ Fixes of 27 Oct 2026 (first 50 cosmetics main questions, the 26 Oct follow-up ve
       matched against its home part's headings and those sections join the candidates (510(k) -> 807.81): P-003
   CM3 (5 Nov, REJECTED with EX2: excm_20261105 0 up / 2 down, R-004 and G-008) CM1 for citation_mismatch too: the cited paragraph's own text names the provision
       (117.260(a) "an order under § 117.254"), so the sentence restates its cross-reference (F-001, with EX2)
-  EQ1 (5 Nov, off until measured) a question asking for a regulation's exemptions is answered by quoting its frame
-      sections verbatim - never the model's paraphrase (regulus.rag.exemption_answers): F-001, Y-001
+  QW1 (5 Nov, ON by default since qw1_20261105) "what changed when FDA amended Part 820 to the QMSR" answered as SU1's part level
+      (820.10(a) and FDA's additions verbatim) with the QS1 note's date (regulus.rag.qmsr.asks_qmsr_changes): M-030
   CQ1 conversational query rewriting (regulus.rag.conversation.rewrite_messages): the model rewrites a follow-up into
       a standalone question naming the anchored provision, or repeats it for a new subject; the word rules decide when
       the rewrite is unusable
@@ -497,7 +497,8 @@ DEFAULT_3NOV = DEFAULT_3NOV_RELEASE + ",XG1,QS1,PK3,DR2"
 # 5 Nov 2026: RI1 (M-006 PARTIALLY FAIL -> PASS, two blind scorers; fires on no other of the 1,962 questions)
 # 5 Nov 2026: SP4O (K-003 PARTIALLY FAIL -> PASS, A-001 PARTIALLY PASS -> PASS, two blind scorers; 14 controls unchanged)
 # 5 Nov 2026: EQ1 (F-001 FAIL -> PASS, Y-001 FAIL -> PASS, two blind scorers; 8 controls byte-identical)
-DEFAULT = DEFAULT_3NOV + ",DI1,SP4,SU1,GP1,RI1,SP4O,EQ1"
+# 5 Nov 2026: QW1 (M-030 PARTIALLY FAIL -> PASS, two blind scorers; 39 other M-* answers byte-identical)
+DEFAULT = DEFAULT_3NOV + ",DI1,SP4,SU1,GP1,RI1,SP4O,EQ1,QW1"
 VALIDATOR_PRECISION = frozenset(x.strip().upper() for x in os.environ.get("REGULUS_VALIDATOR_PRECISION", DEFAULT).split(",")
                                  if x.strip() and x.strip().lower() not in ("off", "none"))
 

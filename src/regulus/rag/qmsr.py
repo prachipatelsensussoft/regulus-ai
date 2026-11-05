@@ -307,12 +307,35 @@ def asks_part_supplements(question: str) -> bool:
                 and _ASKS_WHICH.search(q) and not _PART820_SECTION.findall(q) and not _PART_SUBJECT.search(q))
 
 
+# QW1 (5 Nov 2026): "What changed when FDA amended Part 820 to the Quality Management System Regulation, and what is the
+# compliance date?" (300Q M-030, PARTIALLY PASS: the model's body said the date "is not specified" above the QS1 note that
+# gives it, and named neither the reserved subparts nor the FDA supplements). What the amendment did is in force as
+# text: ISO 13485 incorporated through 820.10(a), FDA's own additions in 820.10(b)-(e), 820.35 and 820.45 - exactly the
+# SU1 part-level answer - and the date and the removed subparts are the QS1 status note, which goes with a "what
+# changed ... Part 820" question. So the question is answered as SU1's part level. Only a question asking what changed
+# (or the differences) in Part 820 / the QMSR through its amendment, naming no Part 820 section and no one subject
+# (complaints, records, design ...: answered from that subject's provision). This is what the Federal Register
+# preamble feature (5 Nov: not built) would have been for, without non-binding text in the prompt.
+_QMSR_CHANGE = re.compile(
+    r"\bwhat\s+(?:has\s+|have\s+)?(?:changed|changes|is\s+different|is\s+new)\b"
+    r"|\b(?:what|which)\s+(?:are\s+)?(?:the\s+)?(?:main\s+|key\s+|major\s+|principal\s+|significant\s+)?(?:changes|differences)\b"
+    r"|\bhow\s+(?:has|have|did|does)\b[^?]{0,80}?\bchang\w*|\bwhat\s+did\b[^?]{0,40}?\bchange\b", re.I)
+_QMSR_AMENDED = re.compile(r"\b(?:amend\w*|QMSR|quality\s+management\s+system\s+regulation|transition\w*|replac\w*|"
+                           r"harmoni[sz]\w*|final\s+rule|new\s+rule|QSR|quality\s+system\s+regulation)\b", re.I)
+
+
+def asks_qmsr_changes(question: str) -> bool:
+    q = question or ""
+    return bool(_PART_QMSR_NAMED.search(q) and _QMSR_CHANGE.search(q) and _QMSR_AMENDED.search(q)
+                and not _PART820_SECTION.findall(q) and not _PART_SUBJECT.search(q))
+
+
 def compose_part_supplements(package, question: str) -> str | None:
-    """The part-level SU1 answer, or None when 820.10(a) or both "In addition to" leads (820.35, 820.45) are not in the
-    evidence. Only provisions present in the evidence are named, each quoted verbatim."""
+    """The part-level SU1 answer (also QW1's), or None when 820.10(a) or both "In addition to" leads (820.35, 820.45) are
+    not in the evidence. Only provisions present in the evidence are named, each quoted verbatim."""
     from regulus.rag.generation import _verbatim, whole_sentences
 
-    if package is None or not asks_part_supplements(question):
+    if package is None or not (asks_part_supplements(question) or asks_qmsr_changes(question)):
         return None
     by_cite = {(s.citation or "").strip(): s for s in package.sources if not s.is_docket}
     a = by_cite.get("21 CFR 820.10(a)")

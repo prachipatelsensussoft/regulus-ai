@@ -1737,7 +1737,8 @@ class RagPipeline:
         if precision_fix("SU1") and not (qmsr_former or qmsr_unknown or qmsr_cert):
             from regulus.rag import qmsr as _qmsr
 
-            if _qmsr.asks_part_supplements(question):
+            # QW1: "what changed when Part 820 was amended to the QMSR" is answered the same way (qmsr.asks_qmsr_changes)
+            if _qmsr.asks_part_supplements(question) or (precision_fix("QW1") and _qmsr.asks_qmsr_changes(question)):
                 live = self.live_part_sections("820") or set()
                 qmsr_supp = all(s in live for s in _qmsr.PART_SUPPLEMENT_SECTIONS)
         if qmsr_former or qmsr_unknown or qmsr_cert or qmsr_supp:
