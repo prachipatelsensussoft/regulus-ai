@@ -178,6 +178,7 @@ def repairs(runs: Path) -> list[dict]:
     d2 = runs / "definition_path_repair_20261103"
     p4 = runs / "paragraph_path_repair_20261104"
     p5 = runs / "paragraph_labels_repair_20261104"
+    p6 = runs / "paragraph_path_repair_20261104c"
     out = [
         {"name": "restore_dropped_text_20261021", "reference_applied": "2026-10-21",
          "description": "Restore eCFR text the original ingestion dropped (EXTRACT block quotes, FP flush paragraphs) in "
@@ -251,6 +252,19 @@ def repairs(runs: Path) -> list[dict]:
          "requires": ["paragraph_labels_8"],
          "files": [p5 / "make_repair.py", p5 / "repair.sql", p5 / "rollback.sql", p5 / "corrections.tsv"],
          "ops": lambda: sql_ops(p5 / "repair.sql", p5 / "rollback.sql")},
+        {"name": "paragraph_path_audit_20261104", "reference_applied": "2026-11-04",
+         "description": "The paragraph paths a Title 21 audit of 4 Nov still found wrong, each checked against the eCFR XML "
+                        "the rows record: 233 rows in 25 sections. Definitions sections (111.3, 314.3, 514.3, 1140.3) by "
+                        "regulus.ingestion.definition_paths, extended to 'X is ...' definitions and a definition stored in "
+                        "two rows; and 21 sections by hand: labels longer than 4 characters (202.1, 866.4001), labels the "
+                        "eCFR itself repeats (17.3, 524.1044g, 520.2362), combined labels chained under the previous run "
+                        "(117.5, 171.1, 571.1, 522.1662, 101.13, 1020.32, 178.1010), other chained paths (161.175, 558.95, "
+                        "310.201, 175.300), the italic n of 177.1060's opening read as (n), 510.600's sponsor lists at "
+                        "(c)(1)/(c)(2), a roman (i) read as the letter (i) (800.30, 1020.30), and 201.327(i)(3)-(7) nested "
+                        "under (i)(2)(ii)(D).",
+         "files": [p6 / "make_repair.py", p6 / "def_rerun3" / "corrections.tsv", p6 / "repair.sql", p6 / "rollback.sql",
+                   p6 / "corrections.tsv"],
+         "ops": lambda: sql_ops(p6 / "repair.sql", p6 / "rollback.sql")},
     ]
     return out
 

@@ -26,9 +26,17 @@ one CHECK so paragraph labels may have up to 8 characters (`paragraph_labels_8`,
 | 9 | `0009_definition_paths_820_3_20261103.json` | 3 Nov | DEF2: 820.3's paragraph (b) definitions back under (b) 1-5 (5 rows) |
 | 10 | `0010_paragraph_path_corrections_20261104.json` | 4 Nov | Chained paragraph paths corrected against the eCFR (e.g. (a)(5)(9)(13)(17) -> (a)(17)): 11 rows in 101.13, 1020.32, 310.201, 558.258 |
 | 11 | `0011_paragraph_labels_8_20261104.json` | 4 Nov | The rest of those corrections, whose labels are longer than 4 characters ((xviii) .. (xxxvii), e.g. 117.5(g)(3)(xvii)(xix)(xx)(xxi)(xxii) -> (g)(3)(xxiii)): 89 rows in 10.95, 1114.41, 117.5, 172.320, 175.300, 178.3870, 50.23, 558.76, 864.1870. **Requires `paragraph_labels_8`** (below) |
+| 12 | `0012_paragraph_path_audit_20261104.json` | 5 Nov | The paths a 4 Nov audit still found wrong: 233 rows in 25 sections. Definitions sections 111.3, 314.3, 514.3, 1140.3 ("X is ..." definitions, a definition stored in two rows); labels over 4 characters (202.1(e)(6)(xviii)-(xx), 866.4001); labels the eCFR repeats (17.3, 520.2362, 524.1044g); combined labels like (i)(1) chained under the previous run (101.13, 117.5, 171.1, 178.1010, 522.1662, 571.1, 1020.32); other chained paths (161.175, 175.300, 310.201, 558.95); 177.1060's italic *n* read as (n); 510.600(c)(1)/(c)(2); a roman (i) read as the letter (i) (800.30, 1020.30); 201.327(i)(3)-(7) |
 
-In total, migrations 1–11 insert 1,733 rows (65,341 → 67,074) and update 9,683. They delete nothing. Head fingerprint:
-67,074 rows / `edd5cf8b6ac344d1`.
+In total, migrations 1–12 insert 1,733 rows (65,341 → 67,074) and update 9,916. They delete nothing. Head fingerprint:
+67,074 rows / `3e37cdea005b6eac`.
+
+**0012 verification (5 Nov).** Checked independently of how it was built: each section's rows aligned by text with eCFR's
+renderer paragraph ids (2026-09-03). 194 of the 233 moved rows match their aligned id (108 before); 18 more carry a path
+eCFR has as an id while the old one is not; 7 (177.1060) follow the section's own cross-reference, as eCFR's renderer
+repeats the italic-*n* misreading; 13 are labelled table captions or items eCFR gives no id (510.600, 558.95); 1 is an
+ordinal renumber. None contradicts eCFR. Rehearsed on the reference database: rollback to 11 gave `edd5cf8b6ac344d1`,
+`apply` gave `3e37cdea005b6eac`.
 
 **Schema requirement `paragraph_labels_8` (0011).** The restored database limits each paragraph label to 4 characters
 (`cfr_records_paragraph_path_check`, from the previous platform's Prisma migration `0017_regulatory_corpus`), while the
